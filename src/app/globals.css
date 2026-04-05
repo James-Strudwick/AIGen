@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #030712;
-  --foreground: #ffffff;
+  --background: #ffffff;
+  --foreground: #1a1a1a;
 }
 
 @theme inline {
@@ -39,12 +39,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 /* Remove number input spinners */
@@ -71,8 +71,8 @@ select {
 }
 
 select option {
-  background: #1a1a2e;
-  color: white;
+  background: #ffffff;
+  color: #1a1a1a;
 }
 
 /* Range slider styling */

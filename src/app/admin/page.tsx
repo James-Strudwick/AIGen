@@ -155,7 +155,7 @@ function TrainerForm({ trainer, existingPackages, onSaved, onCancel }: {
     color_border: existingBranding?.color_border || 'rgba(255,255,255,0.08)',
     font_heading: existingBranding?.font_heading || 'system-ui',
     font_body: existingBranding?.font_body || 'system-ui',
-    theme: existingBranding?.theme || 'dark' as const,
+    theme: existingBranding?.theme || 'light' as const,
     hero_image_url: existingBranding?.hero_image_url || '',
     hero_overlay_opacity: existingBranding?.hero_overlay_opacity ?? 0.6,
   });
@@ -197,14 +197,14 @@ function TrainerForm({ trainer, existingPackages, onSaved, onCancel }: {
     if (theme === 'light') {
       setBranding({
         ...branding, theme,
-        color_background: '#ffffff', color_text: '#111111', color_text_muted: '#6b7280',
-        color_card: 'rgba(0,0,0,0.03)', color_border: 'rgba(0,0,0,0.08)',
+        color_background: '#ffffff', color_text: '#1a1a1a', color_text_muted: '#8e8e93',
+        color_card: '#f5f5f7', color_border: '#e5e5ea',
       });
     } else {
       setBranding({
         ...branding, theme,
-        color_background: branding.color_secondary, color_text: '#ffffff', color_text_muted: '#9ca3af',
-        color_card: 'rgba(255,255,255,0.03)', color_border: 'rgba(255,255,255,0.08)',
+        color_background: '#0a0a0a', color_text: '#ffffff', color_text_muted: '#9ca3af',
+        color_card: 'rgba(255,255,255,0.04)', color_border: 'rgba(255,255,255,0.08)',
       });
     }
   };

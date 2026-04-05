@@ -24,20 +24,21 @@ export function resolveBranding(trainer: Trainer): TrainerBranding {
   const secondary = trainer.brand_color_secondary || '#1A1A2E';
   const b = trainer.branding;
 
-  const isDark = b?.theme !== 'light';
+  // Default to light, clean, Apple-like theme
+  const isDark = b?.theme === 'dark';
 
   return {
     color_primary: b?.color_primary || primary,
     color_secondary: b?.color_secondary || secondary,
     color_accent: b?.color_accent || primary,
-    color_background: b?.color_background || (isDark ? secondary : '#ffffff'),
-    color_text: b?.color_text || (isDark ? '#ffffff' : '#111111'),
-    color_text_muted: b?.color_text_muted || (isDark ? '#9ca3af' : '#6b7280'),
-    color_card: b?.color_card || (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'),
-    color_border: b?.color_border || (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'),
+    color_background: b?.color_background || (isDark ? '#0a0a0a' : '#ffffff'),
+    color_text: b?.color_text || (isDark ? '#ffffff' : '#1a1a1a'),
+    color_text_muted: b?.color_text_muted || (isDark ? '#9ca3af' : '#8e8e93'),
+    color_card: b?.color_card || (isDark ? 'rgba(255,255,255,0.04)' : '#f5f5f7'),
+    color_border: b?.color_border || (isDark ? 'rgba(255,255,255,0.08)' : '#e5e5ea'),
     font_heading: b?.font_heading || 'system-ui',
     font_body: b?.font_body || 'system-ui',
-    theme: b?.theme || 'dark',
+    theme: b?.theme || 'light',
     hero_image_url: b?.hero_image_url || null,
     hero_overlay_opacity: b?.hero_overlay_opacity ?? 0.6,
   };
