@@ -88,6 +88,7 @@ export function resolveServices(trainer: Trainer): TrainerServices {
   return {
     offers_nutrition: s?.offers_nutrition ?? false,
     offers_online: s?.offers_online ?? false,
+    show_prices: s?.show_prices ?? true,
     nutrition_label: s?.nutrition_label || 'Nutrition support',
     nutrition_description: s?.nutrition_description || 'Personalised meal plans & macro tracking to accelerate results',
     online_label: s?.online_label || 'Online coaching',

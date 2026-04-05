@@ -113,33 +113,35 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
           <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: branding.color_primary }}>
             {matchedPkg.name}
           </p>
-          <div className="flex items-center justify-center gap-6">
-            {matchedPkg.monthly_price && (
-              <div>
-                <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
-                  £{matchedPkg.monthly_price}
-                </p>
-                <p className="text-[11px]" style={{ color: branding.color_text_muted }}>per month</p>
-              </div>
-            )}
-            {matchedPkg.price_per_session && (
-              <div>
-                <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
-                  £{matchedPkg.price_per_session}
-                </p>
-                <p className="text-[11px]" style={{ color: branding.color_text_muted }}>per session</p>
-              </div>
-            )}
-            {totalCost && (
-              <div>
-                <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
-                  £{totalCost.toLocaleString()}
-                </p>
-                <p className="text-[11px]" style={{ color: branding.color_text_muted }}>est. total</p>
-              </div>
-            )}
-          </div>
-          <p className="text-[11px] mt-3" style={{ color: branding.color_text_muted }}>
+          {services.show_prices && (
+            <div className="flex items-center justify-center gap-6">
+              {matchedPkg.monthly_price && (
+                <div>
+                  <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
+                    £{matchedPkg.monthly_price}
+                  </p>
+                  <p className="text-[11px]" style={{ color: branding.color_text_muted }}>per month</p>
+                </div>
+              )}
+              {matchedPkg.price_per_session && (
+                <div>
+                  <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
+                    £{matchedPkg.price_per_session}
+                  </p>
+                  <p className="text-[11px]" style={{ color: branding.color_text_muted }}>per session</p>
+                </div>
+              )}
+              {totalCost && (
+                <div>
+                  <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
+                    £{totalCost.toLocaleString()}
+                  </p>
+                  <p className="text-[11px]" style={{ color: branding.color_text_muted }}>est. total</p>
+                </div>
+              )}
+            </div>
+          )}
+          <p className={`text-[11px] ${services.show_prices ? 'mt-3' : ''}`} style={{ color: branding.color_text_muted }}>
             {matchedPkg.sessions_per_week}x per week for ~{displayWeeks} weeks
           </p>
         </div>
@@ -170,18 +172,20 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
                       {pkg.is_online ? 'Online coaching' : `${pkg.sessions_per_week}x per week`}
                     </p>
                   </div>
-                  <div className="text-right">
-                    {pkg.monthly_price && (
-                      <p className="text-sm font-bold" style={{ color: isActive ? branding.color_primary : branding.color_text }}>
-                        £{pkg.monthly_price}<span className="text-[10px] font-normal" style={{ color: branding.color_text_muted }}>/mo</span>
-                      </p>
-                    )}
-                    {pkgTotal && (
-                      <p className="text-[10px]" style={{ color: branding.color_text_muted }}>
-                        ~£{pkgTotal.toLocaleString()} total
-                      </p>
-                    )}
-                  </div>
+                  {services.show_prices && (
+                    <div className="text-right">
+                      {pkg.monthly_price && (
+                        <p className="text-sm font-bold" style={{ color: isActive ? branding.color_primary : branding.color_text }}>
+                          £{pkg.monthly_price}<span className="text-[10px] font-normal" style={{ color: branding.color_text_muted }}>/mo</span>
+                        </p>
+                      )}
+                      {pkgTotal && (
+                        <p className="text-[10px]" style={{ color: branding.color_text_muted }}>
+                          ~£{pkgTotal.toLocaleString()} total
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </button>
               );
             })}

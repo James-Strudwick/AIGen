@@ -163,6 +163,7 @@ function TrainerForm({ trainer, existingPackages, onSaved, onCancel }: {
   const [services, setServices] = useState({
     offers_nutrition: trainer?.services?.offers_nutrition ?? false,
     offers_online: trainer?.services?.offers_online ?? false,
+    show_prices: trainer?.services?.show_prices ?? true,
     nutrition_label: trainer?.services?.nutrition_label || 'Nutrition support',
     nutrition_description: trainer?.services?.nutrition_description || 'Personalised meal plans & macro tracking to accelerate results',
     online_label: trainer?.services?.online_label || 'Online coaching',
@@ -458,7 +459,23 @@ function TrainerForm({ trainer, existingPackages, onSaved, onCancel }: {
         {/* Services tab */}
         {activeTab === 'services' && (
           <div className="space-y-5">
-            <p className="text-[#8e8e93] text-xs">Toggle on the services you offer. These appear as timeline accelerators on your landing page.</p>
+            <p className="text-[#8e8e93] text-xs">Configure what appears on your landing page.</p>
+
+            {/* Show prices toggle */}
+            <div className="rounded-xl border border-[#e5e5ea] p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-sm">Show pricing</p>
+                  <p className="text-[#8e8e93] text-xs mt-0.5">Display package prices on your timeline results</p>
+                </div>
+                <button onClick={() => setServices({ ...services, show_prices: !services.show_prices })}
+                  className="w-12 h-7 rounded-full p-0.5 transition-all duration-300"
+                  style={{ backgroundColor: services.show_prices ? '#34C759' : '#e5e5ea' }}>
+                  <div className="w-6 h-6 rounded-full bg-white shadow-sm transition-transform duration-300"
+                    style={{ transform: services.show_prices ? 'translateX(20px)' : 'translateX(0)' }} />
+                </button>
+              </div>
+            </div>
 
             <div className="rounded-xl border border-[#e5e5ea] p-4 space-y-3">
               <div className="flex items-center justify-between">

@@ -24,6 +24,7 @@ export interface TrainerBranding {
 export interface TrainerServices {
   offers_nutrition: boolean;
   offers_online: boolean;
+  show_prices: boolean;
   nutrition_label: string;
   nutrition_description: string;
   online_label: string;
