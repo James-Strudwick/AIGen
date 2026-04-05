@@ -8,9 +8,9 @@ export default function Home() {
           PT Goal Calculator
         </h1>
         <p className="text-[#8e8e93] text-lg mb-8 leading-relaxed">
-          The AI-powered lead generation tool for personal trainers.
-          Each trainer gets a branded landing page where prospects can calculate
-          their personalised fitness timeline.
+          The AI-powered lead generation tool for coaches.
+          Each coach gets a branded landing page where prospects can calculate
+          how long until theu reach their ultimate goal.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -35,9 +35,9 @@ export default function Home() {
             <p className="text-[#8e8e93] text-sm">Evidence-based calculations personalised to each prospect&apos;s goals and fitness level.</p>
           </div>
           <div className="bg-[#f5f5f7] rounded-2xl p-6">
-            <div className="text-2xl mb-3">🤖</div>
+            <div className="text-2xl mb-3">🦾</div>
             <h3 className="text-black font-semibold mb-1">AI Narratives</h3>
-            <p className="text-[#8e8e93] text-sm">Claude AI generates bespoke journey descriptions that feel personal, not templated.</p>
+            <p className="text-[#8e8e93] text-sm">AI generates bespoke journey descriptions that feel personal, not templated. Based on your real servies and expertise.</p>
           </div>
           <div className="bg-[#f5f5f7] rounded-2xl p-6">
             <div className="text-2xl mb-3">💰</div>
