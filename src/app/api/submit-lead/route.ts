@@ -87,8 +87,8 @@ export async function POST(request: NextRequest) {
     const { error: dbError } = await supabase.from('leads').insert({
       trainer_id: trainerId,
       name: formData.name,
-      email: formData.email,
-      phone: formData.phone || null,
+      email: null,
+      phone: formData.phone,
       goal_type: formData.goalType,
       current_weight_kg: formData.currentWeight,
       goal_weight_kg: formData.goalWeight,

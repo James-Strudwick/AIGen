@@ -160,6 +160,7 @@ function TrainerForm({
     contact_method: trainer?.contact_method || 'whatsapp',
     contact_value: trainer?.contact_value || '',
     logo_url: trainer?.logo_url || '',
+    specialties: trainer?.specialties ? JSON.stringify(trainer.specialties, null, 2) : '[]',
   });
 
   const [pkgs, setPkgs] = useState<PackageInput[]>(
@@ -203,6 +204,7 @@ function TrainerForm({
             contact_method: form.contact_method,
             contact_value: form.contact_value,
             logo_url: form.logo_url || null,
+            specialties: form.specialties ? JSON.parse(form.specialties) : null,
           })
           .eq('id', trainer.id);
         if (error) throw error;
@@ -220,6 +222,7 @@ function TrainerForm({
             contact_method: form.contact_method,
             contact_value: form.contact_value,
             logo_url: form.logo_url || null,
+            specialties: form.specialties ? JSON.parse(form.specialties) : null,
           })
           .select('id')
           .single();
@@ -314,6 +317,17 @@ function TrainerForm({
         <div>
           <label className="text-gray-400 text-xs block mb-1">Logo URL</label>
           <input value={form.logo_url} onChange={(e) => updateField('logo_url', e.target.value)} placeholder="https://..." className={inputClass} />
+        </div>
+        <div className="col-span-2">
+          <label className="text-gray-400 text-xs block mb-1">Specialties (JSON)</label>
+          <textarea
+            value={form.specialties}
+            onChange={(e) => updateField('specialties', e.target.value)}
+            rows={6}
+            placeholder='[{"name": "Body Transformation", "description": "...", "goal_types": ["weight_loss"]}]'
+            className={inputClass + ' font-mono text-xs'}
+          />
+          <p className="text-gray-600 text-[10px] mt-1">Each specialty needs: name, description, goal_types (array of: weight_loss, muscle_gain, fitness, performance)</p>
         </div>
       </div>
 

@@ -1,3 +1,9 @@
+export interface TrainerSpecialty {
+  name: string;
+  description: string;
+  goal_types: GoalType[];
+}
+
 export interface Trainer {
   id: string;
   slug: string;
@@ -10,6 +16,7 @@ export interface Trainer {
   contact_method: 'whatsapp' | 'email' | 'calendly' | 'link';
   contact_value: string;
   logo_url: string | null;
+  specialties: TrainerSpecialty[] | null;
   active: boolean;
   created_at: string;
 }
@@ -30,8 +37,8 @@ export interface Lead {
   id: string;
   trainer_id: string;
   name: string;
-  email: string;
-  phone: string | null;
+  email: string | null;
+  phone: string;
   goal_type: GoalType;
   current_weight_kg: number | null;
   goal_weight_kg: number | null;
@@ -56,7 +63,6 @@ export interface FormData {
   experienceLevel: ExperienceLevel | null;
   availableDays: number;
   name: string;
-  email: string;
   phone: string;
 }
 

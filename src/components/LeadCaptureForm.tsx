@@ -5,20 +5,19 @@ import { useState } from 'react';
 interface LeadCaptureFormProps {
   primaryColor: string;
   isLoading: boolean;
-  onSubmit: (data: { name: string; email: string; phone: string }) => void;
+  onSubmit: (data: { name: string; phone: string }) => void;
 }
 
 export default function LeadCaptureForm({ primaryColor, isLoading, onSubmit }: LeadCaptureFormProps) {
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-  const isValid = name.trim() && email.trim() && email.includes('@');
+  const isValid = name.trim() && phone.trim();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
-    onSubmit({ name: name.trim(), email: email.trim(), phone: phone.trim() });
+    onSubmit({ name: name.trim(), phone: phone.trim() });
   };
 
   return (
@@ -27,43 +26,30 @@ export default function LeadCaptureForm({ primaryColor, isLoading, onSubmit }: L
         Almost there!
       </h2>
       <p className="text-gray-400 text-center mb-8">
-        Where should we send your personalised timeline?
+        Enter your details to see your personalised timeline
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="text-gray-300 text-sm block mb-1.5">Name</label>
+          <label className="text-gray-300 text-sm block mb-1.5">Your name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
+            placeholder="First name"
             required
             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
           />
         </div>
 
         <div>
-          <label className="text-gray-300 text-sm block mb-1.5">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="your@email.com"
-            required
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
-          />
-        </div>
-
-        <div>
-          <label className="text-gray-300 text-sm block mb-1.5">
-            Phone <span className="text-gray-600">(optional)</span>
-          </label>
+          <label className="text-gray-300 text-sm block mb-1.5">Phone number</label>
           <input
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="+44 7700 000000"
+            required
             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
           />
         </div>

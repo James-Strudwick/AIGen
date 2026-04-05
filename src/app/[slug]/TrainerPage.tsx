@@ -38,7 +38,6 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
     experienceLevel: null,
     availableDays: 3,
     name: '',
-    email: '',
     phone: '',
   });
 
@@ -72,7 +71,7 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
     setStep('capture');
   }, []);
 
-  const handleLeadSubmit = useCallback(async (data: { name: string; email: string; phone: string }) => {
+  const handleLeadSubmit = useCallback(async (data: { name: string; phone: string }) => {
     setIsLoading(true);
     const updatedForm = { ...formData, ...data };
     setFormData(updatedForm);
@@ -117,6 +116,7 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
           packages={packages}
           result={result}
           goalLabel={formData.goalType ? goalLabels[formData.goalType] : ''}
+          formData={formData}
         />
       </div>
     );
