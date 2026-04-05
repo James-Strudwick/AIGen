@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { calculateBaseWeeks, calculatePackageTimelines, generateBaseMilestones } from '@/lib/calculateTimeline';
 import { buildPrompt } from '@/lib/generateNarrative';
-import { FormData, Package, TimelineResult, GoalType, ExperienceLevel, TrainerSpecialty, ServiceAddOn } from '@/types';
+import { FormData, Package, TimelineResult, GoalType, ExperienceLevel, TrainerSpecialty, ServiceAddOn, CustomQuestion } from '@/types';
 import Anthropic from '@anthropic-ai/sdk';
 
 interface RequestBody {
@@ -12,6 +12,7 @@ interface RequestBody {
   trainerSpecialties: TrainerSpecialty[] | null;
   trainerTone: string;
   serviceAddOns: ServiceAddOn[];
+  customQuestions: CustomQuestion[];
   formData: FormData;
   packages: Package[];
 }
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
     const body: RequestBody = await request.json();
     const {
       trainerId, trainerName, trainerBio, trainerSpecialties,
-      trainerTone, serviceAddOns,
+      trainerTone, serviceAddOns, customQuestions,
       formData, packages,
     } = body;
 
@@ -57,6 +58,8 @@ export async function POST(request: NextRequest) {
           trainerSpecialties,
           trainerTone,
           serviceAddOns,
+          customAnswers: formData.customAnswers,
+          customQuestions,
           clientName: formData.name,
           goalType: formData.goalType as GoalType,
           currentWeightKg: formData.currentWeight,
@@ -106,6 +109,7 @@ export async function POST(request: NextRequest) {
       age: formData.age,
       experience_level: formData.experienceLevel,
       available_days_per_week: formData.availableDays,
+      custom_answers: formData.customAnswers && Object.keys(formData.customAnswers).length > 0 ? formData.customAnswers : null,
       generated_timeline: timelineResult,
     }).select('id').single();
 

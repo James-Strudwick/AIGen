@@ -7,6 +7,7 @@ import HeroSection from '@/components/HeroSection';
 import GoalSelector from '@/components/GoalSelector';
 import AboutYouForm from '@/components/AboutYouForm';
 import AvailabilitySelector from '@/components/AvailabilitySelector';
+import CustomQuestions from '@/components/CustomQuestions';
 import LeadCaptureForm from '@/components/LeadCaptureForm';
 import TimelineResults from '@/components/TimelineResults';
 import ProgressIndicator from '@/components/ProgressIndicator';
@@ -30,10 +31,17 @@ function getGoalLabel(formData: FormData): string {
   return labels[formData.goalType];
 }
 
-type Step = 'hero' | 'goal' | 'about' | 'availability' | 'capture' | 'results';
-const formSteps: Step[] = ['goal', 'about', 'availability', 'capture'];
+type Step = 'hero' | 'goal' | 'about' | 'availability' | 'questions' | 'capture' | 'results';
 
 export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
+  const hasCustomQuestions = (trainer.custom_questions?.length ?? 0) > 0;
+  const formSteps: Step[] = useMemo(() => {
+    const steps: Step[] = ['goal', 'about', 'availability'];
+    if (hasCustomQuestions) steps.push('questions');
+    steps.push('capture');
+    return steps;
+  }, [hasCustomQuestions]);
+
   const branding = useMemo(() => resolveBranding(trainer), [trainer]);
   const services = useMemo(() => resolveServices(trainer), [trainer]);
   const copy = useMemo(() => resolveCopy(trainer), [trainer]);
@@ -52,6 +60,7 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
     weightUnit: 'kg',
     experienceLevel: null,
     availableDays: 3,
+    customAnswers: {},
     name: '',
     phone: '',
   });
@@ -83,6 +92,11 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
 
   const handleAvailabilitySelect = useCallback((days: number) => {
     setFormData((prev) => ({ ...prev, availableDays: days }));
+    setStep(hasCustomQuestions ? 'questions' : 'capture');
+  }, [hasCustomQuestions]);
+
+  const handleCustomAnswers = useCallback((answers: Record<string, string | string[]>) => {
+    setFormData((prev) => ({ ...prev, customAnswers: answers }));
     setStep('capture');
   }, []);
 
@@ -102,6 +116,7 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
           trainerSpecialties: trainer.specialties,
           trainerTone: copy.tone,
           serviceAddOns: services.add_ons,
+          customQuestions: trainer.custom_questions || [],
           formData: updatedForm,
           packages: packages,
         }),
@@ -182,6 +197,14 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
 
         {step === 'availability' && (
           <AvailabilitySelector branding={branding} onSelect={handleAvailabilitySelect} />
+        )}
+
+        {step === 'questions' && trainer.custom_questions && (
+          <CustomQuestions
+            questions={trainer.custom_questions}
+            branding={branding}
+            onSubmit={handleCustomAnswers}
+          />
         )}
 
         {step === 'capture' && (

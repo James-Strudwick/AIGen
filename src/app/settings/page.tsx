@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@/lib/auth';
 import { AVAILABLE_FONTS, getGoogleFontsUrl } from '@/lib/branding';
-import { ServiceAddOn } from '@/types';
+import { ServiceAddOn, CustomQuestion } from '@/types';
 import PhoneInput from '@/components/PhoneInput';
-import { CopyPreview, SpecialtiesPreview, ServicesPreview, PackagesPreview } from '@/components/SettingsPreview';
+import { CopyPreview, SpecialtiesPreview, ServicesPreview, PackagesPreview, CustomQuestionsPreview } from '@/components/SettingsPreview';
 import Link from 'next/link';
 
 interface PackageInput {
@@ -16,7 +16,7 @@ interface PackageInput {
   is_online: boolean;
 }
 
-type Tab = 'details' | 'branding' | 'copy' | 'specialties' | 'services' | 'packages';
+type Tab = 'details' | 'branding' | 'copy' | 'questions' | 'specialties' | 'services' | 'packages';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -36,6 +36,7 @@ export default function SettingsPage() {
 
   const [addOns, setAddOns] = useState<ServiceAddOn[]>([]);
   const [showPrices, setShowPrices] = useState(true);
+  const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
   const [specialties, setSpecialties] = useState<{ name: string; description: string }[]>([]);
   const [pkgs, setPkgs] = useState<PackageInput[]>([
     { name: '', sessions_per_week: '2', price_per_session: '', monthly_price: '', is_online: false },
@@ -73,6 +74,7 @@ export default function SettingsPage() {
       if (trainer.services?.add_ons?.length) setAddOns(trainer.services.add_ons);
       if (trainer.services?.show_prices !== undefined) setShowPrices(trainer.services.show_prices);
       if (trainer.specialties?.length) setSpecialties(trainer.specialties);
+      if (trainer.custom_questions?.length) setCustomQuestions(trainer.custom_questions);
 
       if (existingPkgs?.length > 0) {
         setPkgs(existingPkgs.map((p: Record<string, unknown>) => ({
@@ -122,6 +124,9 @@ export default function SettingsPage() {
         ? specialties.filter(s => s.name.trim()).map(s => ({ name: s.name.trim(), description: s.description.trim() }))
         : null,
       services: { show_prices: showPrices, add_ons: addOns.filter(a => a.name.trim()) },
+      custom_questions: customQuestions.filter(q => q.question.trim()).length > 0
+        ? customQuestions.filter(q => q.question.trim())
+        : null,
     };
 
     const packageRows = pkgs.filter(p => p.name.trim()).map(p => ({
@@ -154,6 +159,7 @@ export default function SettingsPage() {
     { id: 'details', label: 'Details' },
     { id: 'branding', label: 'Branding' },
     { id: 'copy', label: 'Copy' },
+    { id: 'questions', label: 'Questions' },
     { id: 'specialties', label: 'Specialties' },
     { id: 'services', label: 'Services' },
     { id: 'packages', label: 'Packages' },
@@ -345,6 +351,116 @@ export default function SettingsPage() {
               trainerName={form.name}
               fontHeading={form.font_heading}
               fontBody={form.font_body}
+            />
+          </div>
+        )}
+
+        {/* Questions */}
+        {activeTab === 'questions' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[#8e8e93] text-xs">Add custom questions to your form. Answers feed into the AI narrative and appear on each lead.</p>
+              <button onClick={() => setCustomQuestions([...customQuestions, {
+                id: `q-${Date.now()}`, question: '', type: 'select', options: ['', ''], placeholder: '',
+              }])}
+                className="text-xs text-[#007AFF] font-medium flex-shrink-0 ml-3">+ Add</button>
+            </div>
+
+            {customQuestions.map((q, i) => (
+              <div key={q.id} className="bg-[#f5f5f7] rounded-xl p-4 space-y-3">
+                <div className="flex gap-2">
+                  <input value={q.question}
+                    onChange={(e) => { const u = [...customQuestions]; u[i] = { ...u[i], question: e.target.value }; setCustomQuestions(u); }}
+                    placeholder="e.g. What's held you back before?"
+                    className={inputClass} />
+                  <button onClick={() => setCustomQuestions(customQuestions.filter((_, idx) => idx !== i))}
+                    className="text-[#FF3B30] text-xs px-2 flex-shrink-0">Remove</button>
+                </div>
+
+                <div>
+                  <label className="text-[#8e8e93] text-[10px] block mb-1">Answer type</label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {([
+                      { value: 'text' as const, label: 'Text' },
+                      { value: 'select' as const, label: 'Single choice' },
+                      { value: 'multiselect' as const, label: 'Multi choice' },
+                    ]).map((t) => (
+                      <button key={t.value}
+                        onClick={() => { const u = [...customQuestions]; u[i] = { ...u[i], type: t.value }; setCustomQuestions(u); }}
+                        className="py-2 rounded-lg text-[11px] font-medium border transition-all"
+                        style={{
+                          backgroundColor: q.type === t.value ? '#1a1a1a' : 'white',
+                          color: q.type === t.value ? '#ffffff' : '#8e8e93',
+                          borderColor: q.type === t.value ? '#1a1a1a' : '#e5e5ea',
+                        }}>
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {q.type === 'text' && (
+                  <div>
+                    <label className="text-[#8e8e93] text-[10px] block mb-1">Placeholder text</label>
+                    <input value={q.placeholder}
+                      onChange={(e) => { const u = [...customQuestions]; u[i] = { ...u[i], placeholder: e.target.value }; setCustomQuestions(u); }}
+                      placeholder="e.g. Tell us more..."
+                      className={inputClass} />
+                  </div>
+                )}
+
+                {(q.type === 'select' || q.type === 'multiselect') && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[#8e8e93] text-[10px]">Options</label>
+                      <button onClick={() => {
+                        const u = [...customQuestions];
+                        u[i] = { ...u[i], options: [...u[i].options, ''] };
+                        setCustomQuestions(u);
+                      }} className="text-[10px] text-[#007AFF] font-medium">+ Add option</button>
+                    </div>
+                    <div className="space-y-1.5">
+                      {q.options.map((option, oi) => (
+                        <div key={oi} className="flex gap-1.5">
+                          <input value={option}
+                            onChange={(e) => {
+                              const u = [...customQuestions];
+                              const opts = [...u[i].options];
+                              opts[oi] = e.target.value;
+                              u[i] = { ...u[i], options: opts };
+                              setCustomQuestions(u);
+                            }}
+                            placeholder={`Option ${oi + 1}`}
+                            className={inputClass} />
+                          {q.options.length > 2 && (
+                            <button onClick={() => {
+                              const u = [...customQuestions];
+                              u[i] = { ...u[i], options: u[i].options.filter((_, idx) => idx !== oi) };
+                              setCustomQuestions(u);
+                            }} className="text-[#FF3B30] text-[10px] px-1.5 flex-shrink-0">x</button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {customQuestions.length === 0 && (
+              <button onClick={() => setCustomQuestions([
+                { id: 'q-barriers', question: "What's held you back before?", type: 'select', options: ['Motivation', 'Time', 'Knowledge', 'Accountability', 'Injury'], placeholder: '' },
+                { id: 'q-tried', question: 'Have you worked with a PT before?', type: 'select', options: ['No, this would be my first time', 'Yes, but it didn\'t work out', 'Yes, and it was great'], placeholder: '' },
+              ])}
+                className="w-full py-6 rounded-xl border border-dashed border-[#e5e5ea] text-[#8e8e93] text-sm hover:border-[#8e8e93] transition-colors">
+                + Tap to add recommended questions
+              </button>
+            )}
+
+            <CustomQuestionsPreview
+              theme={form.theme}
+              primaryColor={form.brand_color_primary}
+              questions={customQuestions}
             />
           </div>
         )}

@@ -41,6 +41,16 @@ export interface TrainerCopy {
   tone: string;
 }
 
+export type CustomQuestionType = 'text' | 'select' | 'multiselect';
+
+export interface CustomQuestion {
+  id: string;
+  question: string;
+  type: CustomQuestionType;
+  options: string[];
+  placeholder: string;
+}
+
 export type SubscriptionStatus = 'none' | 'active' | 'past_due' | 'cancelled';
 
 export interface Trainer {
@@ -60,6 +70,7 @@ export interface Trainer {
   branding: TrainerBranding | null;
   services: TrainerServices | null;
   copy: TrainerCopy | null;
+  custom_questions: CustomQuestion[] | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   subscription_status: SubscriptionStatus;
@@ -95,6 +106,7 @@ export interface Lead {
   age: number | null;
   experience_level: ExperienceLevel | null;
   available_days_per_week: number | null;
+  custom_answers: Record<string, string | string[]> | null;
   generated_timeline: TimelineResult | null;
   selected_package_id: string | null;
   whatsapp_clicked_at: string | null;
@@ -114,6 +126,7 @@ export interface FormData {
   weightUnit: 'kg' | 'stone';
   experienceLevel: ExperienceLevel | null;
   availableDays: number;
+  customAnswers: Record<string, string | string[]>;
   name: string;
   phone: string;
 }

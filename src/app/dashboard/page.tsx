@@ -265,9 +265,20 @@ export default function DashboardPage() {
                   </div>
 
                   {lead.generated_timeline && (
-                    <p className="text-xs text-[#8e8e93] mb-3 line-clamp-2">
+                    <p className="text-xs text-[#8e8e93] mb-2 line-clamp-2">
                       {(lead.generated_timeline as { summary?: string }).summary}
                     </p>
+                  )}
+
+                  {lead.custom_answers && Object.keys(lead.custom_answers).length > 0 && (
+                    <div className="flex gap-1.5 flex-wrap mb-3">
+                      {Object.values(lead.custom_answers).map((val, idx) => {
+                        const str = Array.isArray(val) ? val.join(', ') : val;
+                        return str ? (
+                          <span key={idx} className="text-[10px] bg-[#e5e5ea] text-[#1a1a1a] px-2 py-0.5 rounded-full">{str}</span>
+                        ) : null;
+                      })}
+                    </div>
                   )}
 
                   <div className="flex gap-2">

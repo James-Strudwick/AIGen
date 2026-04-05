@@ -1,6 +1,6 @@
 'use client';
 
-import { TrainerSpecialty, ServiceAddOn } from '@/types';
+import { TrainerSpecialty, ServiceAddOn, CustomQuestion } from '@/types';
 import { getGoogleFontsUrl } from '@/lib/branding';
 
 interface PreviewWrapperProps {
@@ -241,6 +241,82 @@ export function PackagesPreview({ theme, primaryColor, packages, showPrices }: {
             </div>
           );
         })}
+      </div>
+    </PreviewWrapper>
+  );
+}
+
+// --- Custom Questions Preview ---
+
+export function CustomQuestionsPreview({ theme, primaryColor, questions }: {
+  theme: 'light' | 'dark';
+  primaryColor: string;
+  questions: CustomQuestion[];
+}) {
+  const c = getColors(theme, primaryColor);
+  const valid = questions.filter(q => q.question.trim());
+
+  if (valid.length === 0) return null;
+
+  return (
+    <PreviewWrapper theme={theme} primaryColor={primaryColor}>
+      <h4 className="text-sm font-bold mb-1 text-center" style={{ color: c.text }}>A couple more questions</h4>
+      <p className="text-[11px] text-center mb-3" style={{ color: c.muted }}>This helps us personalise your plan</p>
+      <div className="space-y-4">
+        {valid.map((q) => (
+          <div key={q.id}>
+            <p className="text-[10px] font-medium mb-1.5" style={{ color: c.text }}>{q.question}</p>
+
+            {q.type === 'text' && (
+              <div className="rounded-lg px-3 py-2 border text-[10px]"
+                style={{ backgroundColor: c.card, borderColor: c.border, color: c.muted }}>
+                {q.placeholder || 'Type your answer...'}
+              </div>
+            )}
+
+            {q.type === 'select' && q.options.filter(o => o.trim()).length > 0 && (
+              <div className="space-y-1">
+                {q.options.filter(o => o.trim()).map((option, i) => (
+                  <div key={i} className="rounded-lg px-3 py-2 border text-[10px]"
+                    style={{
+                      backgroundColor: i === 0 ? c.primary + '12' : c.card,
+                      borderColor: i === 0 ? c.primary : c.border,
+                      color: c.text,
+                    }}>
+                    {option}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {q.type === 'multiselect' && q.options.filter(o => o.trim()).length > 0 && (
+              <div className="space-y-1">
+                {q.options.filter(o => o.trim()).map((option, i) => (
+                  <div key={i} className="rounded-lg px-3 py-2 border text-[10px] flex items-center gap-2"
+                    style={{
+                      backgroundColor: i === 0 ? c.primary + '12' : c.card,
+                      borderColor: i === 0 ? c.primary : c.border,
+                      color: c.text,
+                    }}>
+                    <div className="w-3.5 h-3.5 rounded-[3px] border flex items-center justify-center flex-shrink-0"
+                      style={{
+                        borderColor: i === 0 ? c.primary : c.border,
+                        backgroundColor: i === 0 ? c.primary : 'transparent',
+                      }}>
+                      {i === 0 && (
+                        <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                    {option}
+                  </div>
+                ))}
+                <p className="text-[8px]" style={{ color: c.muted }}>Select all that apply</p>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </PreviewWrapper>
   );

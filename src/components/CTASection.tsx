@@ -36,6 +36,15 @@ function buildWhatsAppMessage(trainer: Trainer, formData: FormData, result: Time
   }
   message += `- Available days: ${formData.availableDays} per week\n`;
   message += `- Estimated timeline: ~${result.estimatedWeeks} weeks\n`;
+
+  // Include custom answers if any
+  if (formData.customAnswers && Object.keys(formData.customAnswers).length > 0) {
+    for (const [, value] of Object.entries(formData.customAnswers)) {
+      const answerStr = Array.isArray(value) ? value.join(', ') : value;
+      if (answerStr) message += `- ${answerStr}\n`;
+    }
+  }
+
   if (bestPkg) message += `\nI'm most interested in the ${bestPkg.packageName} package (~${bestPkg.estimatedWeeks} weeks to goal).\n`;
   message += `\nCould we have a chat about getting started?`;
   return message;

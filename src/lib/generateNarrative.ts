@@ -1,4 +1,4 @@
-import { GoalType, ExperienceLevel, TrainerSpecialty, ServiceAddOn } from '@/types';
+import { GoalType, ExperienceLevel, TrainerSpecialty, ServiceAddOn, CustomQuestion } from '@/types';
 
 export interface NarrativeInput {
   trainerName: string;
@@ -6,6 +6,8 @@ export interface NarrativeInput {
   trainerSpecialties: TrainerSpecialty[] | null;
   trainerTone: string;
   serviceAddOns: ServiceAddOn[];
+  customAnswers?: Record<string, string | string[]>;
+  customQuestions?: CustomQuestion[];
   clientName: string;
   goalType: GoalType;
   currentWeightKg: number | null;
@@ -53,6 +55,21 @@ export function buildPrompt(input: NarrativeInput): string {
     ? `${input.trainerName} also offers: ${input.serviceAddOns.map(a => `${a.name} (${a.description})`).join('; ')}`
     : '';
 
+  // Build custom Q&A context
+  let customQAContext = '';
+  if (input.customAnswers && input.customQuestions) {
+    const qaPairs = input.customQuestions
+      .filter(q => input.customAnswers![q.id])
+      .map(q => {
+        const answer = input.customAnswers![q.id];
+        const answerStr = Array.isArray(answer) ? answer.join(', ') : answer;
+        return `- ${q.question}: ${answerStr}`;
+      });
+    if (qaPairs.length > 0) {
+      customQAContext = `\nAdditional information from ${input.clientName}:\n${qaPairs.join('\n')}`;
+    }
+  }
+
   // Use PT's custom tone if set, otherwise default by goal type
   const tone = input.trainerTone
     ? `${input.trainerTone}. Also be ${defaultToneGuide[input.goalType]}`
@@ -71,6 +88,7 @@ ${weightContext ? `- ${weightContext}` : ''}- Experience level: ${input.experien
 - Available training days per week: ${input.availableDays}
 - Estimated timeline: approximately ${input.estimatedWeeks} weeks
 ${performanceContext}
+${customQAContext}
 
 Tone: ${tone}
 
@@ -78,6 +96,7 @@ IMPORTANT INSTRUCTIONS:
 - Address ${input.clientName} by name in the summary and narrative
 - Reference ${input.trainerName}'s specific specialties where relevant to this client's goal
 - If ${input.trainerName} offers additional services (nutrition, online coaching, etc.), mention how they specifically accelerate this client's goal
+- If additional information was provided (barriers, previous experience, etc.), weave it naturally into the narrative and milestones — show that the plan accounts for their specific situation
 - Make the milestones feel like they were written specifically for ${input.clientName}, not generic templates
 - Use UK English spelling (programme, personalised, etc.)
 
