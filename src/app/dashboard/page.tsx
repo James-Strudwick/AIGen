@@ -28,32 +28,26 @@ export default function DashboardPage() {
 
   const fetchData = useCallback(async () => {
     const supabase = createBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       window.location.href = '/login';
       return;
     }
 
-    const { data: trainer } = await supabase
-      .from('trainers')
-      .select('id, name, slug')
-      .eq('user_id', user.id)
-      .single();
+    const res = await fetch('/api/me', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
 
-    if (!trainer) {
-      window.location.href = '/onboarding';
+    if (!res.ok) {
+      if (res.status === 401) window.location.href = '/login';
+      if (res.status === 404) window.location.href = '/onboarding';
       return;
     }
 
+    const { trainer, leads: leadsData } = await res.json();
+
     setTrainerName(trainer.name);
     setTrainerSlug(trainer.slug);
-
-    const { data: leadsData } = await supabase
-      .from('leads')
-      .select('*')
-      .eq('trainer_id', trainer.id)
-      .order('created_at', { ascending: false });
-
     setLeads((leadsData || []) as Lead[]);
     setLoading(false);
   }, []);
@@ -67,8 +61,11 @@ export default function DashboardPage() {
   };
 
   const markConverted = async (leadId: string) => {
-    const supabase = createBrowserClient();
-    await supabase.from('leads').update({ status: 'converted' }).eq('id', leadId);
+    await fetch('/api/track-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId, action: 'converted' }),
+    });
     fetchData();
   };
 

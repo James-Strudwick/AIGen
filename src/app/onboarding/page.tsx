@@ -57,17 +57,25 @@ export default function OnboardingPage() {
   useEffect(() => {
     const loadTrainer = async () => {
       const supabase = createBrowserClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         window.location.href = '/login';
         return;
       }
 
-      const { data: trainer } = await supabase
-        .from('trainers')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      // Use API with service role to bypass RLS
+      const res = await fetch('/api/me', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          window.location.href = '/login';
+        }
+        return;
+      }
+
+      const { trainer, packages: existingPkgs } = await res.json();
 
       if (trainer) {
         setTrainerId(trainer.id);
@@ -81,7 +89,32 @@ export default function OnboardingPage() {
           contact_method: trainer.contact_method || 'whatsapp',
           contact_value: trainer.contact_value || '',
           brand_color_primary: trainer.brand_color_primary || '#1a1a1a',
+          ...(trainer.branding ? {
+            font_heading: trainer.branding.font_heading || 'system-ui',
+            font_body: trainer.branding.font_body || 'system-ui',
+            theme: trainer.branding.theme || 'light',
+            photo_url: trainer.photo_url || '',
+            logo_url: trainer.logo_url || '',
+            hero_headline: trainer.copy?.hero_headline || '',
+            tone: trainer.copy?.tone || '',
+          } : {}),
         }));
+
+        if (trainer.services?.add_ons?.length) {
+          setAddOns(trainer.services.add_ons);
+        }
+        if (trainer.services?.show_prices !== undefined) {
+          setShowPrices(trainer.services.show_prices);
+        }
+        if (existingPkgs?.length > 0) {
+          setPkgs(existingPkgs.map((p: Record<string, unknown>) => ({
+            name: p.name as string,
+            sessions_per_week: String(p.sessions_per_week),
+            price_per_session: p.price_per_session ? String(p.price_per_session) : '',
+            monthly_price: p.monthly_price ? String(p.monthly_price) : '',
+            is_online: p.is_online as boolean,
+          })));
+        }
       }
     };
     loadTrainer();

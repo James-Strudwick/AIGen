@@ -18,9 +18,9 @@ export async function POST(request: NextRequest) {
     } else if (action === 'booking_clicked') {
       updates.status = 'call_booked';
       updates.booking_clicked_at = new Date().toISOString();
-    }
-
-    if (Object.keys(updates).length === 0) {
+    } else if (action === 'converted') {
+      updates.status = 'converted';
+    } else {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
 
