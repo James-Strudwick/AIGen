@@ -1,4 +1,4 @@
-import { GoalType, ExperienceLevel, Package, PackageTimeline, Milestone, TimelineConfig } from '@/types';
+import { GoalType, ExperienceLevel, Package, PackageTimeline, Milestone, TimelineConfig, ServiceAddOn } from '@/types';
 
 export interface CalcInput {
   goalType: GoalType;
@@ -193,27 +193,24 @@ export function generateBaseMilestones(
 
 /**
  * Calculate weeks with toggle modifiers applied.
- * Used client-side for the interactive timeline toggles.
+ * Each active add-on reduces the timeline by its configured percentage.
+ * Reductions are applied multiplicatively (not additive) to avoid
+ * unrealistic timelines when multiple add-ons are enabled.
  */
 export function calculateWithToggles(
   baseInput: CalcInput,
-  config: TimelineConfig
+  config: TimelineConfig,
+  addOns: ServiceAddOn[]
 ): number {
-  // Start with the sessions toggle value
   const input = { ...baseInput, availableDays: config.sessionsPerWeek };
   let weeks = calculateBaseWeeks(input);
 
-  // Nutrition support: reduces timeline by 15-25% depending on goal
-  if (config.hasNutritionSupport) {
-    const nutritionBoost = baseInput.goalType === 'weight_loss' ? 0.25
-      : baseInput.goalType === 'muscle_gain' ? 0.20
-      : 0.15;
-    weeks = Math.ceil(weeks * (1 - nutritionBoost));
-  }
-
-  // Online coaching: additional 10% reduction (accountability + guidance between sessions)
-  if (config.hasOnlineCoaching) {
-    weeks = Math.ceil(weeks * 0.90);
+  // Apply each active add-on's timeline reduction
+  for (const addOn of addOns) {
+    if (config.activeAddOnIds.includes(addOn.id)) {
+      const reduction = addOn.timeline_reduction_percent / 100;
+      weeks = Math.ceil(weeks * (1 - reduction));
+    }
   }
 
   return Math.max(weeks, 4);

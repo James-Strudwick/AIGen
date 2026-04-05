@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { calculateBaseWeeks, calculatePackageTimelines, generateBaseMilestones } from '@/lib/calculateTimeline';
 import { buildPrompt } from '@/lib/generateNarrative';
-import { FormData, Package, TimelineResult, GoalType, ExperienceLevel, TrainerSpecialty } from '@/types';
+import { FormData, Package, TimelineResult, GoalType, ExperienceLevel, TrainerSpecialty, ServiceAddOn } from '@/types';
 import Anthropic from '@anthropic-ai/sdk';
 
 interface RequestBody {
@@ -11,8 +11,7 @@ interface RequestBody {
   trainerBio: string | null;
   trainerSpecialties: TrainerSpecialty[] | null;
   trainerTone: string;
-  offersNutrition: boolean;
-  offersOnline: boolean;
+  serviceAddOns: ServiceAddOn[];
   formData: FormData;
   packages: Package[];
 }
@@ -22,7 +21,7 @@ export async function POST(request: NextRequest) {
     const body: RequestBody = await request.json();
     const {
       trainerId, trainerName, trainerBio, trainerSpecialties,
-      trainerTone, offersNutrition, offersOnline,
+      trainerTone, serviceAddOns,
       formData, packages,
     } = body;
 
@@ -57,8 +56,7 @@ export async function POST(request: NextRequest) {
           trainerBio,
           trainerSpecialties,
           trainerTone,
-          offersNutrition,
-          offersOnline,
+          serviceAddOns,
           clientName: formData.name,
           goalType: formData.goalType as GoalType,
           currentWeightKg: formData.currentWeight,

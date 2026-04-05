@@ -1,4 +1,4 @@
-import { Trainer, TrainerBranding, TrainerServices, TrainerCopy } from '@/types';
+import { Trainer, TrainerBranding, TrainerServices, TrainerCopy, ServiceAddOn } from '@/types';
 
 /** Curated fonts that work well for fitness branding */
 export const AVAILABLE_FONTS = [
@@ -85,14 +85,32 @@ function fontStack(font: string): string {
 /** Resolve services config with defaults */
 export function resolveServices(trainer: Trainer): TrainerServices {
   const s = trainer.services;
+
+  // Migrate old format if needed
+  const oldServices = trainer.services as Record<string, unknown> | null;
+  const migratedAddOns: ServiceAddOn[] = [];
+  if (oldServices?.offers_nutrition) {
+    migratedAddOns.push({
+      id: 'nutrition',
+      name: (oldServices.nutrition_label as string) || 'Nutrition support',
+      description: (oldServices.nutrition_description as string) || 'Personalised meal plans & macro tracking to accelerate results',
+      timeline_reduction_percent: 20,
+      price_per_month: null,
+    });
+  }
+  if (oldServices?.offers_online) {
+    migratedAddOns.push({
+      id: 'online',
+      name: (oldServices.online_label as string) || 'Online coaching',
+      description: (oldServices.online_description as string) || 'Accountability check-ins, form reviews & programme adjustments between sessions',
+      timeline_reduction_percent: 10,
+      price_per_month: null,
+    });
+  }
+
   return {
-    offers_nutrition: s?.offers_nutrition ?? false,
-    offers_online: s?.offers_online ?? false,
     show_prices: s?.show_prices ?? true,
-    nutrition_label: s?.nutrition_label || 'Nutrition support',
-    nutrition_description: s?.nutrition_description || 'Personalised meal plans & macro tracking to accelerate results',
-    online_label: s?.online_label || 'Online coaching',
-    online_description: s?.online_description || 'Accountability check-ins, form reviews & programme adjustments between sessions',
+    add_ons: s?.add_ons ?? migratedAddOns,
   };
 }
 

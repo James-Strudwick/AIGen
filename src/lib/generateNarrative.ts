@@ -1,12 +1,11 @@
-import { GoalType, ExperienceLevel, TrainerSpecialty } from '@/types';
+import { GoalType, ExperienceLevel, TrainerSpecialty, ServiceAddOn } from '@/types';
 
 export interface NarrativeInput {
   trainerName: string;
   trainerBio: string | null;
   trainerSpecialties: TrainerSpecialty[] | null;
   trainerTone: string;
-  offersNutrition: boolean;
-  offersOnline: boolean;
+  serviceAddOns: ServiceAddOn[];
   clientName: string;
   goalType: GoalType;
   currentWeightKg: number | null;
@@ -50,10 +49,9 @@ export function buildPrompt(input: NarrativeInput): string {
     ? `\nAbout ${input.trainerName}: ${input.trainerBio}`
     : '';
 
-  const servicesContext = [
-    input.offersNutrition ? `${input.trainerName} includes personalised nutrition support` : null,
-    input.offersOnline ? `${input.trainerName} offers online coaching between sessions` : null,
-  ].filter(Boolean).join('. ');
+  const servicesContext = input.serviceAddOns.length > 0
+    ? `${input.trainerName} also offers: ${input.serviceAddOns.map(a => `${a.name} (${a.description})`).join('; ')}`
+    : '';
 
   // Use PT's custom tone if set, otherwise default by goal type
   const tone = input.trainerTone
@@ -79,7 +77,7 @@ Tone: ${tone}
 IMPORTANT INSTRUCTIONS:
 - Address ${input.clientName} by name in the summary and narrative
 - Reference ${input.trainerName}'s specific specialties where relevant to this client's goal
-- If ${input.trainerName} offers nutrition support, mention how that specifically accelerates this client's goal
+- If ${input.trainerName} offers additional services (nutrition, online coaching, etc.), mention how they specifically accelerate this client's goal
 - Make the milestones feel like they were written specifically for ${input.clientName}, not generic templates
 - Use UK English spelling (programme, personalised, etc.)
 

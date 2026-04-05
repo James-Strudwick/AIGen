@@ -21,14 +21,17 @@ export interface TrainerBranding {
   hero_overlay_opacity: number;
 }
 
+export interface ServiceAddOn {
+  id: string;
+  name: string;
+  description: string;
+  timeline_reduction_percent: number;
+  price_per_month: number | null;
+}
+
 export interface TrainerServices {
-  offers_nutrition: boolean;
-  offers_online: boolean;
   show_prices: boolean;
-  nutrition_label: string;
-  nutrition_description: string;
-  online_label: string;
-  online_description: string;
+  add_ons: ServiceAddOn[];
 }
 
 export interface TrainerCopy {
@@ -123,8 +126,7 @@ export interface PackageTimeline {
 
 export interface TimelineConfig {
   sessionsPerWeek: number;
-  hasNutritionSupport: boolean;
-  hasOnlineCoaching: boolean;
+  activeAddOnIds: string[];
 }
 
 export interface TimelineResult {

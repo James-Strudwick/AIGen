@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Trainer, Package, TrainerSpecialty, TrainerBranding } from '@/types';
+import { Trainer, Package, TrainerSpecialty, TrainerBranding, ServiceAddOn } from '@/types';
 import { supabase } from '@/lib/supabase';
-import { AVAILABLE_FONTS, resolveBranding } from '@/lib/branding';
+import { AVAILABLE_FONTS, resolveBranding, resolveServices } from '@/lib/branding';
 
 interface PackageInput {
   name: string;
@@ -160,15 +160,10 @@ function TrainerForm({ trainer, existingPackages, onSaved, onCancel }: {
     hero_overlay_opacity: existingBranding?.hero_overlay_opacity ?? 0.6,
   });
 
-  const [services, setServices] = useState({
-    offers_nutrition: trainer?.services?.offers_nutrition ?? false,
-    offers_online: trainer?.services?.offers_online ?? false,
-    show_prices: trainer?.services?.show_prices ?? true,
-    nutrition_label: trainer?.services?.nutrition_label || 'Nutrition support',
-    nutrition_description: trainer?.services?.nutrition_description || 'Personalised meal plans & macro tracking to accelerate results',
-    online_label: trainer?.services?.online_label || 'Online coaching',
-    online_description: trainer?.services?.online_description || 'Accountability check-ins, form reviews & programme adjustments between sessions',
-  });
+  const resolvedServices = trainer ? resolveServices(trainer) : null;
+
+  const [showPrices, setShowPrices] = useState(resolvedServices?.show_prices ?? true);
+  const [addOns, setAddOns] = useState<ServiceAddOn[]>(resolvedServices?.add_ons ?? []);
 
   const [copy, setCopy] = useState({
     hero_headline: trainer?.copy?.hero_headline || '',
@@ -228,7 +223,10 @@ function TrainerForm({ trainer, existingPackages, onSaved, onCancel }: {
         contact_value: form.contact_value, logo_url: form.logo_url || null,
         specialties: specialtiesData.length > 0 ? specialtiesData : null,
         branding: brandingData,
-        services: services,
+        services: {
+          show_prices: showPrices,
+          add_ons: addOns.filter(a => a.name.trim()),
+        },
         copy: (copy.hero_headline || copy.hero_subtext || copy.cta_button_text || copy.tone) ? copy : null,
       };
 
@@ -459,80 +457,88 @@ function TrainerForm({ trainer, existingPackages, onSaved, onCancel }: {
         {/* Services tab */}
         {activeTab === 'services' && (
           <div className="space-y-5">
-            <p className="text-[#8e8e93] text-xs">Configure what appears on your landing page.</p>
+            <p className="text-[#8e8e93] text-xs">Add services that prospects can toggle on to see how they accelerate their timeline. Each add-on shows as an interactive toggle on your results page.</p>
 
             {/* Show prices toggle */}
             <div className="rounded-xl border border-[#e5e5ea] p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-sm">Show pricing</p>
-                  <p className="text-[#8e8e93] text-xs mt-0.5">Display package prices on your timeline results</p>
+                  <p className="text-[#8e8e93] text-xs mt-0.5">Display prices on your timeline results</p>
                 </div>
-                <button onClick={() => setServices({ ...services, show_prices: !services.show_prices })}
+                <button onClick={() => setShowPrices(!showPrices)}
                   className="w-12 h-7 rounded-full p-0.5 transition-all duration-300"
-                  style={{ backgroundColor: services.show_prices ? '#34C759' : '#e5e5ea' }}>
+                  style={{ backgroundColor: showPrices ? '#34C759' : '#e5e5ea' }}>
                   <div className="w-6 h-6 rounded-full bg-white shadow-sm transition-transform duration-300"
-                    style={{ transform: services.show_prices ? 'translateX(20px)' : 'translateX(0)' }} />
+                    style={{ transform: showPrices ? 'translateX(20px)' : 'translateX(0)' }} />
                 </button>
               </div>
             </div>
 
-            <div className="rounded-xl border border-[#e5e5ea] p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">Nutrition support</p>
-                  <p className="text-[#8e8e93] text-xs mt-0.5">Show a nutrition toggle on your timeline</p>
-                </div>
-                <button onClick={() => setServices({ ...services, offers_nutrition: !services.offers_nutrition })}
-                  className="w-12 h-7 rounded-full p-0.5 transition-all duration-300"
-                  style={{ backgroundColor: services.offers_nutrition ? '#34C759' : '#e5e5ea' }}>
-                  <div className="w-6 h-6 rounded-full bg-white shadow-sm transition-transform duration-300"
-                    style={{ transform: services.offers_nutrition ? 'translateX(20px)' : 'translateX(0)' }} />
-                </button>
+            {/* Add-ons */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-medium text-sm">Service add-ons</p>
+                <button onClick={() => setAddOns([...addOns, {
+                  id: `addon-${Date.now()}`,
+                  name: '',
+                  description: '',
+                  timeline_reduction_percent: 15,
+                  price_per_month: null,
+                }])}
+                  className="text-xs text-[#007AFF] hover:text-[#0056b3] font-medium">+ Add service</button>
               </div>
-              {services.offers_nutrition && (
-                <div className="space-y-2 pt-2 border-t border-[#e5e5ea]">
-                  <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">Label</label>
-                    <input value={services.nutrition_label} onChange={(e) => setServices({ ...services, nutrition_label: e.target.value })}
-                      placeholder="Nutrition support" className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">Description</label>
-                    <textarea value={services.nutrition_description} onChange={(e) => setServices({ ...services, nutrition_description: e.target.value })}
-                      placeholder="Personalised meal plans & macro tracking..." rows={2} className={inputClass} />
-                  </div>
-                </div>
-              )}
-            </div>
 
-            <div className="rounded-xl border border-[#e5e5ea] p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">Online coaching</p>
-                  <p className="text-[#8e8e93] text-xs mt-0.5">Show an online coaching toggle on your timeline</p>
-                </div>
-                <button onClick={() => setServices({ ...services, offers_online: !services.offers_online })}
-                  className="w-12 h-7 rounded-full p-0.5 transition-all duration-300"
-                  style={{ backgroundColor: services.offers_online ? '#34C759' : '#e5e5ea' }}>
-                  <div className="w-6 h-6 rounded-full bg-white shadow-sm transition-transform duration-300"
-                    style={{ transform: services.offers_online ? 'translateX(20px)' : 'translateX(0)' }} />
-                </button>
+              <div className="space-y-3">
+                {addOns.map((addOn, i) => (
+                  <div key={addOn.id} className="bg-[#f5f5f7] rounded-xl p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <input value={addOn.name}
+                        onChange={(e) => { const u = [...addOns]; u[i] = { ...u[i], name: e.target.value }; setAddOns(u); }}
+                        placeholder="e.g. Nutrition Plan, Online Programming, Hybrid Coaching"
+                        className={inputClass} />
+                      <button onClick={() => setAddOns(addOns.filter((_, idx) => idx !== i))}
+                        className="text-[#FF3B30] text-xs flex-shrink-0 px-2">Remove</button>
+                    </div>
+                    <textarea value={addOn.description}
+                      onChange={(e) => { const u = [...addOns]; u[i] = { ...u[i], description: e.target.value }; setAddOns(u); }}
+                      placeholder="Describe what this includes and how it helps clients..."
+                      rows={2} className={inputClass} />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[#8e8e93] text-[10px] block mb-0.5">Timeline impact (%)</label>
+                        <div className="flex items-center gap-2">
+                          <input type="range" min={5} max={40} step={5}
+                            value={addOn.timeline_reduction_percent}
+                            onChange={(e) => { const u = [...addOns]; u[i] = { ...u[i], timeline_reduction_percent: parseInt(e.target.value) }; setAddOns(u); }}
+                            className="flex-1" />
+                          <span className="text-sm font-semibold text-[#1a1a1a] min-w-[3ch] text-right">
+                            {addOn.timeline_reduction_percent}%
+                          </span>
+                        </div>
+                        <p className="text-[#8e8e93] text-[9px] mt-0.5">How much faster clients reach their goal with this</p>
+                      </div>
+                      <div>
+                        <label className="text-[#8e8e93] text-[10px] block mb-0.5">Price per month (£)</label>
+                        <input type="number" value={addOn.price_per_month || ''}
+                          onChange={(e) => { const u = [...addOns]; u[i] = { ...u[i], price_per_month: e.target.value ? parseFloat(e.target.value) : null }; setAddOns(u); }}
+                          placeholder="Optional" className={inputClass} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {addOns.length === 0 && (
+                  <button onClick={() => setAddOns([
+                    { id: 'nutrition', name: 'Nutrition Plan', description: 'Personalised meal plans, macro targets, and weekly check-ins to accelerate your results', timeline_reduction_percent: 20, price_per_month: null },
+                    { id: 'online', name: 'Online Programming', description: 'Structured workout plans for the days you train alone, with form check video reviews', timeline_reduction_percent: 15, price_per_month: null },
+                    { id: 'hybrid', name: 'Hybrid Coaching', description: 'Combines in-person sessions with online programming and nutrition support for the fastest results', timeline_reduction_percent: 30, price_per_month: null },
+                  ])}
+                    className="w-full py-6 rounded-xl border border-dashed border-[#e5e5ea] text-[#8e8e93] text-sm hover:border-[#8e8e93] transition-colors">
+                    + Add services — or tap to use recommended templates
+                  </button>
+                )}
               </div>
-              {services.offers_online && (
-                <div className="space-y-2 pt-2 border-t border-[#e5e5ea]">
-                  <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">Label</label>
-                    <input value={services.online_label} onChange={(e) => setServices({ ...services, online_label: e.target.value })}
-                      placeholder="Online coaching" className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">Description</label>
-                    <textarea value={services.online_description} onChange={(e) => setServices({ ...services, online_description: e.target.value })}
-                      placeholder="Accountability check-ins, form reviews..." rows={2} className={inputClass} />
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
