@@ -1,6 +1,7 @@
 'use client';
 
 import { TrainerSpecialty, ServiceAddOn } from '@/types';
+import { getGoogleFontsUrl } from '@/lib/branding';
 
 interface PreviewWrapperProps {
   theme: 'light' | 'dark';
@@ -36,23 +37,36 @@ function getColors(theme: 'light' | 'dark', primaryColor: string) {
 
 // --- Copy Preview ---
 
-export function CopyPreview({ theme, primaryColor, headline, subtext, ctaText, trainerName }: {
+export function CopyPreview({ theme, primaryColor, headline, subtext, ctaText, trainerName, fontHeading, fontBody }: {
   theme: 'light' | 'dark';
   primaryColor: string;
   headline: string;
   subtext: string;
   ctaText: string;
   trainerName: string;
+  fontHeading?: string;
+  fontBody?: string;
 }) {
   const c = getColors(theme, primaryColor);
   const displayHeadline = headline || "Find out how long it'll take to reach your goal";
   const displaySubtext = subtext || 'Free personalised timeline in 60 seconds';
   const displayCta = ctaText || 'Get My Timeline';
 
+  const headingStack = fontHeading && fontHeading !== 'system-ui' ? `'${fontHeading}', system-ui, sans-serif` : undefined;
+  const bodyStack = fontBody && fontBody !== 'system-ui' ? `'${fontBody}', system-ui, sans-serif` : undefined;
+
+  const fontsUrl = (fontHeading || fontBody) ? getGoogleFontsUrl({
+    color_primary: primaryColor, color_secondary: '', color_accent: '',
+    color_background: '', color_text: '', color_text_muted: '',
+    color_card: '', color_border: '',
+    font_heading: fontHeading || 'system-ui', font_body: fontBody || 'system-ui',
+    theme, hero_image_url: null, hero_overlay_opacity: 0.6,
+  }) : null;
+
   return (
     <PreviewWrapper theme={theme} primaryColor={primaryColor}>
+      {fontsUrl && <link rel="stylesheet" href={fontsUrl} />}
       <div className="text-center max-w-xs mx-auto">
-        {/* Initials */}
         <div className="w-14 h-14 rounded-full mx-auto mb-3 border-2 flex items-center justify-center text-sm font-bold"
           style={{ borderColor: c.primary, backgroundColor: c.primary + '33', color: c.text }}>
           {trainerName.split(' ').map(n => n[0]).join('') || 'PT'}
@@ -60,11 +74,11 @@ export function CopyPreview({ theme, primaryColor, headline, subtext, ctaText, t
         <p className="text-[10px] font-semibold tracking-[0.15em] uppercase mb-2" style={{ color: c.primary }}>
           {trainerName || 'Your Name'}
         </p>
-        <h3 className="text-base font-bold leading-tight mb-1.5" style={{ color: c.text }}>
+        <h3 className="text-base font-bold leading-tight mb-1.5" style={{ color: c.text, fontFamily: headingStack }}>
           {displayHeadline}
         </h3>
-        <p className="text-xs mb-4" style={{ color: c.muted }}>{displaySubtext}</p>
-        <div className="py-2.5 rounded-xl text-white text-xs font-semibold" style={{ backgroundColor: c.primary }}>
+        <p className="text-xs mb-4" style={{ color: c.muted, fontFamily: bodyStack }}>{displaySubtext}</p>
+        <div className="py-2.5 rounded-xl text-white text-xs font-semibold" style={{ backgroundColor: c.primary, fontFamily: bodyStack }}>
           {displayCta}
         </div>
       </div>

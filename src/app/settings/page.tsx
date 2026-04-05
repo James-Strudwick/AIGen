@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@/lib/auth';
-import { AVAILABLE_FONTS } from '@/lib/branding';
+import { AVAILABLE_FONTS, getGoogleFontsUrl } from '@/lib/branding';
 import { ServiceAddOn } from '@/types';
 import PhoneInput from '@/components/PhoneInput';
 import { CopyPreview, SpecialtiesPreview, ServicesPreview } from '@/components/SettingsPreview';
@@ -269,23 +269,12 @@ export default function SettingsPage() {
               </div>
             </div>
             {/* Preview */}
-            <div>
-              <label className="text-[#8e8e93] text-xs block mb-2">Preview</label>
-              <div className="rounded-xl p-4 border" style={{
-                backgroundColor: form.theme === 'dark' ? '#0a0a0a' : '#ffffff',
-                borderColor: form.theme === 'dark' ? 'rgba(255,255,255,0.08)' : '#e5e5ea',
-              }}>
-                <p className="text-lg font-bold mb-1" style={{ color: form.theme === 'dark' ? '#ffffff' : '#1a1a1a' }}>
-                  Heading text
-                </p>
-                <p className="text-sm mb-3" style={{ color: form.theme === 'dark' ? '#9ca3af' : '#8e8e93' }}>
-                  Muted body text preview
-                </p>
-                <div className="inline-block px-4 py-2 rounded-lg text-white text-xs font-medium" style={{ backgroundColor: form.brand_color_primary }}>
-                  Button
-                </div>
-              </div>
-            </div>
+            <BrandingPreview
+              theme={form.theme}
+              primaryColor={form.brand_color_primary}
+              fontHeading={form.font_heading}
+              fontBody={form.font_body}
+            />
           </div>
         )}
 
@@ -322,6 +311,8 @@ export default function SettingsPage() {
               subtext={form.hero_subtext}
               ctaText={form.cta_button_text}
               trainerName={form.name}
+              fontHeading={form.font_heading}
+              fontBody={form.font_body}
             />
           </div>
         )}
@@ -478,6 +469,59 @@ export default function SettingsPage() {
             className="flex-1 py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm disabled:opacity-40 transition-all active:scale-[0.97]">
             {saving ? 'Saving...' : saved ? 'Saved!' : 'Save changes'}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BrandingPreview({ theme, primaryColor, fontHeading, fontBody }: {
+  theme: 'light' | 'dark';
+  primaryColor: string;
+  fontHeading: string;
+  fontBody: string;
+}) {
+  const bg = theme === 'dark' ? '#0a0a0a' : '#ffffff';
+  const border = theme === 'dark' ? 'rgba(255,255,255,0.08)' : '#e5e5ea';
+  const text = theme === 'dark' ? '#ffffff' : '#1a1a1a';
+  const muted = theme === 'dark' ? '#9ca3af' : '#8e8e93';
+
+  const headingStack = fontHeading === 'system-ui' ? 'system-ui, sans-serif' : `'${fontHeading}', system-ui, sans-serif`;
+  const bodyStack = fontBody === 'system-ui' ? 'system-ui, sans-serif' : `'${fontBody}', system-ui, sans-serif`;
+
+  // Build Google Fonts URL for the selected fonts
+  const fontsUrl = getGoogleFontsUrl({
+    color_primary: primaryColor, color_secondary: '', color_accent: '',
+    color_background: bg, color_text: text, color_text_muted: muted,
+    color_card: '', color_border: border,
+    font_heading: fontHeading, font_body: fontBody,
+    theme, hero_image_url: null, hero_overlay_opacity: 0.6,
+  });
+
+  return (
+    <div>
+      <label className="text-[#8e8e93] text-xs block mb-2">Preview</label>
+      {fontsUrl && <link rel="stylesheet" href={fontsUrl} />}
+      <div className="rounded-xl p-5 border" style={{ backgroundColor: bg, borderColor: border }}>
+        <p className="text-xl font-bold mb-1" style={{ color: text, fontFamily: headingStack }}>
+          Heading text
+        </p>
+        <p className="text-sm mb-1" style={{ color: text, fontFamily: headingStack }}>
+          Subheading text
+        </p>
+        <p className="text-sm mb-4" style={{ color: muted, fontFamily: bodyStack }}>
+          This is what your body text will look like to prospects visiting your page.
+        </p>
+        <div className="flex gap-2">
+          <div className="px-4 py-2 rounded-xl text-white text-xs font-semibold" style={{ backgroundColor: primaryColor, fontFamily: bodyStack }}>
+            Get My Timeline
+          </div>
+          <div className="px-4 py-2 rounded-xl text-xs font-medium" style={{
+            backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.04)' : '#f5f5f7',
+            color: text, fontFamily: bodyStack,
+          }}>
+            Learn more
+          </div>
         </div>
       </div>
     </div>
