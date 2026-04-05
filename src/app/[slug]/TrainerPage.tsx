@@ -16,12 +16,19 @@ interface TrainerPageProps {
   packages: Package[];
 }
 
-const goalLabels: Record<GoalType, string> = {
-  weight_loss: 'Lose Weight',
-  muscle_gain: 'Build Muscle',
-  fitness: 'Improve Fitness',
-  performance: 'Performance Goal',
-};
+function getGoalLabel(formData: FormData): string {
+  if (!formData.goalType) return '';
+  if ((formData.goalType === 'fitness' || formData.goalType === 'performance') && formData.performanceTarget) {
+    return formData.performanceTarget;
+  }
+  const labels: Record<GoalType, string> = {
+    weight_loss: 'Lose Weight',
+    muscle_gain: 'Build Muscle',
+    fitness: 'Improve Fitness',
+    performance: 'Performance Goal',
+  };
+  return labels[formData.goalType];
+}
 
 type Step = 'hero' | 'goal' | 'about' | 'availability' | 'capture' | 'results';
 const formSteps: Step[] = ['goal', 'about', 'availability', 'capture'];
@@ -146,7 +153,7 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
           services={services}
           packages={packages}
           result={result}
-          goalLabel={formData.goalType ? goalLabels[formData.goalType] : ''}
+          goalLabel={getGoalLabel(formData)}
           formData={formData}
         />
       </div>

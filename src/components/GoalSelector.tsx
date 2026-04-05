@@ -15,17 +15,38 @@ const goals: { type: GoalType; emoji: string; label: string; sub: string }[] = [
   { type: 'performance', emoji: '🏃', label: 'Performance', sub: 'Hit a specific target' },
 ];
 
+const needsTarget: Record<GoalType, boolean> = {
+  weight_loss: false,
+  muscle_gain: false,
+  fitness: true,
+  performance: true,
+};
+
+const targetPrompts: Record<GoalType, { label: string; placeholder: string }> = {
+  weight_loss: { label: '', placeholder: '' },
+  muscle_gain: { label: '', placeholder: '' },
+  fitness: {
+    label: "What does 'fit' look like for you?",
+    placeholder: "e.g. Run 5K without stopping, keep up with my kids, feel confident in the gym",
+  },
+  performance: {
+    label: "What's your specific target?",
+    placeholder: "e.g. Run a sub-25min 5K, bench press 100kg, complete a Hyrox",
+  },
+};
+
 export default function GoalSelector({ branding, onSelect }: GoalSelectorProps) {
   const [selected, setSelected] = useState<GoalType | null>(null);
-  const [performanceTarget, setPerformanceTarget] = useState('');
-  const [showPerformanceInput, setShowPerformanceInput] = useState(false);
+  const [target, setTarget] = useState('');
+  const [showTargetInput, setShowTargetInput] = useState(false);
 
   const handleSelect = (type: GoalType) => {
     setSelected(type);
-    if (type === 'performance') {
-      setShowPerformanceInput(true);
+    if (needsTarget[type]) {
+      setShowTargetInput(true);
+      setTarget('');
     } else {
-      setShowPerformanceInput(false);
+      setShowTargetInput(false);
       onSelect(type);
     }
   };
@@ -57,16 +78,16 @@ export default function GoalSelector({ branding, onSelect }: GoalSelectorProps) 
         ))}
       </div>
 
-      {showPerformanceInput && (
+      {showTargetInput && selected && needsTarget[selected] && (
         <div className="mt-5">
           <label className="text-sm block mb-2" style={{ color: branding.color_text }}>
-            What&apos;s your specific target?
+            {targetPrompts[selected].label}
           </label>
           <input
             type="text"
-            value={performanceTarget}
-            onChange={(e) => setPerformanceTarget(e.target.value)}
-            placeholder="e.g. Run a 5K, bench press 100kg"
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+            placeholder={targetPrompts[selected].placeholder}
             autoFocus
             className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors"
             style={{
@@ -77,8 +98,8 @@ export default function GoalSelector({ branding, onSelect }: GoalSelectorProps) 
             }}
           />
           <button
-            onClick={() => onSelect('performance', performanceTarget)}
-            disabled={!performanceTarget.trim()}
+            onClick={() => onSelect(selected, target)}
+            disabled={!target.trim()}
             className="w-full mt-3 py-3.5 rounded-xl font-semibold transition-all duration-200 disabled:opacity-40 active:scale-[0.97] text-sm text-white"
             style={{ backgroundColor: branding.color_primary }}
           >
