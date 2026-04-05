@@ -13,9 +13,10 @@ interface TimelineResultsProps {
   result: TimelineResult;
   goalLabel: string;
   formData: FormData;
+  leadId: string | null;
 }
 
-export default function TimelineResults({ trainer, branding, services, packages, result, goalLabel, formData }: TimelineResultsProps) {
+export default function TimelineResults({ trainer, branding, services, packages, result, goalLabel, formData, leadId }: TimelineResultsProps) {
   const specialties = trainer.specialties || [];
 
   return (
@@ -96,7 +97,7 @@ export default function TimelineResults({ trainer, branding, services, packages,
       </div>
 
       {/* WhatsApp CTA */}
-      <CTASection trainer={trainer} branding={branding} formData={formData} result={result} goalLabel={goalLabel} />
+      <CTASection trainer={trainer} branding={branding} formData={formData} result={result} goalLabel={goalLabel} leadId={leadId} />
     </div>
   );
 }

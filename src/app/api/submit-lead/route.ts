@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     };
 
     const supabase = getServiceClient();
-    const { error: dbError } = await supabase.from('leads').insert({
+    const { data: leadData, error: dbError } = await supabase.from('leads').insert({
       trainer_id: trainerId,
       name: formData.name,
       email: null,
@@ -107,13 +107,16 @@ export async function POST(request: NextRequest) {
       experience_level: formData.experienceLevel,
       available_days_per_week: formData.availableDays,
       generated_timeline: timelineResult,
-    });
+    }).select('id').single();
 
     if (dbError) {
       console.error('Database error:', dbError);
     }
 
-    return NextResponse.json(timelineResult);
+    return NextResponse.json({
+      ...timelineResult,
+      leadId: leadData?.id || null,
+    });
   } catch (error) {
     console.error('Submit lead error:', error);
     return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });

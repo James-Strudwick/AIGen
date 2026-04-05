@@ -43,6 +43,7 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
   const [step, setStep] = useState<Step>('hero');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<TimelineResult | null>(null);
+  const [leadId, setLeadId] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     goalType: null,
     age: null,
@@ -108,8 +109,10 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
 
       if (!response.ok) throw new Error('Failed to submit');
 
-      const timeline: TimelineResult = await response.json();
-      setResult(timeline);
+      const data = await response.json();
+      const { leadId: newLeadId, ...timeline } = data;
+      setResult(timeline as TimelineResult);
+      setLeadId(newLeadId || null);
       setStep('results');
     } catch (err) {
       console.error('Error submitting lead:', err);
@@ -154,6 +157,7 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
           result={result}
           goalLabel={getGoalLabel(formData)}
           formData={formData}
+          leadId={leadId}
         />
       </div>
     );

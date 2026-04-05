@@ -1,0 +1,250 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { createBrowserClient } from '@/lib/auth';
+import { Lead, GoalType, LeadStatus } from '@/types';
+import Link from 'next/link';
+
+const goalLabels: Record<GoalType, string> = {
+  weight_loss: '🔥 Weight Loss',
+  muscle_gain: '💪 Muscle Gain',
+  fitness: '❤️ Fitness',
+  performance: '🏃 Performance',
+};
+
+const statusLabels: Record<LeadStatus, { label: string; color: string; bg: string }> = {
+  form_completed: { label: 'Form completed', color: '#8e8e93', bg: '#f5f5f7' },
+  whatsapp_sent: { label: 'WhatsApp sent', color: '#34C759', bg: '#34C75910' },
+  call_booked: { label: 'Call booked', color: '#007AFF', bg: '#007AFF10' },
+  converted: { label: 'Converted', color: '#FF9500', bg: '#FF950010' },
+};
+
+export default function DashboardPage() {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [trainerName, setTrainerName] = useState('');
+  const [trainerSlug, setTrainerSlug] = useState('');
+  const [filter, setFilter] = useState<'all' | GoalType | LeadStatus>('all');
+
+  const fetchData = useCallback(async () => {
+    const supabase = createBrowserClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const { data: trainer } = await supabase
+      .from('trainers')
+      .select('id, name, slug')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!trainer) {
+      window.location.href = '/onboarding';
+      return;
+    }
+
+    setTrainerName(trainer.name);
+    setTrainerSlug(trainer.slug);
+
+    const { data: leadsData } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('trainer_id', trainer.id)
+      .order('created_at', { ascending: false });
+
+    setLeads((leadsData || []) as Lead[]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleLogout = async () => {
+    const supabase = createBrowserClient();
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
+
+  const markConverted = async (leadId: string) => {
+    const supabase = createBrowserClient();
+    await supabase.from('leads').update({ status: 'converted' }).eq('id', leadId);
+    fetchData();
+  };
+
+  // Filter leads
+  const filteredLeads = leads.filter(l => {
+    if (filter === 'all') return true;
+    if (['weight_loss', 'muscle_gain', 'fitness', 'performance'].includes(filter)) return l.goal_type === filter;
+    return l.status === filter;
+  });
+
+  // Stats
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const thisWeek = leads.filter(l => new Date(l.created_at) > weekAgo);
+  const whatsappSent = leads.filter(l => l.status === 'whatsapp_sent' || l.status === 'call_booked' || l.status === 'converted');
+  const converted = leads.filter(l => l.status === 'converted');
+
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] bg-white flex items-center justify-center">
+        <p className="text-[#8e8e93]">Loading...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-[100dvh] bg-white">
+      <div className="max-w-2xl mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-[#8e8e93] text-sm">{trainerName}</p>
+          </div>
+          <div className="flex gap-2">
+            <Link href={`/${trainerSlug}`} target="_blank"
+              className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
+              View page
+            </Link>
+            <Link href="/onboarding"
+              className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
+              Settings
+            </Link>
+            <button onClick={handleLogout}
+              className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
+              Log out
+            </button>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-3 mb-6">
+          <StatCard label="Total leads" value={leads.length} />
+          <StatCard label="This week" value={thisWeek.length} />
+          <StatCard label="Messaged" value={whatsappSent.length} />
+          <StatCard label="Converted" value={converted.length} />
+        </div>
+
+        {/* Share link */}
+        <div className="bg-[#f5f5f7] rounded-xl p-4 mb-6 flex items-center justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] text-[#8e8e93] uppercase tracking-wider font-semibold mb-0.5">Your link</p>
+            <p className="text-sm font-medium truncate">{typeof window !== 'undefined' ? window.location.origin : ''}/{trainerSlug}</p>
+          </div>
+          <button onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/${trainerSlug}`)}
+            className="text-[#007AFF] text-xs font-medium px-3 py-1.5 rounded-lg bg-white flex-shrink-0 ml-3">
+            Copy
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="flex gap-1.5 overflow-x-auto pb-2 mb-4 -mx-4 px-4">
+          {[
+            { id: 'all', label: 'All' },
+            { id: 'form_completed', label: 'Form only' },
+            { id: 'whatsapp_sent', label: 'Messaged' },
+            { id: 'call_booked', label: 'Booked' },
+            { id: 'converted', label: 'Converted' },
+            { id: 'weight_loss', label: '🔥 Weight Loss' },
+            { id: 'muscle_gain', label: '💪 Muscle' },
+            { id: 'fitness', label: '❤️ Fitness' },
+            { id: 'performance', label: '🏃 Perf.' },
+          ].map((f) => (
+            <button key={f.id} onClick={() => setFilter(f.id as typeof filter)}
+              className="text-xs px-3 py-1.5 rounded-full whitespace-nowrap transition-all flex-shrink-0"
+              style={{
+                backgroundColor: filter === f.id ? '#1a1a1a' : '#f5f5f7',
+                color: filter === f.id ? '#ffffff' : '#8e8e93',
+              }}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Leads list */}
+        {filteredLeads.length === 0 ? (
+          <div className="text-center py-16 text-[#8e8e93]">
+            <p className="text-lg mb-1">No leads yet</p>
+            <p className="text-sm">Share your link to start capturing leads</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filteredLeads.map((lead) => {
+              const status = statusLabels[lead.status] || statusLabels.form_completed;
+              const timeAgo = getTimeAgo(lead.created_at);
+
+              return (
+                <div key={lead.id} className="bg-[#f5f5f7] rounded-xl p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-semibold text-sm">{lead.name}</p>
+                      <p className="text-[#8e8e93] text-xs">{lead.phone}</p>
+                    </div>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: status.bg, color: status.color }}>
+                      {status.label}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-[11px] text-[#8e8e93] mb-3">
+                    <span>{goalLabels[lead.goal_type] || lead.goal_type}</span>
+                    <span>·</span>
+                    <span>{lead.experience_level}</span>
+                    <span>·</span>
+                    <span>{lead.available_days_per_week}x/wk</span>
+                    <span>·</span>
+                    <span>{timeAgo}</span>
+                  </div>
+
+                  {lead.generated_timeline && (
+                    <p className="text-xs text-[#8e8e93] mb-3 line-clamp-2">
+                      {(lead.generated_timeline as { summary?: string }).summary}
+                    </p>
+                  )}
+
+                  <div className="flex gap-2">
+                    {lead.status !== 'converted' && (
+                      <button onClick={() => markConverted(lead.id)}
+                        className="text-[10px] font-medium px-3 py-1.5 rounded-lg bg-white text-[#FF9500] border border-[#e5e5ea]">
+                        Mark converted
+                      </button>
+                    )}
+                    <a href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
+                      className="text-[10px] font-medium px-3 py-1.5 rounded-lg bg-white text-[#34C759] border border-[#e5e5ea]">
+                      WhatsApp
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="bg-[#f5f5f7] rounded-xl p-3 text-center">
+      <p className="text-xl font-bold tracking-tight">{value}</p>
+      <p className="text-[10px] text-[#8e8e93]">{label}</p>
+    </div>
+  );
+}
+
+function getTimeAgo(dateStr: string): string {
+  const now = Date.now();
+  const date = new Date(dateStr).getTime();
+  const diff = now - date;
+
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}

@@ -44,6 +44,7 @@ export interface TrainerCopy {
 export interface Trainer {
   id: string;
   slug: string;
+  user_id: string | null;
   name: string;
   bio: string | null;
   photo_url: string | null;
@@ -73,12 +74,15 @@ export interface Package {
   sort_order: number;
 }
 
+export type LeadStatus = 'form_completed' | 'whatsapp_sent' | 'call_booked' | 'converted';
+
 export interface Lead {
   id: string;
   trainer_id: string;
   name: string;
   email: string | null;
   phone: string;
+  status: LeadStatus;
   goal_type: GoalType;
   current_weight_kg: number | null;
   goal_weight_kg: number | null;
@@ -87,6 +91,8 @@ export interface Lead {
   available_days_per_week: number | null;
   generated_timeline: TimelineResult | null;
   selected_package_id: string | null;
+  whatsapp_clicked_at: string | null;
+  booking_clicked_at: string | null;
   created_at: string;
 }
 
