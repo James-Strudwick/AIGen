@@ -41,6 +41,8 @@ export interface TrainerCopy {
   tone: string;
 }
 
+export type SubscriptionStatus = 'none' | 'active' | 'past_due' | 'cancelled';
+
 export interface Trainer {
   id: string;
   slug: string;
@@ -58,6 +60,10 @@ export interface Trainer {
   branding: TrainerBranding | null;
   services: TrainerServices | null;
   copy: TrainerCopy | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  subscription_status: SubscriptionStatus;
+  subscription_ends_at: string | null;
   active: boolean;
   created_at: string;
 }

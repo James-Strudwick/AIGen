@@ -21,6 +21,22 @@ export default async function PTLandingPage({ params }: Props) {
     notFound();
   }
 
+  // If page isn't active (no subscription), show inactive page
+  if (!trainer.active) {
+    return (
+      <div className="min-h-[100dvh] bg-white flex items-center justify-center px-5">
+        <div className="text-center max-w-sm">
+          <div className="w-16 h-16 rounded-full mx-auto mb-4 bg-[#f5f5f7] flex items-center justify-center text-xl font-bold text-[#1a1a1a]"
+            style={{ backgroundColor: trainer.brand_color_primary + '20', color: trainer.brand_color_primary }}>
+            {trainer.name.split(' ').map((n: string) => n[0]).join('')}
+          </div>
+          <h1 className="text-xl font-bold text-[#1a1a1a] mb-2">{trainer.name}</h1>
+          <p className="text-[#8e8e93] text-sm">This page is coming soon.</p>
+        </div>
+      </div>
+    );
+  }
+
   const { data: packages } = await supabase
     .from('packages')
     .select('*')

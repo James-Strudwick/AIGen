@@ -24,8 +24,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [trainerName, setTrainerName] = useState('');
   const [trainerSlug, setTrainerSlug] = useState('');
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string>('none');
   const [filter, setFilter] = useState<'all' | GoalType | LeadStatus>('all');
   const [copied, setCopied] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
 
   const fetchData = useCallback(async () => {
     const supabase = createBrowserClient();
@@ -49,11 +51,40 @@ export default function DashboardPage() {
 
     setTrainerName(trainer.name);
     setTrainerSlug(trainer.slug);
+    setSubscriptionStatus(trainer.subscription_status || 'none');
     setLeads((leadsData || []) as Lead[]);
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleSubscribe = async () => {
+    setCheckingOut(true);
+    const supabase = createBrowserClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+    setCheckingOut(false);
+  };
+
+  const handleManageBilling = async () => {
+    const supabase = createBrowserClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const res = await fetch('/api/billing-portal', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+  };
 
   const handleLogout = async () => {
     const supabase = createBrowserClient();
@@ -110,12 +141,42 @@ export default function DashboardPage() {
               className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
               Settings
             </Link>
+            {subscriptionStatus === 'active' && (
+              <button onClick={handleManageBilling}
+                className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
+                Billing
+              </button>
+            )}
             <button onClick={handleLogout}
               className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
               Log out
             </button>
           </div>
         </div>
+
+        {/* Subscription banner */}
+        {subscriptionStatus !== 'active' && (
+          <div className="rounded-xl border border-[#e5e5ea] p-5 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-sm">
+                  {subscriptionStatus === 'none' ? 'Subscribe to go live' : subscriptionStatus === 'past_due' ? 'Payment overdue' : 'Subscription cancelled'}
+                </p>
+                <p className="text-[#8e8e93] text-xs mt-0.5">
+                  {subscriptionStatus === 'none'
+                    ? 'Your page is hidden until you subscribe — £9.99/month'
+                    : subscriptionStatus === 'past_due'
+                    ? 'Please update your payment method to keep your page live'
+                    : 'Your page is no longer live — resubscribe to reactivate'}
+                </p>
+              </div>
+              <button onClick={handleSubscribe} disabled={checkingOut}
+                className="bg-[#1a1a1a] text-white text-xs font-semibold px-4 py-2 rounded-xl flex-shrink-0 ml-4 disabled:opacity-40">
+                {checkingOut ? 'Loading...' : subscriptionStatus === 'none' ? 'Subscribe' : 'Resubscribe'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-3 mb-6">
