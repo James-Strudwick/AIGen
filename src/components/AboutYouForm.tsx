@@ -17,8 +17,8 @@ interface AboutYouFormProps {
 
 const experienceLevels: { value: ExperienceLevel; label: string; desc: string }[] = [
   { value: 'beginner', label: 'Beginner', desc: 'New to training' },
-  { value: 'intermediate', label: 'Some Experience', desc: '6+ months training' },
-  { value: 'advanced', label: 'Experienced', desc: '2+ years consistent' },
+  { value: 'intermediate', label: 'Some Exp.', desc: '6+ months' },
+  { value: 'advanced', label: 'Experienced', desc: '2+ years' },
 ];
 
 export default function AboutYouForm({ goalType, primaryColor, onSubmit }: AboutYouFormProps) {
@@ -47,37 +47,38 @@ export default function AboutYouForm({ goalType, primaryColor, onSubmit }: About
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <h2 className="text-2xl font-bold text-white mb-2 text-center">
+      <h2 className="text-[1.4rem] font-bold text-white mb-1.5 text-center">
         Tell us about you
       </h2>
-      <p className="text-gray-400 text-center mb-8">
-        This helps us personalise your timeline
+      <p className="text-gray-400 text-sm text-center mb-6">
+        This helps personalise your timeline
       </p>
 
-      <div className="space-y-5">
+      <div className="space-y-4">
         {/* Age */}
         <div>
-          <label className="text-gray-300 text-sm block mb-1.5">Age</label>
+          <label className="text-gray-300 text-xs font-medium block mb-1.5">Age</label>
           <input
             type="number"
+            inputMode="numeric"
             value={age}
             onChange={(e) => setAge(e.target.value)}
             placeholder="25"
             min={16}
             max={80}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-base placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
           />
         </div>
 
         {/* Weight unit toggle */}
         <div>
-          <label className="text-gray-300 text-sm block mb-1.5">Weight unit</label>
-          <div className="flex gap-2">
+          <label className="text-gray-300 text-xs font-medium block mb-1.5">Weight unit</label>
+          <div className="grid grid-cols-2 gap-2">
             {(['kg', 'stone'] as const).map((unit) => (
               <button
                 key={unit}
                 onClick={() => setWeightUnit(unit)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
+                className="py-2.5 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.97]"
                 style={{
                   backgroundColor: weightUnit === unit ? primaryColor : 'rgba(255,255,255,0.05)',
                   color: weightUnit === unit ? 'white' : 'rgba(255,255,255,0.5)',
@@ -93,49 +94,51 @@ export default function AboutYouForm({ goalType, primaryColor, onSubmit }: About
 
         {/* Current weight */}
         <div>
-          <label className="text-gray-300 text-sm block mb-1.5">
+          <label className="text-gray-300 text-xs font-medium block mb-1.5">
             Current weight ({weightUnit})
           </label>
           <input
             type="number"
+            inputMode="decimal"
             value={currentWeight}
             onChange={(e) => setCurrentWeight(e.target.value)}
             placeholder={weightUnit === 'kg' ? '80' : '12.5'}
             step={weightUnit === 'stone' ? 0.5 : 1}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-base placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
           />
         </div>
 
         {/* Goal weight */}
         {needsWeight && (
           <div>
-            <label className="text-gray-300 text-sm block mb-1.5">
+            <label className="text-gray-300 text-xs font-medium block mb-1.5">
               Goal weight ({weightUnit})
             </label>
             <input
               type="number"
+              inputMode="decimal"
               value={goalWeight}
               onChange={(e) => setGoalWeight(e.target.value)}
               placeholder={weightUnit === 'kg' ? '70' : '11'}
               step={weightUnit === 'stone' ? 0.5 : 1}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-base placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
             />
           </div>
         )}
 
         {/* Experience */}
         <div>
-          <label className="text-gray-300 text-sm block mb-2">Experience level</label>
+          <label className="text-gray-300 text-xs font-medium block mb-2">Experience level</label>
           <div className="grid grid-cols-3 gap-2">
             {experienceLevels.map((level) => (
               <button
                 key={level.value}
                 onClick={() => setExperience(level.value)}
-                className="p-3 rounded-xl text-center transition-all duration-200"
+                className="py-3 px-2 rounded-xl text-center transition-all duration-200 active:scale-[0.97]"
                 style={{
-                  backgroundColor: experience === level.value ? primaryColor + '20' : 'rgba(255,255,255,0.03)',
+                  backgroundColor: experience === level.value ? primaryColor + '18' : 'rgba(255,255,255,0.03)',
                   borderWidth: '1.5px',
-                  borderColor: experience === level.value ? primaryColor : 'rgba(255,255,255,0.1)',
+                  borderColor: experience === level.value ? primaryColor : 'rgba(255,255,255,0.08)',
                 }}
               >
                 <span className="text-white text-xs font-semibold block">{level.label}</span>
@@ -148,7 +151,7 @@ export default function AboutYouForm({ goalType, primaryColor, onSubmit }: About
         <button
           onClick={handleSubmit}
           disabled={!isValid}
-          className="w-full py-3.5 rounded-xl text-white font-semibold transition-all duration-200 disabled:opacity-40 mt-2"
+          className="w-full py-3.5 rounded-xl text-white font-semibold transition-all duration-200 disabled:opacity-40 active:scale-[0.97] text-sm"
           style={{ backgroundColor: primaryColor }}
         >
           Continue

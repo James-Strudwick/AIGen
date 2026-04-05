@@ -108,7 +108,7 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
   if (step === 'results' && result) {
     return (
       <div
-        className="min-h-screen py-12 px-5"
+        className="min-h-[100dvh] py-10 px-4"
         style={{ backgroundColor: trainer.brand_color_secondary }}
       >
         <TimelineResults
@@ -124,7 +124,7 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-5 py-12"
+      className="min-h-[100dvh] flex flex-col items-center justify-center px-4 py-10"
       style={{ backgroundColor: trainer.brand_color_secondary }}
     >
       <ProgressIndicator

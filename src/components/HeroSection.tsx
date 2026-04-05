@@ -10,7 +10,7 @@ interface HeroSectionProps {
 export default function HeroSection({ trainer, onStart }: HeroSectionProps) {
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-6 text-center relative overflow-hidden"
+      className="min-h-[100dvh] flex flex-col items-center justify-center px-5 text-center relative overflow-hidden"
       style={{ backgroundColor: trainer.brand_color_secondary }}
     >
       {/* Gradient overlay */}
@@ -21,11 +21,11 @@ export default function HeroSection({ trainer, onStart }: HeroSectionProps) {
         }}
       />
 
-      <div className="relative z-10 max-w-lg mx-auto">
+      <div className="relative z-10 w-full max-w-md mx-auto">
         {/* PT Photo */}
         {trainer.photo_url ? (
           <div
-            className="w-28 h-28 rounded-full mx-auto mb-6 border-4 bg-cover bg-center"
+            className="w-24 h-24 rounded-full mx-auto mb-5 border-[3px] bg-cover bg-center"
             style={{
               borderColor: trainer.brand_color_primary,
               backgroundImage: `url(${trainer.photo_url})`,
@@ -33,7 +33,7 @@ export default function HeroSection({ trainer, onStart }: HeroSectionProps) {
           />
         ) : (
           <div
-            className="w-28 h-28 rounded-full mx-auto mb-6 border-4 flex items-center justify-center text-3xl font-bold text-white"
+            className="w-24 h-24 rounded-full mx-auto mb-5 border-[3px] flex items-center justify-center text-2xl font-bold text-white"
             style={{
               borderColor: trainer.brand_color_primary,
               backgroundColor: trainer.brand_color_primary + '33',
@@ -48,32 +48,32 @@ export default function HeroSection({ trainer, onStart }: HeroSectionProps) {
           <img
             src={trainer.logo_url}
             alt={`${trainer.name} logo`}
-            className="h-10 mx-auto mb-4 object-contain"
+            className="h-8 mx-auto mb-3 object-contain"
           />
         )}
 
         {/* Name */}
         <p
-          className="text-sm font-medium tracking-widest uppercase mb-4"
+          className="text-xs font-semibold tracking-[0.2em] uppercase mb-4"
           style={{ color: trainer.brand_color_primary }}
         >
           {trainer.name}
         </p>
 
         {/* Headline */}
-        <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
-          Find out exactly how long it&apos;ll take to reach your goal
+        <h1 className="text-[1.7rem] leading-[1.2] sm:text-4xl font-bold text-white mb-3">
+          Find out how long it&apos;ll take to reach your goal
         </h1>
 
         {/* Subtext */}
-        <p className="text-gray-400 text-lg mb-8">
-          Get your free personalised timeline in 60 seconds
+        <p className="text-gray-400 text-base mb-8">
+          Free personalised timeline in 60 seconds
         </p>
 
-        {/* CTA */}
+        {/* CTA — full width on mobile */}
         <button
           onClick={onStart}
-          className="w-full sm:w-auto px-10 py-4 rounded-xl text-white font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95"
+          className="w-full py-4 rounded-2xl text-white font-semibold text-lg transition-all duration-300 active:scale-[0.97]"
           style={{
             backgroundColor: trainer.brand_color_primary,
             boxShadow: `0 4px 24px ${trainer.brand_color_primary}44`,
@@ -84,7 +84,7 @@ export default function HeroSection({ trainer, onStart }: HeroSectionProps) {
 
         {/* Bio */}
         {trainer.bio && (
-          <p className="text-gray-500 text-sm mt-8 max-w-sm mx-auto leading-relaxed">
+          <p className="text-gray-500 text-xs mt-8 max-w-xs mx-auto leading-relaxed">
             {trainer.bio}
           </p>
         )}

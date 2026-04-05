@@ -1,7 +1,6 @@
 export interface TrainerSpecialty {
   name: string;
   description: string;
-  goal_types: GoalType[];
 }
 
 export interface Trainer {
@@ -82,6 +81,12 @@ export interface PackageTimeline {
   estimatedWeeks: number;
   totalCost: number | null;
   isBestValue: boolean;
+}
+
+export interface TimelineConfig {
+  sessionsPerWeek: number;
+  hasNutritionSupport: boolean;
+  hasOnlineCoaching: boolean;
 }
 
 export interface TimelineResult {

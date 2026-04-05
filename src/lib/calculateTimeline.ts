@@ -1,6 +1,6 @@
-import { GoalType, ExperienceLevel, Package, PackageTimeline, Milestone } from '@/types';
+import { GoalType, ExperienceLevel, Package, PackageTimeline, Milestone, TimelineConfig } from '@/types';
 
-interface CalcInput {
+export interface CalcInput {
   goalType: GoalType;
   currentWeightKg: number | null;
   goalWeightKg: number | null;
@@ -189,4 +189,32 @@ export function generateBaseMilestones(
   }
 
   return milestones;
+}
+
+/**
+ * Calculate weeks with toggle modifiers applied.
+ * Used client-side for the interactive timeline toggles.
+ */
+export function calculateWithToggles(
+  baseInput: CalcInput,
+  config: TimelineConfig
+): number {
+  // Start with the sessions toggle value
+  const input = { ...baseInput, availableDays: config.sessionsPerWeek };
+  let weeks = calculateBaseWeeks(input);
+
+  // Nutrition support: reduces timeline by 15-25% depending on goal
+  if (config.hasNutritionSupport) {
+    const nutritionBoost = baseInput.goalType === 'weight_loss' ? 0.25
+      : baseInput.goalType === 'muscle_gain' ? 0.20
+      : 0.15;
+    weeks = Math.ceil(weeks * (1 - nutritionBoost));
+  }
+
+  // Online coaching: additional 10% reduction (accountability + guidance between sessions)
+  if (config.hasOnlineCoaching) {
+    weeks = Math.ceil(weeks * 0.90);
+  }
+
+  return Math.max(weeks, 4);
 }
