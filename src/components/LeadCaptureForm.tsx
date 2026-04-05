@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { TrainerBranding } from '@/types';
 
 interface LeadCaptureFormProps {
-  primaryColor: string;
+  branding: TrainerBranding;
   isLoading: boolean;
   onSubmit: (data: { name: string; phone: string }) => void;
 }
 
-export default function LeadCaptureForm({ primaryColor, isLoading, onSubmit }: LeadCaptureFormProps) {
+export default function LeadCaptureForm({ branding, isLoading, onSubmit }: LeadCaptureFormProps) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
 
@@ -20,49 +21,38 @@ export default function LeadCaptureForm({ primaryColor, isLoading, onSubmit }: L
     onSubmit({ name: name.trim(), phone: phone.trim() });
   };
 
+  const inputStyle = {
+    backgroundColor: branding.color_card,
+    borderWidth: '1px',
+    borderColor: branding.color_border,
+    color: branding.color_text,
+  };
+
   return (
     <div className="w-full max-w-md mx-auto">
-      <h2 className="text-[1.4rem] font-bold text-white mb-1.5 text-center">
+      <h2 className="text-[1.4rem] font-bold mb-1.5 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
         Almost there!
       </h2>
-      <p className="text-gray-400 text-sm text-center mb-6">
+      <p className="text-sm text-center mb-6" style={{ color: branding.color_text_muted }}>
         Enter your details to see your timeline
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="text-gray-300 text-xs font-medium block mb-1.5">Your name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="First name"
-            required
-            autoComplete="given-name"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-base placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
-          />
+          <label className="text-xs font-medium block mb-1.5" style={{ color: branding.color_text }}>Your name</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="First name" required autoComplete="given-name"
+            className="w-full rounded-xl px-4 py-3 text-base focus:outline-none transition-colors" style={inputStyle} />
         </div>
 
         <div>
-          <label className="text-gray-300 text-xs font-medium block mb-1.5">Phone number</label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+44 7700 000000"
-            required
-            autoComplete="tel"
-            inputMode="tel"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-base placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
-          />
+          <label className="text-xs font-medium block mb-1.5" style={{ color: branding.color_text }}>Phone number</label>
+          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+44 7700 000000" required autoComplete="tel" inputMode="tel"
+            className="w-full rounded-xl px-4 py-3 text-base focus:outline-none transition-colors" style={inputStyle} />
         </div>
 
-        <button
-          type="submit"
-          disabled={!isValid || isLoading}
-          className="w-full py-3.5 rounded-xl text-white font-semibold transition-all duration-200 disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.97] text-sm"
-          style={{ backgroundColor: primaryColor }}
-        >
+        <button type="submit" disabled={!isValid || isLoading}
+          className="w-full py-3.5 rounded-xl font-semibold transition-all duration-200 disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.97] text-sm text-white"
+          style={{ backgroundColor: branding.color_primary }}>
           {isLoading ? (
             <>
               <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
@@ -77,7 +67,7 @@ export default function LeadCaptureForm({ primaryColor, isLoading, onSubmit }: L
         </button>
       </form>
 
-      <p className="text-gray-600 text-[11px] text-center mt-4">
+      <p className="text-[11px] text-center mt-4" style={{ color: branding.color_text_muted }}>
         Your data is kept private and only shared with your trainer
       </p>
     </div>

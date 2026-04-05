@@ -1,45 +1,45 @@
 'use client';
 
-import { Trainer, Package, TimelineResult, FormData, TrainerSpecialty } from '@/types';
+import { Trainer, Package, TimelineResult, FormData, TrainerBranding, TrainerSpecialty } from '@/types';
 import MilestoneTimeline from './MilestoneTimeline';
 import TimelineToggles from './TimelineToggles';
 import CTASection from './CTASection';
 
 interface TimelineResultsProps {
   trainer: Trainer;
+  branding: TrainerBranding;
   packages: Package[];
   result: TimelineResult;
   goalLabel: string;
   formData: FormData;
 }
 
-export default function TimelineResults({ trainer, result, goalLabel, formData }: TimelineResultsProps) {
+export default function TimelineResults({ trainer, branding, result, goalLabel, formData }: TimelineResultsProps) {
   const specialties = trainer.specialties || [];
 
   return (
     <div className="w-full max-w-lg mx-auto space-y-10 pb-8">
-      {/* Section A — Summary */}
+      {/* Summary */}
       <div className="text-center animate-in fade-in duration-700">
-        <p className="text-gray-400 text-sm mb-2">
+        <p className="text-sm mb-2" style={{ color: branding.color_text_muted }}>
           Your personalised timeline to
         </p>
-        <p className="text-lg font-medium mb-6" style={{ color: trainer.brand_color_primary }}>
+        <p className="text-lg font-medium mb-6" style={{ color: branding.color_primary, fontFamily: 'var(--font-heading)' }}>
           {goalLabel}
         </p>
-
-        <p className="text-gray-300 leading-relaxed text-sm px-2">
+        <p className="text-sm leading-relaxed px-2" style={{ color: branding.color_text }}>
           {result.summary}
         </p>
       </div>
 
       {/* Narrative */}
-      <div className="bg-white/[0.03] rounded-2xl p-5 border border-white/5">
-        <p className="text-gray-300 leading-relaxed text-sm italic">
+      <div className="rounded-2xl p-5" style={{ backgroundColor: branding.color_card, borderWidth: '1px', borderColor: branding.color_border }}>
+        <p className="text-sm italic leading-relaxed" style={{ color: branding.color_text }}>
           &ldquo;{result.narrative}&rdquo;
         </p>
       </div>
 
-      {/* Section B — Interactive Timeline Toggles */}
+      {/* Interactive Timeline Toggles */}
       <TimelineToggles
         baseInput={{
           goalType: formData.goalType!,
@@ -50,39 +50,32 @@ export default function TimelineResults({ trainer, result, goalLabel, formData }
           availableDays: formData.availableDays,
         }}
         baseWeeks={result.estimatedWeeks}
-        primaryColor={trainer.brand_color_primary}
+        branding={branding}
         trainerName={trainer.name}
       />
 
       {/* Coach Specialties */}
       {specialties.length > 0 && (
         <div>
-          <h3 className="text-xl font-bold text-white mb-2 text-center">
+          <h3 className="text-xl font-bold mb-2 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
             Why {trainer.name}?
           </h3>
-          <p className="text-gray-500 text-sm text-center mb-5">
+          <p className="text-sm text-center mb-5" style={{ color: branding.color_text_muted }}>
             What you get when you train with {trainer.name}
           </p>
           <div className="space-y-3">
             {specialties.map((specialty: TrainerSpecialty, i: number) => (
-              <div
-                key={i}
-                className="rounded-2xl p-4 bg-white/[0.03] border border-white/5"
-              >
+              <div key={i} className="rounded-2xl p-4" style={{ backgroundColor: branding.color_card, borderWidth: '1px', borderColor: branding.color_border }}>
                 <div className="flex items-start gap-3">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ backgroundColor: trainer.brand_color_primary + '20' }}
-                  >
-                    <svg className="w-4 h-4" style={{ color: trainer.brand_color_primary }} fill="currentColor" viewBox="0 0 20 20">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                    style={{ backgroundColor: branding.color_primary + '20' }}>
+                    <svg className="w-4 h-4" style={{ color: branding.color_primary }} fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <div>
-                    <h4 className="text-white font-semibold text-sm">{specialty.name}</h4>
-                    <p className="text-gray-400 text-xs leading-relaxed mt-1">
-                      {specialty.description}
-                    </p>
+                    <h4 className="font-semibold text-sm" style={{ color: branding.color_text }}>{specialty.name}</h4>
+                    <p className="text-xs leading-relaxed mt-1" style={{ color: branding.color_text_muted }}>{specialty.description}</p>
                   </div>
                 </div>
               </div>
@@ -91,24 +84,16 @@ export default function TimelineResults({ trainer, result, goalLabel, formData }
         </div>
       )}
 
-      {/* Section C — Milestones */}
+      {/* Milestones */}
       <div>
-        <h3 className="text-xl font-bold text-white mb-6 text-center">
+        <h3 className="text-xl font-bold mb-6 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
           Your Journey
         </h3>
-        <MilestoneTimeline
-          milestones={result.milestones}
-          primaryColor={trainer.brand_color_primary}
-        />
+        <MilestoneTimeline milestones={result.milestones} branding={branding} />
       </div>
 
-      {/* Section D — WhatsApp CTA */}
-      <CTASection
-        trainer={trainer}
-        formData={formData}
-        result={result}
-        goalLabel={goalLabel}
-      />
+      {/* WhatsApp CTA */}
+      <CTASection trainer={trainer} branding={branding} formData={formData} result={result} goalLabel={goalLabel} />
     </div>
   );
 }

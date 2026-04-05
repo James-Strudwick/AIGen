@@ -3,6 +3,24 @@ export interface TrainerSpecialty {
   description: string;
 }
 
+export type ThemeMode = 'dark' | 'light';
+
+export interface TrainerBranding {
+  color_primary: string;
+  color_secondary: string;
+  color_accent: string;
+  color_background: string;
+  color_text: string;
+  color_text_muted: string;
+  color_card: string;
+  color_border: string;
+  font_heading: string;
+  font_body: string;
+  theme: ThemeMode;
+  hero_image_url: string | null;
+  hero_overlay_opacity: number;
+}
+
 export interface Trainer {
   id: string;
   slug: string;
@@ -16,6 +34,7 @@ export interface Trainer {
   contact_value: string;
   logo_url: string | null;
   specialties: TrainerSpecialty[] | null;
+  branding: TrainerBranding | null;
   active: boolean;
   created_at: string;
 }

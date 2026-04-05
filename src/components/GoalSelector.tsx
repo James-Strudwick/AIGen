@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { GoalType } from '@/types';
+import { GoalType, TrainerBranding } from '@/types';
 
 interface GoalSelectorProps {
-  primaryColor: string;
+  branding: TrainerBranding;
   onSelect: (goal: GoalType, performanceTarget?: string) => void;
 }
 
@@ -15,7 +15,7 @@ const goals: { type: GoalType; emoji: string; label: string; sub: string }[] = [
   { type: 'performance', emoji: '🏃', label: 'Performance', sub: 'Hit a specific target' },
 ];
 
-export default function GoalSelector({ primaryColor, onSelect }: GoalSelectorProps) {
+export default function GoalSelector({ branding, onSelect }: GoalSelectorProps) {
   const [selected, setSelected] = useState<GoalType | null>(null);
   const [performanceTarget, setPerformanceTarget] = useState('');
   const [showPerformanceInput, setShowPerformanceInput] = useState(false);
@@ -32,10 +32,10 @@ export default function GoalSelector({ primaryColor, onSelect }: GoalSelectorPro
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <h2 className="text-[1.4rem] font-bold text-white mb-1.5 text-center">
+      <h2 className="text-[1.4rem] font-bold mb-1.5 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
         What&apos;s your main goal?
       </h2>
-      <p className="text-gray-400 text-sm text-center mb-6">
+      <p className="text-sm text-center mb-6" style={{ color: branding.color_text_muted }}>
         Select the goal that matters most
       </p>
 
@@ -46,20 +46,20 @@ export default function GoalSelector({ primaryColor, onSelect }: GoalSelectorPro
             onClick={() => handleSelect(goal.type)}
             className="p-4 rounded-2xl border-2 text-left transition-all duration-200 active:scale-[0.97]"
             style={{
-              borderColor: selected === goal.type ? primaryColor : 'rgba(255,255,255,0.08)',
-              backgroundColor: selected === goal.type ? primaryColor + '12' : 'rgba(255,255,255,0.02)',
+              borderColor: selected === goal.type ? branding.color_primary : branding.color_border,
+              backgroundColor: selected === goal.type ? branding.color_primary + '12' : branding.color_card,
             }}
           >
             <span className="text-2xl block mb-1.5">{goal.emoji}</span>
-            <span className="text-white font-semibold block text-[13px] leading-tight">{goal.label}</span>
-            <span className="text-gray-500 text-[11px]">{goal.sub}</span>
+            <span className="font-semibold block text-[13px] leading-tight" style={{ color: branding.color_text }}>{goal.label}</span>
+            <span className="text-[11px]" style={{ color: branding.color_text_muted }}>{goal.sub}</span>
           </button>
         ))}
       </div>
 
       {showPerformanceInput && (
         <div className="mt-5">
-          <label className="text-gray-300 text-sm block mb-2">
+          <label className="text-sm block mb-2" style={{ color: branding.color_text }}>
             What&apos;s your specific target?
           </label>
           <input
@@ -68,13 +68,19 @@ export default function GoalSelector({ primaryColor, onSelect }: GoalSelectorPro
             onChange={(e) => setPerformanceTarget(e.target.value)}
             placeholder="e.g. Run a 5K, bench press 100kg"
             autoFocus
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors text-sm"
+            className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors"
+            style={{
+              backgroundColor: branding.color_card,
+              borderWidth: '1px',
+              borderColor: branding.color_border,
+              color: branding.color_text,
+            }}
           />
           <button
             onClick={() => onSelect('performance', performanceTarget)}
             disabled={!performanceTarget.trim()}
-            className="w-full mt-3 py-3.5 rounded-xl text-white font-semibold transition-all duration-200 disabled:opacity-40 active:scale-[0.97] text-sm"
-            style={{ backgroundColor: primaryColor }}
+            className="w-full mt-3 py-3.5 rounded-xl font-semibold transition-all duration-200 disabled:opacity-40 active:scale-[0.97] text-sm text-white"
+            style={{ backgroundColor: branding.color_primary }}
           >
             Continue
           </button>

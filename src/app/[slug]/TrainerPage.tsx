@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { Trainer, Package, FormData, GoalType, ExperienceLevel, TimelineResult } from '@/types';
+import { useState, useCallback, useMemo } from 'react';
+import { Trainer, Package, FormData, GoalType, ExperienceLevel, TimelineResult, TrainerBranding } from '@/types';
+import { resolveBranding, brandingToCssVars, getGoogleFontsUrl } from '@/lib/branding';
 import HeroSection from '@/components/HeroSection';
 import GoalSelector from '@/components/GoalSelector';
 import AboutYouForm from '@/components/AboutYouForm';
@@ -26,6 +27,10 @@ type Step = 'hero' | 'goal' | 'about' | 'availability' | 'capture' | 'results';
 const formSteps: Step[] = ['goal', 'about', 'availability', 'capture'];
 
 export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
+  const branding = useMemo(() => resolveBranding(trainer), [trainer]);
+  const cssVars = useMemo(() => brandingToCssVars(branding), [branding]);
+  const fontsUrl = useMemo(() => getGoogleFontsUrl(branding), [branding]);
+
   const [step, setStep] = useState<Step>('hero');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<TimelineResult | null>(null);
@@ -101,18 +106,36 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
     }
   }, [formData, trainer, packages]);
 
+  // Wrap everything in a div that sets CSS custom properties for the branding
+  const pageWrapper = (children: React.ReactNode, extraClass?: string) => (
+    <>
+      {fontsUrl && <link rel="stylesheet" href={fontsUrl} />}
+      <div
+        className={`min-h-[100dvh] ${extraClass || ''}`}
+        style={{
+          ...cssVars,
+          backgroundColor: 'var(--brand-bg)',
+          color: 'var(--brand-text)',
+          fontFamily: 'var(--font-body)',
+        } as React.CSSProperties}
+      >
+        {children}
+      </div>
+    </>
+  );
+
   if (step === 'hero') {
-    return <HeroSection trainer={trainer} onStart={() => setStep('goal')} />;
+    return pageWrapper(
+      <HeroSection trainer={trainer} branding={branding} onStart={() => setStep('goal')} />
+    );
   }
 
   if (step === 'results' && result) {
-    return (
-      <div
-        className="min-h-[100dvh] py-10 px-4"
-        style={{ backgroundColor: trainer.brand_color_secondary }}
-      >
+    return pageWrapper(
+      <div className="py-10 px-4">
         <TimelineResults
           trainer={trainer}
+          branding={branding}
           packages={packages}
           result={result}
           goalLabel={formData.goalType ? goalLabels[formData.goalType] : ''}
@@ -122,46 +145,29 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
     );
   }
 
-  return (
-    <div
-      className="min-h-[100dvh] flex flex-col items-center justify-center px-4 py-10"
-      style={{ backgroundColor: trainer.brand_color_secondary }}
-    >
+  return pageWrapper(
+    <div className="flex flex-col items-center justify-center min-h-[100dvh] px-4 py-10">
       <ProgressIndicator
         currentStep={currentFormStep}
         totalSteps={formSteps.length}
-        primaryColor={trainer.brand_color_primary}
+        branding={branding}
       />
 
       <div className="w-full transition-all duration-300">
         {step === 'goal' && (
-          <GoalSelector
-            primaryColor={trainer.brand_color_primary}
-            onSelect={handleGoalSelect}
-          />
+          <GoalSelector branding={branding} onSelect={handleGoalSelect} />
         )}
 
         {step === 'about' && formData.goalType && (
-          <AboutYouForm
-            goalType={formData.goalType}
-            primaryColor={trainer.brand_color_primary}
-            onSubmit={handleAboutSubmit}
-          />
+          <AboutYouForm goalType={formData.goalType} branding={branding} onSubmit={handleAboutSubmit} />
         )}
 
         {step === 'availability' && (
-          <AvailabilitySelector
-            primaryColor={trainer.brand_color_primary}
-            onSelect={handleAvailabilitySelect}
-          />
+          <AvailabilitySelector branding={branding} onSelect={handleAvailabilitySelect} />
         )}
 
         {step === 'capture' && (
-          <LeadCaptureForm
-            primaryColor={trainer.brand_color_primary}
-            isLoading={isLoading}
-            onSubmit={handleLeadSubmit}
-          />
+          <LeadCaptureForm branding={branding} isLoading={isLoading} onSubmit={handleLeadSubmit} />
         )}
       </div>
     </div>
