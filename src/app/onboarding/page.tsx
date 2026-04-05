@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@/lib/auth';
 import { AVAILABLE_FONTS } from '@/lib/branding';
 import { ServiceAddOn } from '@/types';
+import PhoneInput from '@/components/PhoneInput';
 
 type Step = 'basics' | 'branding' | 'services' | 'packages' | 'preview';
 const steps: { id: Step; label: string }[] = [
@@ -266,8 +267,7 @@ export default function OnboardingPage() {
             </div>
             <div>
               <label className="text-[#8e8e93] text-xs block mb-1">WhatsApp number</label>
-              <input value={form.contact_value} onChange={(e) => setForm({ ...form, contact_value: e.target.value })}
-                placeholder="+447700000000" type="tel" className={inputClass} />
+              <PhoneInput value={form.contact_value} onChange={(v) => setForm({ ...form, contact_value: v })} />
             </div>
             <div>
               <label className="text-[#8e8e93] text-xs block mb-1">Booking link (Calendly, etc.)</label>

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@/lib/auth';
 import { AVAILABLE_FONTS } from '@/lib/branding';
 import { ServiceAddOn } from '@/types';
+import PhoneInput from '@/components/PhoneInput';
 import Link from 'next/link';
 
 interface PackageInput {
@@ -199,7 +200,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <label className="text-[#8e8e93] text-xs block mb-1">WhatsApp number</label>
-              <input value={form.contact_value} onChange={(e) => setForm({ ...form, contact_value: e.target.value })} type="tel" className={inputClass} />
+              <PhoneInput value={form.contact_value} onChange={(v) => setForm({ ...form, contact_value: v })} />
             </div>
             <div>
               <label className="text-[#8e8e93] text-xs block mb-1">Booking link</label>
@@ -210,15 +211,7 @@ export default function SettingsPage() {
 
         {/* Branding */}
         {activeTab === 'branding' && (
-          <div className="space-y-4">
-            <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">Brand colour</label>
-              <div className="flex gap-2 items-center">
-                <input type="color" value={form.brand_color_primary} onChange={(e) => setForm({ ...form, brand_color_primary: e.target.value })}
-                  className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border-0" />
-                <input value={form.brand_color_primary} onChange={(e) => setForm({ ...form, brand_color_primary: e.target.value })} className={inputClass + ' font-mono'} />
-              </div>
-            </div>
+          <div className="space-y-5">
             <div>
               <label className="text-[#8e8e93] text-xs block mb-1">Theme</label>
               <div className="grid grid-cols-2 gap-2">
@@ -236,24 +229,61 @@ export default function SettingsPage() {
               </div>
             </div>
             <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">Heading font</label>
-              <select value={form.font_heading} onChange={(e) => setForm({ ...form, font_heading: e.target.value })} className={inputClass}>
-                {AVAILABLE_FONTS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
-              </select>
+              <label className="text-[#8e8e93] text-xs block mb-2">Brand colour</label>
+              <div className="flex gap-2 items-center">
+                <input type="color" value={form.brand_color_primary} onChange={(e) => setForm({ ...form, brand_color_primary: e.target.value })}
+                  className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border-0" />
+                <input value={form.brand_color_primary} onChange={(e) => setForm({ ...form, brand_color_primary: e.target.value })} className={inputClass + ' font-mono'} />
+              </div>
+              <p className="text-[#8e8e93] text-[10px] mt-1">Used for buttons, accents, and highlights throughout your page</p>
             </div>
             <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">Body font</label>
-              <select value={form.font_body} onChange={(e) => setForm({ ...form, font_body: e.target.value })} className={inputClass}>
-                {AVAILABLE_FONTS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
-              </select>
+              <label className="text-[#8e8e93] text-xs block mb-2">Fonts</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[#8e8e93] text-[10px] block mb-1">Heading font</label>
+                  <select value={form.font_heading} onChange={(e) => setForm({ ...form, font_heading: e.target.value })} className={inputClass}>
+                    {AVAILABLE_FONTS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[#8e8e93] text-[10px] block mb-1">Body font</label>
+                  <select value={form.font_body} onChange={(e) => setForm({ ...form, font_body: e.target.value })} className={inputClass}>
+                    {AVAILABLE_FONTS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                  </select>
+                </div>
+              </div>
             </div>
             <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">Photo URL</label>
-              <input value={form.photo_url} onChange={(e) => setForm({ ...form, photo_url: e.target.value })} placeholder="https://..." className={inputClass} />
+              <label className="text-[#8e8e93] text-xs block mb-2">Images</label>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[#8e8e93] text-[10px] block mb-1">Profile photo URL</label>
+                  <input value={form.photo_url} onChange={(e) => setForm({ ...form, photo_url: e.target.value })} placeholder="https://..." className={inputClass} />
+                </div>
+                <div>
+                  <label className="text-[#8e8e93] text-[10px] block mb-1">Logo URL</label>
+                  <input value={form.logo_url} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} placeholder="https://..." className={inputClass} />
+                </div>
+              </div>
             </div>
+            {/* Preview */}
             <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">Logo URL</label>
-              <input value={form.logo_url} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} placeholder="https://..." className={inputClass} />
+              <label className="text-[#8e8e93] text-xs block mb-2">Preview</label>
+              <div className="rounded-xl p-4 border" style={{
+                backgroundColor: form.theme === 'dark' ? '#0a0a0a' : '#ffffff',
+                borderColor: form.theme === 'dark' ? 'rgba(255,255,255,0.08)' : '#e5e5ea',
+              }}>
+                <p className="text-lg font-bold mb-1" style={{ color: form.theme === 'dark' ? '#ffffff' : '#1a1a1a' }}>
+                  Heading text
+                </p>
+                <p className="text-sm mb-3" style={{ color: form.theme === 'dark' ? '#9ca3af' : '#8e8e93' }}>
+                  Muted body text preview
+                </p>
+                <div className="inline-block px-4 py-2 rounded-lg text-white text-xs font-medium" style={{ backgroundColor: form.brand_color_primary }}>
+                  Button
+                </div>
+              </div>
             </div>
           </div>
         )}

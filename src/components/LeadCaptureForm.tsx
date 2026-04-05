@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { TrainerBranding } from '@/types';
+import PhoneInput from './PhoneInput';
 
 interface LeadCaptureFormProps {
   branding: TrainerBranding;
@@ -13,17 +14,17 @@ export default function LeadCaptureForm({ branding, isLoading, onSubmit }: LeadC
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
 
-  const isValid = name.trim() && phone.trim();
+  // Phone must have country code + digits (at least 8 chars total like +441234567)
+  const isValid = name.trim() && phone.length >= 8;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
-    onSubmit({ name: name.trim(), phone: phone.trim() });
+    onSubmit({ name: name.trim(), phone });
   };
 
   const inputStyle = {
     backgroundColor: branding.color_card,
-    borderWidth: '1px',
     borderColor: branding.color_border,
     color: branding.color_text,
   };
@@ -41,13 +42,13 @@ export default function LeadCaptureForm({ branding, isLoading, onSubmit }: LeadC
         <div>
           <label className="text-xs font-medium block mb-1.5" style={{ color: branding.color_text }}>Your name</label>
           <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="First name" required autoComplete="given-name"
-            className="w-full rounded-xl px-4 py-3 text-base focus:outline-none transition-colors" style={inputStyle} />
+            className="w-full rounded-xl px-4 py-3 text-base focus:outline-none transition-colors border"
+            style={inputStyle} />
         </div>
 
         <div>
           <label className="text-xs font-medium block mb-1.5" style={{ color: branding.color_text }}>Phone number</label>
-          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+44 7700 000000" required autoComplete="tel" inputMode="tel"
-            className="w-full rounded-xl px-4 py-3 text-base focus:outline-none transition-colors" style={inputStyle} />
+          <PhoneInput value={phone} onChange={setPhone} style={inputStyle} />
         </div>
 
         <button type="submit" disabled={!isValid || isLoading}

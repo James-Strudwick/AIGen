@@ -47,8 +47,8 @@ export default function SignupPage() {
         throw new Error(data.error || 'Failed to create trainer profile');
       }
 
-      // Redirect to onboarding
-      window.location.href = '/onboarding';
+      // Redirect to dashboard
+      window.location.href = '/dashboard';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
