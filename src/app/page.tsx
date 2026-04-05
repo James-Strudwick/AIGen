@@ -19,10 +19,10 @@ export default function Home() {
       {/* Hero */}
       <section className="max-w-2xl mx-auto px-5 pt-16 pb-20 text-center">
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-[1.1] mb-5">
-          Turn Instagram followers into paying clients
+          Turn up the heat on new leads and convert them into paying clients
         </h1>
         <p className="text-[#8e8e93] text-lg leading-relaxed max-w-lg mx-auto mb-8">
-          Give every prospect a personalised timeline showing exactly how long it&apos;ll take to reach their goal — with your coaching. They sell themselves before you even speak to them.
+          Give every prospect a personalised timeline showing exactly how long it&apos;ll take to reach their goal with your coaching. They sell themselves before you even speak to them.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link href="/signup"
@@ -101,17 +101,17 @@ export default function Home() {
           &ldquo;How much do you charge?&rdquo;
         </h2>
         <p className="text-[#8e8e93] text-base leading-relaxed max-w-md mx-auto">
-          That DM kills conversions. By the time someone sees your price, they haven&apos;t built any emotional investment. This tool flips it — they see their personalised timeline, imagine the milestones, and convince themselves before you even quote a price.
+          That DM kills conversions. By the time someone sees your price, they haven&apos;t built any emotional investment. This tool flips it. They see their personalised timeline, imagine the milestones, trust your expertise and convince themselves before you even quote a price.
         </p>
       </section>
 
       {/* Pricing */}
       <section className="max-w-2xl mx-auto px-5 py-16 text-center">
         <h2 className="text-2xl font-bold tracking-tight mb-2">Simple pricing</h2>
-        <p className="text-[#8e8e93] text-sm mb-8">Less than the cost of one PT session</p>
+        <p className="text-[#8e8e93] text-sm mb-8">Less than the cost of one Easter Egg</p>
 
         <div className="bg-[#f5f5f7] rounded-2xl p-8 max-w-sm mx-auto">
-          <p className="text-4xl font-bold tracking-tight">£39<span className="text-lg text-[#8e8e93] font-normal">/month</span></p>
+          <p className="text-4xl font-bold tracking-tight">£9.99<span className="text-lg text-[#8e8e93] font-normal">/month</span></p>
           <p className="text-[#8e8e93] text-sm mt-2 mb-6">Unlimited leads. Everything included.</p>
           <ul className="text-sm text-left space-y-2 mb-6">
             {[
