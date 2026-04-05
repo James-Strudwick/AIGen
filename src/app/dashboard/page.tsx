@@ -25,6 +25,7 @@ export default function DashboardPage() {
   const [trainerName, setTrainerName] = useState('');
   const [trainerSlug, setTrainerSlug] = useState('');
   const [filter, setFilter] = useState<'all' | GoalType | LeadStatus>('all');
+  const [copied, setCopied] = useState(false);
 
   const fetchData = useCallback(async () => {
     const supabase = createBrowserClient();
@@ -128,11 +129,18 @@ export default function DashboardPage() {
         <div className="bg-[#f5f5f7] rounded-xl p-4 mb-6 flex items-center justify-between">
           <div className="min-w-0 flex-1">
             <p className="text-[10px] text-[#8e8e93] uppercase tracking-wider font-semibold mb-0.5">Your link</p>
-            <p className="text-sm font-medium truncate">{typeof window !== 'undefined' ? window.location.origin : ''}/{trainerSlug}</p>
+            <p className="text-sm font-medium truncate">{typeof window !== 'undefined' ? `${window.location.origin}/${trainerSlug}` : `/${trainerSlug}`}</p>
           </div>
-          <button onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/${trainerSlug}`)}
-            className="text-[#007AFF] text-xs font-medium px-3 py-1.5 rounded-lg bg-white flex-shrink-0 ml-3">
-            Copy
+          <button onClick={() => {
+            const url = `${window.location.origin}/${trainerSlug}`;
+            navigator.clipboard.writeText(url).then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            });
+          }}
+            className="text-xs font-medium px-3 py-1.5 rounded-lg bg-white flex-shrink-0 ml-3"
+            style={{ color: copied ? '#34C759' : '#007AFF' }}>
+            {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
 

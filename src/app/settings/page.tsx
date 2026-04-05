@@ -14,7 +14,7 @@ interface PackageInput {
   is_online: boolean;
 }
 
-type Tab = 'details' | 'branding' | 'copy' | 'services' | 'packages';
+type Tab = 'details' | 'branding' | 'copy' | 'specialties' | 'services' | 'packages';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -149,6 +149,7 @@ export default function SettingsPage() {
     { id: 'details', label: 'Details' },
     { id: 'branding', label: 'Branding' },
     { id: 'copy', label: 'Copy' },
+    { id: 'specialties', label: 'Specialties' },
     { id: 'services', label: 'Services' },
     { id: 'packages', label: 'Packages' },
   ];
@@ -203,26 +204,6 @@ export default function SettingsPage() {
             <div>
               <label className="text-[#8e8e93] text-xs block mb-1">Booking link</label>
               <input value={form.booking_link} onChange={(e) => setForm({ ...form, booking_link: e.target.value })} className={inputClass} />
-            </div>
-            {/* Specialties */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-[#8e8e93] text-xs">Specialties</label>
-                <button onClick={() => setSpecialties([...specialties, { name: '', description: '' }])}
-                  className="text-xs text-[#007AFF] font-medium">+ Add</button>
-              </div>
-              {specialties.map((s, i) => (
-                <div key={i} className="bg-[#f5f5f7] rounded-xl p-3 mb-2 space-y-2">
-                  <div className="flex gap-2">
-                    <input value={s.name} onChange={(e) => { const u = [...specialties]; u[i] = { ...u[i], name: e.target.value }; setSpecialties(u); }}
-                      placeholder="e.g. Body Transformation" className={inputClass} />
-                    <button onClick={() => setSpecialties(specialties.filter((_, idx) => idx !== i))}
-                      className="text-[#FF3B30] text-xs px-2">Remove</button>
-                  </div>
-                  <textarea value={s.description} onChange={(e) => { const u = [...specialties]; u[i] = { ...u[i], description: e.target.value }; setSpecialties(u); }}
-                    placeholder="Description..." rows={2} className={inputClass} />
-                </div>
-              ))}
             </div>
           </div>
         )}
@@ -302,6 +283,35 @@ export default function SettingsPage() {
                 placeholder="e.g. Straight-talking but supportive. I keep it real." rows={3} className={inputClass} />
               <p className="text-[#8e8e93] text-[10px] mt-1">The AI will match this when writing your clients&apos; timelines.</p>
             </div>
+          </div>
+        )}
+
+        {/* Specialties */}
+        {activeTab === 'specialties' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[#8e8e93] text-xs">What makes you different? These show on your results page.</p>
+              <button onClick={() => setSpecialties([...specialties, { name: '', description: '' }])}
+                className="text-xs text-[#007AFF] font-medium">+ Add</button>
+            </div>
+            {specialties.map((s, i) => (
+              <div key={i} className="bg-[#f5f5f7] rounded-xl p-3 space-y-2">
+                <div className="flex gap-2">
+                  <input value={s.name} onChange={(e) => { const u = [...specialties]; u[i] = { ...u[i], name: e.target.value }; setSpecialties(u); }}
+                    placeholder="e.g. Body Transformation" className={inputClass} />
+                  <button onClick={() => setSpecialties(specialties.filter((_, idx) => idx !== i))}
+                    className="text-[#FF3B30] text-xs px-2">Remove</button>
+                </div>
+                <textarea value={s.description} onChange={(e) => { const u = [...specialties]; u[i] = { ...u[i], description: e.target.value }; setSpecialties(u); }}
+                  placeholder="Description..." rows={2} className={inputClass} />
+              </div>
+            ))}
+            {specialties.length === 0 && (
+              <button onClick={() => setSpecialties([{ name: '', description: '' }])}
+                className="w-full py-8 rounded-xl border border-dashed border-[#e5e5ea] text-[#8e8e93] text-sm hover:border-[#8e8e93] transition-colors">
+                + Add your first specialty
+              </button>
+            )}
           </div>
         )}
 
