@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { GoalType, ExperienceLevel, TimelineConfig, TrainerBranding, TrainerServices } from '@/types';
+import { GoalType, ExperienceLevel, TimelineConfig, TrainerBranding, TrainerServices, Package } from '@/types';
 import { calculateWithToggles, CalcInput } from '@/lib/calculateTimeline';
 
 interface TimelineTogglesProps {
@@ -16,10 +16,11 @@ interface TimelineTogglesProps {
   baseWeeks: number;
   branding: TrainerBranding;
   services: TrainerServices;
+  packages: Package[];
   trainerName: string;
 }
 
-export default function TimelineToggles({ baseInput, baseWeeks, branding, services, trainerName }: TimelineTogglesProps) {
+export default function TimelineToggles({ baseInput, baseWeeks, branding, services, packages, trainerName }: TimelineTogglesProps) {
   const [config, setConfig] = useState<TimelineConfig>({
     sessionsPerWeek: baseInput.availableDays,
     hasNutritionSupport: false,
@@ -65,6 +66,16 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
   const weeksSaved = baseWeeks - displayWeeks;
   const percentFaster = baseWeeks > 0 ? Math.round((weeksSaved / baseWeeks) * 100) : 0;
 
+  // Find the package that matches current session count (closest match)
+  const sortedPkgs = [...packages].filter(p => !p.is_online).sort((a, b) => a.sessions_per_week - b.sessions_per_week);
+  const matchedPkg = sortedPkgs.find(p => p.sessions_per_week >= config.sessionsPerWeek)
+    || sortedPkgs[sortedPkgs.length - 1]
+    || null;
+
+  // Calculate estimated total cost for matched package
+  const months = displayWeeks / 4.33;
+  const totalCost = matchedPkg?.monthly_price ? Math.round(matchedPkg.monthly_price * months) : null;
+
   return (
     <div className="w-full">
       <h3 className="text-xl font-bold mb-2 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
@@ -94,6 +105,88 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
           </div>
         )}
       </div>
+
+      {/* Matched package pricing */}
+      {matchedPkg && (
+        <div className="rounded-2xl p-5 text-center transition-all duration-500"
+          style={{ backgroundColor: branding.color_card, borderWidth: '1px', borderColor: branding.color_border }}>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: branding.color_primary }}>
+            {matchedPkg.name}
+          </p>
+          <div className="flex items-center justify-center gap-6">
+            {matchedPkg.monthly_price && (
+              <div>
+                <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
+                  £{matchedPkg.monthly_price}
+                </p>
+                <p className="text-[11px]" style={{ color: branding.color_text_muted }}>per month</p>
+              </div>
+            )}
+            {matchedPkg.price_per_session && (
+              <div>
+                <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
+                  £{matchedPkg.price_per_session}
+                </p>
+                <p className="text-[11px]" style={{ color: branding.color_text_muted }}>per session</p>
+              </div>
+            )}
+            {totalCost && (
+              <div>
+                <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
+                  £{totalCost.toLocaleString()}
+                </p>
+                <p className="text-[11px]" style={{ color: branding.color_text_muted }}>est. total</p>
+              </div>
+            )}
+          </div>
+          <p className="text-[11px] mt-3" style={{ color: branding.color_text_muted }}>
+            {matchedPkg.sessions_per_week}x per week for ~{displayWeeks} weeks
+          </p>
+        </div>
+      )}
+
+      {/* All packages overview */}
+      {packages.length > 1 && (
+        <div className="space-y-2">
+          {packages
+            .sort((a, b) => a.sort_order - b.sort_order)
+            .map((pkg) => {
+              const isActive = matchedPkg?.id === pkg.id;
+              const pkgMonths = displayWeeks / 4.33;
+              const pkgTotal = pkg.monthly_price ? Math.round(pkg.monthly_price * pkgMonths) : null;
+
+              return (
+                <button key={pkg.id}
+                  onClick={() => !pkg.is_online && setConfig({ ...config, sessionsPerWeek: pkg.sessions_per_week })}
+                  className="w-full flex items-center justify-between rounded-xl p-3.5 transition-all duration-300 active:scale-[0.98]"
+                  style={{
+                    backgroundColor: isActive ? branding.color_primary + '12' : branding.color_card,
+                    borderWidth: '1.5px',
+                    borderColor: isActive ? branding.color_primary : branding.color_border,
+                  }}>
+                  <div className="text-left">
+                    <p className="text-sm font-semibold" style={{ color: branding.color_text }}>{pkg.name}</p>
+                    <p className="text-[11px]" style={{ color: branding.color_text_muted }}>
+                      {pkg.is_online ? 'Online coaching' : `${pkg.sessions_per_week}x per week`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    {pkg.monthly_price && (
+                      <p className="text-sm font-bold" style={{ color: isActive ? branding.color_primary : branding.color_text }}>
+                        £{pkg.monthly_price}<span className="text-[10px] font-normal" style={{ color: branding.color_text_muted }}>/mo</span>
+                      </p>
+                    )}
+                    {pkgTotal && (
+                      <p className="text-[10px]" style={{ color: branding.color_text_muted }}>
+                        ~£{pkgTotal.toLocaleString()} total
+                      </p>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+        </div>
+      )}
 
       {/* Toggle controls */}
       <div className="space-y-4">

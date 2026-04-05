@@ -15,7 +15,7 @@ interface TimelineResultsProps {
   formData: FormData;
 }
 
-export default function TimelineResults({ trainer, branding, services, result, goalLabel, formData }: TimelineResultsProps) {
+export default function TimelineResults({ trainer, branding, services, packages, result, goalLabel, formData }: TimelineResultsProps) {
   const specialties = trainer.specialties || [];
 
   return (
@@ -53,6 +53,7 @@ export default function TimelineResults({ trainer, branding, services, result, g
         baseWeeks={result.estimatedWeeks}
         branding={branding}
         services={services}
+        packages={packages}
         trainerName={trainer.name}
       />
 
