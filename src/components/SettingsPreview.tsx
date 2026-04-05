@@ -183,3 +183,65 @@ export function ServicesPreview({ theme, primaryColor, addOns, showPrices }: {
     </PreviewWrapper>
   );
 }
+
+// --- Packages Preview ---
+
+interface PackageInput {
+  name: string;
+  sessions_per_week: string;
+  monthly_price: string;
+  price_per_session: string;
+  is_online: boolean;
+}
+
+export function PackagesPreview({ theme, primaryColor, packages, showPrices }: {
+  theme: 'light' | 'dark';
+  primaryColor: string;
+  packages: PackageInput[];
+  showPrices: boolean;
+}) {
+  const c = getColors(theme, primaryColor);
+  const valid = packages.filter(p => p.name.trim());
+
+  if (valid.length === 0) return null;
+
+  return (
+    <PreviewWrapper theme={theme} primaryColor={primaryColor}>
+      {/* Mini weeks display */}
+      <div className="text-center mb-4">
+        <div className="inline-block rounded-xl px-5 py-3" style={{ backgroundColor: c.primary + '15' }}>
+          <p className="text-2xl font-bold" style={{ color: c.primary }}>~16</p>
+          <p className="text-[10px]" style={{ color: c.muted }}>weeks to goal</p>
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        {valid.map((pkg, i) => {
+          const isFirst = i === 0;
+          return (
+            <div key={i} className="flex items-center justify-between rounded-lg p-2.5"
+              style={{
+                backgroundColor: isFirst ? c.primary + '12' : c.card,
+                borderWidth: '1px',
+                borderColor: isFirst ? c.primary : c.border,
+              }}>
+              <div>
+                <p className="text-xs font-semibold" style={{ color: c.text }}>{pkg.name}</p>
+                <p className="text-[10px]" style={{ color: c.muted }}>
+                  {parseInt(pkg.sessions_per_week) > 0
+                    ? `${pkg.sessions_per_week}x per week${pkg.is_online ? ' (online)' : ''}`
+                    : 'Contact for details'}
+                </p>
+              </div>
+              {showPrices && pkg.monthly_price && (
+                <p className="text-xs font-bold" style={{ color: isFirst ? c.primary : c.text }}>
+                  £{pkg.monthly_price}<span className="text-[9px] font-normal" style={{ color: c.muted }}>/mo</span>
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </PreviewWrapper>
+  );
+}

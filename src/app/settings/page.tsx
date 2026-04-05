@@ -5,7 +5,7 @@ import { createBrowserClient } from '@/lib/auth';
 import { AVAILABLE_FONTS, getGoogleFontsUrl } from '@/lib/branding';
 import { ServiceAddOn } from '@/types';
 import PhoneInput from '@/components/PhoneInput';
-import { CopyPreview, SpecialtiesPreview, ServicesPreview } from '@/components/SettingsPreview';
+import { CopyPreview, SpecialtiesPreview, ServicesPreview, PackagesPreview } from '@/components/SettingsPreview';
 import Link from 'next/link';
 
 interface PackageInput {
@@ -28,7 +28,8 @@ export default function SettingsPage() {
   const [form, setForm] = useState({
     name: '', bio: '', slug: '', photo_url: '', logo_url: '',
     booking_link: '', contact_method: 'whatsapp', contact_value: '',
-    brand_color_primary: '#1a1a1a', font_heading: 'system-ui', font_body: 'system-ui',
+    brand_color_primary: '#1a1a1a', color_text: '', color_text_muted: '',
+    font_heading: 'system-ui', font_body: 'system-ui',
     theme: 'light' as 'light' | 'dark', hero_headline: '', hero_subtext: '',
     cta_button_text: '', tone: '',
   });
@@ -60,6 +61,8 @@ export default function SettingsPage() {
         booking_link: trainer.booking_link || '', contact_method: trainer.contact_method || 'whatsapp',
         contact_value: trainer.contact_value || '',
         brand_color_primary: trainer.branding?.color_primary || trainer.brand_color_primary || '#1a1a1a',
+        color_text: trainer.branding?.color_text || '',
+        color_text_muted: trainer.branding?.color_text_muted || '',
         font_heading: trainer.branding?.font_heading || 'system-ui',
         font_body: trainer.branding?.font_body || 'system-ui',
         theme: trainer.branding?.theme || 'light',
@@ -95,8 +98,8 @@ export default function SettingsPage() {
       color_primary: form.brand_color_primary, color_secondary: '#f5f5f7',
       color_accent: form.brand_color_primary,
       color_background: form.theme === 'dark' ? '#0a0a0a' : '#ffffff',
-      color_text: form.theme === 'dark' ? '#ffffff' : '#1a1a1a',
-      color_text_muted: form.theme === 'dark' ? '#9ca3af' : '#8e8e93',
+      color_text: form.color_text || (form.theme === 'dark' ? '#ffffff' : '#1a1a1a'),
+      color_text_muted: form.color_text_muted || (form.theme === 'dark' ? '#9ca3af' : '#8e8e93'),
       color_card: form.theme === 'dark' ? 'rgba(255,255,255,0.04)' : '#f5f5f7',
       color_border: form.theme === 'dark' ? 'rgba(255,255,255,0.08)' : '#e5e5ea',
       font_heading: form.font_heading, font_body: form.font_body,
@@ -239,6 +242,33 @@ export default function SettingsPage() {
               <p className="text-[#8e8e93] text-[10px] mt-1">Used for buttons, accents, and highlights throughout your page</p>
             </div>
             <div>
+              <label className="text-[#8e8e93] text-xs block mb-2">Text colours</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[#8e8e93] text-[10px] block mb-1">Heading / body text</label>
+                  <div className="flex gap-1.5 items-center">
+                    <input type="color" value={form.color_text || (form.theme === 'dark' ? '#ffffff' : '#1a1a1a')}
+                      onChange={(e) => setForm({ ...form, color_text: e.target.value })}
+                      className="w-7 h-7 rounded cursor-pointer bg-transparent border-0 flex-shrink-0" />
+                    <input value={form.color_text || (form.theme === 'dark' ? '#ffffff' : '#1a1a1a')}
+                      onChange={(e) => setForm({ ...form, color_text: e.target.value })}
+                      className="w-full bg-[#f5f5f7] border border-[#e5e5ea] rounded-lg px-2 py-1.5 text-[#1a1a1a] text-xs font-mono focus:outline-none focus:border-[#8e8e93]" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[#8e8e93] text-[10px] block mb-1">Muted / secondary text</label>
+                  <div className="flex gap-1.5 items-center">
+                    <input type="color" value={form.color_text_muted || (form.theme === 'dark' ? '#9ca3af' : '#8e8e93')}
+                      onChange={(e) => setForm({ ...form, color_text_muted: e.target.value })}
+                      className="w-7 h-7 rounded cursor-pointer bg-transparent border-0 flex-shrink-0" />
+                    <input value={form.color_text_muted || (form.theme === 'dark' ? '#9ca3af' : '#8e8e93')}
+                      onChange={(e) => setForm({ ...form, color_text_muted: e.target.value })}
+                      className="w-full bg-[#f5f5f7] border border-[#e5e5ea] rounded-lg px-2 py-1.5 text-[#1a1a1a] text-xs font-mono focus:outline-none focus:border-[#8e8e93]" />
+                  </div>
+                </div>
+              </div>
+</div>
+            <div>
               <label className="text-[#8e8e93] text-xs block mb-2">Fonts</label>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -274,6 +304,8 @@ export default function SettingsPage() {
               primaryColor={form.brand_color_primary}
               fontHeading={form.font_heading}
               fontBody={form.font_body}
+              textColor={form.color_text}
+              textMutedColor={form.color_text_muted}
             />
           </div>
         )}
@@ -460,6 +492,13 @@ export default function SettingsPage() {
                 </label>
               </div>
             ))}
+
+            <PackagesPreview
+              theme={form.theme}
+              primaryColor={form.brand_color_primary}
+              packages={pkgs}
+              showPrices={showPrices}
+            />
           </div>
         )}
 
@@ -475,16 +514,18 @@ export default function SettingsPage() {
   );
 }
 
-function BrandingPreview({ theme, primaryColor, fontHeading, fontBody }: {
+function BrandingPreview({ theme, primaryColor, fontHeading, fontBody, textColor, textMutedColor }: {
   theme: 'light' | 'dark';
   primaryColor: string;
   fontHeading: string;
   fontBody: string;
+  textColor: string;
+  textMutedColor: string;
 }) {
   const bg = theme === 'dark' ? '#0a0a0a' : '#ffffff';
   const border = theme === 'dark' ? 'rgba(255,255,255,0.08)' : '#e5e5ea';
-  const text = theme === 'dark' ? '#ffffff' : '#1a1a1a';
-  const muted = theme === 'dark' ? '#9ca3af' : '#8e8e93';
+  const text = textColor || (theme === 'dark' ? '#ffffff' : '#1a1a1a');
+  const muted = textMutedColor || (theme === 'dark' ? '#9ca3af' : '#8e8e93');
 
   const headingStack = fontHeading === 'system-ui' ? 'system-ui, sans-serif' : `'${fontHeading}', system-ui, sans-serif`;
   const bodyStack = fontBody === 'system-ui' ? 'system-ui, sans-serif' : `'${fontBody}', system-ui, sans-serif`;
