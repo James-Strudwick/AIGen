@@ -61,10 +61,10 @@ export default function TimelineResults({ trainer, branding, services, packages,
       {specialties.length > 0 && (
         <div>
           <h3 className="text-xl font-bold mb-2 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
-            Why {trainer.name}?
+            What&apos;s included
           </h3>
           <p className="text-sm text-center mb-5" style={{ color: branding.color_text_muted }}>
-            What you get when you train with {trainer.name}
+            Here&apos;s what you get when you start
           </p>
           <div className="space-y-3">
             {specialties.map((specialty: TrainerSpecialty, i: number) => (

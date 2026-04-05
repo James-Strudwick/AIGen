@@ -101,11 +101,10 @@ export function calculatePackageTimelines(
     .map((pkg) => {
       let estimatedWeeks: number;
 
-      if (pkg.is_online && pkg.sessions_per_week === 0) {
-        // Online coaching: ~85% effectiveness of 2x/week in-person
-        const twoPerWeekInput = { ...input, availableDays: 2 };
-        const twoPerWeekWeeks = calculateBaseWeeks(twoPerWeekInput);
-        estimatedWeeks = Math.ceil(twoPerWeekWeeks * 1.15);
+      if (pkg.sessions_per_week === 0) {
+        // No sessions specified — fallback estimate based on 2x/week
+        const fallbackInput = { ...input, availableDays: 2 };
+        estimatedWeeks = Math.ceil(calculateBaseWeeks(fallbackInput) * 1.15);
       } else {
         const pkgInput = { ...input, availableDays: pkg.sessions_per_week };
         estimatedWeeks = calculateBaseWeeks(pkgInput);

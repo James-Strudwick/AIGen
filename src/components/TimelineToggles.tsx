@@ -66,7 +66,7 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
   const percentFaster = baseWeeks > 0 ? Math.round((weeksSaved / baseWeeks) * 100) : 0;
 
   // Find matching package for current session count
-  const sortedPkgs = [...packages].filter(p => !p.is_online).sort((a, b) => a.sessions_per_week - b.sessions_per_week);
+  const sortedPkgs = [...packages].filter(p => p.sessions_per_week > 0).sort((a, b) => a.sessions_per_week - b.sessions_per_week);
   const matchedPkg = sortedPkgs.find(p => p.sessions_per_week >= config.sessionsPerWeek)
     || sortedPkgs[sortedPkgs.length - 1]
     || null;
@@ -95,10 +95,10 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
   return (
     <div className="w-full">
       <h3 className="text-xl font-bold mb-2 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
-        Customise your plan
+        Build your plan
       </h3>
       <p className="text-sm text-center mb-8" style={{ color: branding.color_text_muted }}>
-        See how {trainerName} can accelerate your progress
+        Adjust your training to see how it affects your timeline
       </p>
 
       {/* Animated weeks display */}
@@ -159,7 +159,7 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
             </div>
           )}
           <p className={`text-[11px] ${services.show_prices ? 'mt-3' : ''}`} style={{ color: branding.color_text_muted }}>
-            {matchedPkg.sessions_per_week}x per week for ~{displayWeeks} weeks
+            {matchedPkg.sessions_per_week}x per week{matchedPkg.is_online ? ' (online)' : ''} for ~{displayWeeks} weeks
           </p>
         </div>
       )}
@@ -173,17 +173,20 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
               const isActive = matchedPkg?.id === pkg.id;
               return (
                 <button key={pkg.id}
-                  onClick={() => !pkg.is_online && setConfig({ ...config, sessionsPerWeek: pkg.sessions_per_week })}
+                  onClick={() => pkg.sessions_per_week > 0 && setConfig({ ...config, sessionsPerWeek: pkg.sessions_per_week })}
                   className="w-full flex items-center justify-between rounded-xl p-3.5 transition-all duration-300 active:scale-[0.98]"
                   style={{
                     backgroundColor: isActive ? branding.color_primary + '12' : branding.color_card,
                     borderWidth: '1.5px',
                     borderColor: isActive ? branding.color_primary : branding.color_border,
+                    opacity: pkg.sessions_per_week === 0 ? 0.5 : 1,
                   }}>
                   <div className="text-left">
                     <p className="text-sm font-semibold" style={{ color: branding.color_text }}>{pkg.name}</p>
                     <p className="text-[11px]" style={{ color: branding.color_text_muted }}>
-                      {pkg.is_online ? 'Online coaching' : `${pkg.sessions_per_week}x per week`}
+                      {pkg.sessions_per_week > 0
+                        ? `${pkg.sessions_per_week}x per week${pkg.is_online ? ' (online)' : ''}`
+                        : 'Contact for details'}
                     </p>
                   </div>
                   {services.show_prices && pkg.monthly_price && (

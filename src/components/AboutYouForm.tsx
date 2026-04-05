@@ -53,10 +53,10 @@ export default function AboutYouForm({ goalType, branding, onSubmit }: AboutYouF
   return (
     <div className="w-full max-w-md mx-auto">
       <h2 className="text-[1.4rem] font-bold mb-1.5 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
-        Tell us about you
+        A bit about you
       </h2>
       <p className="text-sm text-center mb-6" style={{ color: branding.color_text_muted }}>
-        This helps personalise your timeline
+        So we can personalise your timeline
       </p>
 
       <div className="space-y-4">
