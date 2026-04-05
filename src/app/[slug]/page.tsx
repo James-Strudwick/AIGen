@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { getServiceClient } from '@/lib/supabase';
 import { Trainer, Package } from '@/types';
 import { notFound } from 'next/navigation';
 import TrainerPage from './TrainerPage';
@@ -9,12 +9,12 @@ interface Props {
 
 export default async function PTLandingPage({ params }: Props) {
   const { slug } = await params;
+  const supabase = getServiceClient();
 
   const { data: trainer } = await supabase
     .from('trainers')
     .select('*')
     .eq('slug', slug)
-    .eq('active', true)
     .single();
 
   if (!trainer) {
@@ -37,12 +37,12 @@ export default async function PTLandingPage({ params }: Props) {
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
+  const supabase = getServiceClient();
 
   const { data: trainer } = await supabase
     .from('trainers')
     .select('name, bio')
     .eq('slug', slug)
-    .eq('active', true)
     .single();
 
   if (!trainer) return { title: 'Not Found' };

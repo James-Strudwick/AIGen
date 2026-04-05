@@ -87,11 +87,7 @@ export default function OnboardingPage() {
     loadTrainer();
   }, []);
 
-  const saveProgress = useCallback(async () => {
-    if (!trainerId) return;
-    setSaving(true);
-    const supabase = createBrowserClient();
-
+  const buildTrainerData = useCallback(() => {
     const brandingData = {
       color_primary: form.brand_color_primary,
       color_secondary: '#f5f5f7',
@@ -115,7 +111,7 @@ export default function OnboardingPage() {
       tone: form.tone || null,
     } : null;
 
-    await supabase.from('trainers').update({
+    return {
       name: form.name,
       bio: form.bio || null,
       slug: form.slug || slug,
@@ -132,38 +128,51 @@ export default function OnboardingPage() {
         show_prices: showPrices,
         add_ons: addOns.filter(a => a.name.trim()),
       },
-    }).eq('id', trainerId);
+    };
+  }, [form, slug, addOns, showPrices]);
+
+  const saveProgress = useCallback(async () => {
+    if (!trainerId) return;
+    setSaving(true);
+
+    await fetch('/api/onboarding', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trainerId, trainerData: buildTrainerData() }),
+    });
 
     setSaving(false);
-  }, [trainerId, form, slug, addOns, showPrices]);
+  }, [trainerId, buildTrainerData]);
 
   const goLive = async () => {
     if (!trainerId) return;
     setSaving(true);
 
-    await saveProgress();
-
-    // Save packages
-    const supabase = createBrowserClient();
-    await supabase.from('packages').delete().eq('trainer_id', trainerId);
-    const packageRows = pkgs.filter(p => p.name.trim()).map((p, i) => ({
-      trainer_id: trainerId,
+    const packageRows = pkgs.filter(p => p.name.trim()).map((p) => ({
       name: p.name,
       sessions_per_week: parseInt(p.sessions_per_week) || 0,
       price_per_session: p.price_per_session ? parseFloat(p.price_per_session) : null,
       monthly_price: p.monthly_price ? parseFloat(p.monthly_price) : null,
       is_online: p.is_online,
-      sort_order: i + 1,
     }));
-    if (packageRows.length > 0) {
-      await supabase.from('packages').insert(packageRows);
+
+    const res = await fetch('/api/onboarding', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        trainerId,
+        trainerData: buildTrainerData(),
+        packages: packageRows,
+        goLive: true,
+      }),
+    });
+
+    if (res.ok) {
+      window.location.href = '/dashboard';
+    } else {
+      alert('Something went wrong. Please try again.');
     }
-
-    // Activate
-    await supabase.from('trainers').update({ active: true }).eq('id', trainerId);
-
     setSaving(false);
-    window.location.href = '/dashboard';
   };
 
   const nextStep = async () => {
