@@ -5,7 +5,7 @@ export default function Home() {
     <div className="min-h-screen bg-white text-black flex flex-col items-center justify-center px-6">
       <div className="max-w-2xl text-center">
         <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-black tracking-tight">
-          PT Goal Calculator
+          Lead Gen Goal Calculator
         </h1>
         <p className="text-[#8e8e93] text-lg mb-8 leading-relaxed">
           The AI-powered lead generation tool for coaches.
