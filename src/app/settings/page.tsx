@@ -5,6 +5,7 @@ import { createBrowserClient } from '@/lib/auth';
 import { AVAILABLE_FONTS } from '@/lib/branding';
 import { ServiceAddOn } from '@/types';
 import PhoneInput from '@/components/PhoneInput';
+import { CopyPreview, SpecialtiesPreview, ServicesPreview } from '@/components/SettingsPreview';
 import Link from 'next/link';
 
 interface PackageInput {
@@ -313,6 +314,15 @@ export default function SettingsPage() {
                 placeholder="e.g. Straight-talking but supportive. I keep it real." rows={3} className={inputClass} />
               <p className="text-[#8e8e93] text-[10px] mt-1">The AI will match this when writing your clients&apos; timelines.</p>
             </div>
+
+            <CopyPreview
+              theme={form.theme}
+              primaryColor={form.brand_color_primary}
+              headline={form.hero_headline}
+              subtext={form.hero_subtext}
+              ctaText={form.cta_button_text}
+              trainerName={form.name}
+            />
           </div>
         )}
 
@@ -342,6 +352,12 @@ export default function SettingsPage() {
                 + Add your first specialty
               </button>
             )}
+
+            <SpecialtiesPreview
+              theme={form.theme}
+              primaryColor={form.brand_color_primary}
+              specialties={specialties}
+            />
           </div>
         )}
 
@@ -406,6 +422,13 @@ export default function SettingsPage() {
                 + Tap to add recommended services
               </button>
             )}
+
+            <ServicesPreview
+              theme={form.theme}
+              primaryColor={form.brand_color_primary}
+              addOns={addOns}
+              showPrices={showPrices}
+            />
           </div>
         )}
 
