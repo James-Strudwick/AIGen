@@ -105,7 +105,7 @@ export default function DashboardPage() {
               className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
               View page
             </Link>
-            <Link href="/onboarding"
+            <Link href="/settings"
               className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
               Settings
             </Link>

@@ -24,6 +24,7 @@ interface PackageInput {
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState<Step>('basics');
+  const [isExistingTrainer, setIsExistingTrainer] = useState(false);
   const [saving, setSaving] = useState(false);
   const [trainerId, setTrainerId] = useState<string | null>(null);
   const [slug, setSlug] = useState('');
@@ -78,6 +79,11 @@ export default function OnboardingPage() {
       const { trainer, packages: existingPkgs } = await res.json();
 
       if (trainer) {
+        // If already active, redirect to settings instead
+        if (trainer.active) {
+          window.location.href = '/settings';
+          return;
+        }
         setTrainerId(trainer.id);
         setSlug(trainer.slug);
         setForm(prev => ({
