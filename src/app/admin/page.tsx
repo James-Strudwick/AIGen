@@ -127,7 +127,7 @@ function TrainerForm({ trainer, existingPackages, onSaved, onCancel }: {
   trainer?: Trainer; existingPackages?: Package[]; onSaved: () => void; onCancel: () => void;
 }) {
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'details' | 'branding' | 'specialties' | 'packages'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'branding' | 'copy' | 'services' | 'specialties' | 'packages'>('details');
 
   const existingBranding = trainer ? resolveBranding(trainer) : null;
 
@@ -158,6 +158,22 @@ function TrainerForm({ trainer, existingPackages, onSaved, onCancel }: {
     theme: existingBranding?.theme || 'dark' as const,
     hero_image_url: existingBranding?.hero_image_url || '',
     hero_overlay_opacity: existingBranding?.hero_overlay_opacity ?? 0.6,
+  });
+
+  const [services, setServices] = useState({
+    offers_nutrition: trainer?.services?.offers_nutrition ?? false,
+    offers_online: trainer?.services?.offers_online ?? false,
+    nutrition_label: trainer?.services?.nutrition_label || 'Nutrition support',
+    nutrition_description: trainer?.services?.nutrition_description || 'Personalised meal plans & macro tracking to accelerate results',
+    online_label: trainer?.services?.online_label || 'Online coaching',
+    online_description: trainer?.services?.online_description || 'Accountability check-ins, form reviews & programme adjustments between sessions',
+  });
+
+  const [copy, setCopy] = useState({
+    hero_headline: trainer?.copy?.hero_headline || '',
+    hero_subtext: trainer?.copy?.hero_subtext || '',
+    cta_button_text: trainer?.copy?.cta_button_text || '',
+    tone: trainer?.copy?.tone || '',
   });
 
   const [specialties, setSpecialties] = useState<SpecialtyInput[]>(
@@ -212,6 +228,8 @@ function TrainerForm({ trainer, existingPackages, onSaved, onCancel }: {
         contact_value: form.contact_value, logo_url: form.logo_url || null,
         specialties: specialtiesData.length > 0 ? specialtiesData : null,
         branding: brandingData,
+        services: services,
+        copy: (copy.hero_headline || copy.hero_subtext || copy.cta_button_text || copy.tone) ? copy : null,
       };
 
       let trainerId = trainer?.id;
@@ -254,6 +272,8 @@ function TrainerForm({ trainer, existingPackages, onSaved, onCancel }: {
   const tabs = [
     { id: 'details' as const, label: 'Details' },
     { id: 'branding' as const, label: 'Branding' },
+    { id: 'copy' as const, label: 'Copy' },
+    { id: 'services' as const, label: 'Services' },
     { id: 'specialties' as const, label: 'Specialties' },
     { id: 'packages' as const, label: 'Packages' },
   ];
@@ -429,6 +449,106 @@ function TrainerForm({ trainer, existingPackages, onSaved, onCancel }: {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Copy tab */}
+        {activeTab === 'copy' && (
+          <div className="space-y-4">
+            <p className="text-gray-500 text-xs">Customise the text on your landing page. Leave blank to use defaults.</p>
+            <div>
+              <label className="text-gray-400 text-xs block mb-1">Hero headline</label>
+              <input value={copy.hero_headline} onChange={(e) => setCopy({ ...copy, hero_headline: e.target.value })}
+                placeholder="Find out how long it'll take to reach your goal" className={inputClass} />
+            </div>
+            <div>
+              <label className="text-gray-400 text-xs block mb-1">Hero subtext</label>
+              <input value={copy.hero_subtext} onChange={(e) => setCopy({ ...copy, hero_subtext: e.target.value })}
+                placeholder="Free personalised timeline in 60 seconds" className={inputClass} />
+            </div>
+            <div>
+              <label className="text-gray-400 text-xs block mb-1">CTA button text</label>
+              <input value={copy.cta_button_text} onChange={(e) => setCopy({ ...copy, cta_button_text: e.target.value })}
+                placeholder="Get My Timeline" className={inputClass} />
+            </div>
+            <div>
+              <label className="text-gray-400 text-xs block mb-1">Your voice / tone</label>
+              <textarea value={copy.tone} onChange={(e) => setCopy({ ...copy, tone: e.target.value })}
+                placeholder="e.g. Straight-talking, no BS, but always supportive. I use humour and keep it real. I want clients to feel like they're talking to a mate who knows their stuff."
+                rows={3} className={inputClass} />
+              <p className="text-gray-600 text-[10px] mt-1">Describe how you speak to clients. The AI will match this tone in the personalised timeline it generates.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Services tab */}
+        {activeTab === 'services' && (
+          <div className="space-y-5">
+            <p className="text-gray-500 text-xs">Toggle on the services you offer. These appear as timeline accelerators on your landing page — prospects can see how adding these services speeds up their results.</p>
+
+            {/* Nutrition */}
+            <div className="rounded-xl border border-white/5 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white font-medium text-sm">Nutrition support</p>
+                  <p className="text-gray-500 text-xs mt-0.5">Show a nutrition toggle on your timeline</p>
+                </div>
+                <button onClick={() => setServices({ ...services, offers_nutrition: !services.offers_nutrition })}
+                  className="w-12 h-7 rounded-full p-0.5 transition-all duration-300"
+                  style={{ backgroundColor: services.offers_nutrition ? '#FF6B35' : 'rgba(255,255,255,0.1)' }}>
+                  <div className="w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300"
+                    style={{ transform: services.offers_nutrition ? 'translateX(20px)' : 'translateX(0)' }} />
+                </button>
+              </div>
+              {services.offers_nutrition && (
+                <div className="space-y-2 pt-2 border-t border-white/5">
+                  <div>
+                    <label className="text-gray-500 text-[10px] block mb-0.5">Label (what clients see)</label>
+                    <input value={services.nutrition_label}
+                      onChange={(e) => setServices({ ...services, nutrition_label: e.target.value })}
+                      placeholder="Nutrition support" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className="text-gray-500 text-[10px] block mb-0.5">Description</label>
+                    <textarea value={services.nutrition_description}
+                      onChange={(e) => setServices({ ...services, nutrition_description: e.target.value })}
+                      placeholder="Personalised meal plans & macro tracking..." rows={2} className={inputClass} />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Online coaching */}
+            <div className="rounded-xl border border-white/5 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white font-medium text-sm">Online coaching</p>
+                  <p className="text-gray-500 text-xs mt-0.5">Show an online coaching toggle on your timeline</p>
+                </div>
+                <button onClick={() => setServices({ ...services, offers_online: !services.offers_online })}
+                  className="w-12 h-7 rounded-full p-0.5 transition-all duration-300"
+                  style={{ backgroundColor: services.offers_online ? '#FF6B35' : 'rgba(255,255,255,0.1)' }}>
+                  <div className="w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300"
+                    style={{ transform: services.offers_online ? 'translateX(20px)' : 'translateX(0)' }} />
+                </button>
+              </div>
+              {services.offers_online && (
+                <div className="space-y-2 pt-2 border-t border-white/5">
+                  <div>
+                    <label className="text-gray-500 text-[10px] block mb-0.5">Label (what clients see)</label>
+                    <input value={services.online_label}
+                      onChange={(e) => setServices({ ...services, online_label: e.target.value })}
+                      placeholder="Online coaching" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className="text-gray-500 text-[10px] block mb-0.5">Description</label>
+                    <textarea value={services.online_description}
+                      onChange={(e) => setServices({ ...services, online_description: e.target.value })}
+                      placeholder="Accountability check-ins, form reviews..." rows={2} className={inputClass} />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

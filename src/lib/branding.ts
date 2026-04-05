@@ -1,4 +1,4 @@
-import { Trainer, TrainerBranding } from '@/types';
+import { Trainer, TrainerBranding, TrainerServices, TrainerCopy } from '@/types';
 
 /** Curated fonts that work well for fitness branding */
 export const AVAILABLE_FONTS = [
@@ -79,4 +79,28 @@ export function brandingToCssVars(branding: TrainerBranding): Record<string, str
 function fontStack(font: string): string {
   if (font === 'system-ui') return 'system-ui, -apple-system, sans-serif';
   return `'${font}', system-ui, sans-serif`;
+}
+
+/** Resolve services config with defaults */
+export function resolveServices(trainer: Trainer): TrainerServices {
+  const s = trainer.services;
+  return {
+    offers_nutrition: s?.offers_nutrition ?? false,
+    offers_online: s?.offers_online ?? false,
+    nutrition_label: s?.nutrition_label || 'Nutrition support',
+    nutrition_description: s?.nutrition_description || 'Personalised meal plans & macro tracking to accelerate results',
+    online_label: s?.online_label || 'Online coaching',
+    online_description: s?.online_description || 'Accountability check-ins, form reviews & programme adjustments between sessions',
+  };
+}
+
+/** Resolve copy/messaging with defaults */
+export function resolveCopy(trainer: Trainer): TrainerCopy {
+  const c = trainer.copy;
+  return {
+    hero_headline: c?.hero_headline || `Find out how long it'll take to reach your goal`,
+    hero_subtext: c?.hero_subtext || 'Free personalised timeline in 60 seconds',
+    cta_button_text: c?.cta_button_text || 'Get My Timeline',
+    tone: c?.tone || '',
+  };
 }

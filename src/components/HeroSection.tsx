@@ -1,14 +1,15 @@
 'use client';
 
-import { Trainer, TrainerBranding } from '@/types';
+import { Trainer, TrainerBranding, TrainerCopy } from '@/types';
 
 interface HeroSectionProps {
   trainer: Trainer;
   branding: TrainerBranding;
+  copy: TrainerCopy;
   onStart: () => void;
 }
 
-export default function HeroSection({ trainer, branding, onStart }: HeroSectionProps) {
+export default function HeroSection({ trainer, branding, copy, onStart }: HeroSectionProps) {
   const hasHeroImage = !!branding.hero_image_url;
 
   return (
@@ -88,12 +89,12 @@ export default function HeroSection({ trainer, branding, onStart }: HeroSectionP
           className="text-[1.7rem] leading-[1.2] sm:text-4xl font-bold mb-3"
           style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}
         >
-          Find out how long it&apos;ll take to reach your goal
+          {copy.hero_headline}
         </h1>
 
         {/* Subtext */}
         <p className="text-base mb-8" style={{ color: branding.color_text_muted }}>
-          Free personalised timeline in 60 seconds
+          {copy.hero_subtext}
         </p>
 
         {/* CTA */}
@@ -106,7 +107,7 @@ export default function HeroSection({ trainer, branding, onStart }: HeroSectionP
             boxShadow: `0 4px 24px ${branding.color_primary}44`,
           }}
         >
-          Get My Timeline
+          {copy.cta_button_text}
         </button>
 
         {/* Bio */}

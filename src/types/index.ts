@@ -21,6 +21,22 @@ export interface TrainerBranding {
   hero_overlay_opacity: number;
 }
 
+export interface TrainerServices {
+  offers_nutrition: boolean;
+  offers_online: boolean;
+  nutrition_label: string;
+  nutrition_description: string;
+  online_label: string;
+  online_description: string;
+}
+
+export interface TrainerCopy {
+  hero_headline: string;
+  hero_subtext: string;
+  cta_button_text: string;
+  tone: string;
+}
+
 export interface Trainer {
   id: string;
   slug: string;
@@ -35,6 +51,8 @@ export interface Trainer {
   logo_url: string | null;
   specialties: TrainerSpecialty[] | null;
   branding: TrainerBranding | null;
+  services: TrainerServices | null;
+  copy: TrainerCopy | null;
   active: boolean;
   created_at: string;
 }

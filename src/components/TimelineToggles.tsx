@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { GoalType, ExperienceLevel, TimelineConfig, TrainerBranding } from '@/types';
+import { GoalType, ExperienceLevel, TimelineConfig, TrainerBranding, TrainerServices } from '@/types';
 import { calculateWithToggles, CalcInput } from '@/lib/calculateTimeline';
 
 interface TimelineTogglesProps {
@@ -15,10 +15,11 @@ interface TimelineTogglesProps {
   };
   baseWeeks: number;
   branding: TrainerBranding;
+  services: TrainerServices;
   trainerName: string;
 }
 
-export default function TimelineToggles({ baseInput, baseWeeks, branding, trainerName }: TimelineTogglesProps) {
+export default function TimelineToggles({ baseInput, baseWeeks, branding, services, trainerName }: TimelineTogglesProps) {
   const [config, setConfig] = useState<TimelineConfig>({
     sessionsPerWeek: baseInput.availableDays,
     hasNutritionSupport: false,
@@ -132,25 +133,29 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, traine
           </div>
         </div>
 
-        {/* Nutrition support toggle */}
-        <ToggleCard
-          title="Nutrition support"
-          description="Personalised meal plans & macro tracking to accelerate results"
-          impact={baseInput.goalType === 'weight_loss' ? 'Up to 25% faster' : baseInput.goalType === 'muscle_gain' ? 'Up to 20% faster' : 'Up to 15% faster'}
-          enabled={config.hasNutritionSupport}
-          onToggle={() => setConfig({ ...config, hasNutritionSupport: !config.hasNutritionSupport })}
-          branding={branding}
-        />
+        {/* Nutrition support toggle — only if PT offers it */}
+        {services.offers_nutrition && (
+          <ToggleCard
+            title={services.nutrition_label}
+            description={services.nutrition_description}
+            impact={baseInput.goalType === 'weight_loss' ? 'Up to 25% faster' : baseInput.goalType === 'muscle_gain' ? 'Up to 20% faster' : 'Up to 15% faster'}
+            enabled={config.hasNutritionSupport}
+            onToggle={() => setConfig({ ...config, hasNutritionSupport: !config.hasNutritionSupport })}
+            branding={branding}
+          />
+        )}
 
-        {/* Online coaching toggle */}
-        <ToggleCard
-          title="Online coaching"
-          description="Accountability check-ins, form reviews & programme adjustments between sessions"
-          impact="Up to 10% faster"
-          enabled={config.hasOnlineCoaching}
-          onToggle={() => setConfig({ ...config, hasOnlineCoaching: !config.hasOnlineCoaching })}
-          branding={branding}
-        />
+        {/* Online coaching toggle — only if PT offers it */}
+        {services.offers_online && (
+          <ToggleCard
+            title={services.online_label}
+            description={services.online_description}
+            impact="Up to 10% faster"
+            enabled={config.hasOnlineCoaching}
+            onToggle={() => setConfig({ ...config, hasOnlineCoaching: !config.hasOnlineCoaching })}
+            branding={branding}
+          />
+        )}
       </div>
     </div>
   );

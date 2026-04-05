@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { Trainer, Package, FormData, GoalType, ExperienceLevel, TimelineResult, TrainerBranding } from '@/types';
-import { resolveBranding, brandingToCssVars, getGoogleFontsUrl } from '@/lib/branding';
+import { resolveBranding, brandingToCssVars, getGoogleFontsUrl, resolveServices, resolveCopy } from '@/lib/branding';
 import HeroSection from '@/components/HeroSection';
 import GoalSelector from '@/components/GoalSelector';
 import AboutYouForm from '@/components/AboutYouForm';
@@ -28,6 +28,8 @@ const formSteps: Step[] = ['goal', 'about', 'availability', 'capture'];
 
 export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
   const branding = useMemo(() => resolveBranding(trainer), [trainer]);
+  const services = useMemo(() => resolveServices(trainer), [trainer]);
+  const copy = useMemo(() => resolveCopy(trainer), [trainer]);
   const cssVars = useMemo(() => brandingToCssVars(branding), [branding]);
   const fontsUrl = useMemo(() => getGoogleFontsUrl(branding), [branding]);
 
@@ -88,6 +90,11 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
         body: JSON.stringify({
           trainerId: trainer.id,
           trainerName: trainer.name,
+          trainerBio: trainer.bio,
+          trainerSpecialties: trainer.specialties,
+          trainerTone: copy.tone,
+          offersNutrition: services.offers_nutrition,
+          offersOnline: services.offers_online,
           formData: updatedForm,
           packages: packages,
         }),
@@ -126,7 +133,7 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
 
   if (step === 'hero') {
     return pageWrapper(
-      <HeroSection trainer={trainer} branding={branding} onStart={() => setStep('goal')} />
+      <HeroSection trainer={trainer} branding={branding} copy={copy} onStart={() => setStep('goal')} />
     );
   }
 
@@ -136,6 +143,7 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
         <TimelineResults
           trainer={trainer}
           branding={branding}
+          services={services}
           packages={packages}
           result={result}
           goalLabel={formData.goalType ? goalLabels[formData.goalType] : ''}

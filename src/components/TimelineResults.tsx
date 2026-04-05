@@ -1,6 +1,6 @@
 'use client';
 
-import { Trainer, Package, TimelineResult, FormData, TrainerBranding, TrainerSpecialty } from '@/types';
+import { Trainer, Package, TimelineResult, FormData, TrainerBranding, TrainerServices, TrainerSpecialty } from '@/types';
 import MilestoneTimeline from './MilestoneTimeline';
 import TimelineToggles from './TimelineToggles';
 import CTASection from './CTASection';
@@ -8,13 +8,14 @@ import CTASection from './CTASection';
 interface TimelineResultsProps {
   trainer: Trainer;
   branding: TrainerBranding;
+  services: TrainerServices;
   packages: Package[];
   result: TimelineResult;
   goalLabel: string;
   formData: FormData;
 }
 
-export default function TimelineResults({ trainer, branding, result, goalLabel, formData }: TimelineResultsProps) {
+export default function TimelineResults({ trainer, branding, services, result, goalLabel, formData }: TimelineResultsProps) {
   const specialties = trainer.specialties || [];
 
   return (
@@ -51,6 +52,7 @@ export default function TimelineResults({ trainer, branding, result, goalLabel, 
         }}
         baseWeeks={result.estimatedWeeks}
         branding={branding}
+        services={services}
         trainerName={trainer.name}
       />
 
