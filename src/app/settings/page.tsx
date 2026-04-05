@@ -16,12 +16,14 @@ interface PackageInput {
   is_online: boolean;
 }
 
-type Tab = 'details' | 'branding' | 'copy' | 'questions' | 'specialties' | 'services' | 'packages';
+type Tab = 'details' | 'branding' | 'copy' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string>('none');
+  const [billingLoading, setBillingLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('details');
   const [trainerId, setTrainerId] = useState<string | null>(null);
 
@@ -55,6 +57,7 @@ export default function SettingsPage() {
 
       const { trainer, packages: existingPkgs } = await res.json();
       setTrainerId(trainer.id);
+      setSubscriptionStatus(trainer.subscription_status || 'none');
 
       setForm({
         name: trainer.name || '', bio: trainer.bio || '', slug: trainer.slug || '',
@@ -163,6 +166,7 @@ export default function SettingsPage() {
     { id: 'specialties', label: 'Specialties' },
     { id: 'services', label: 'Services' },
     { id: 'packages', label: 'Packages' },
+    { id: 'billing', label: 'Billing' },
   ];
 
   return (
@@ -618,13 +622,90 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Save */}
-        <div className="mt-8 flex gap-3">
-          <button onClick={handleSave} disabled={saving}
-            className="flex-1 py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm disabled:opacity-40 transition-all active:scale-[0.97]">
-            {saving ? 'Saving...' : saved ? 'Saved!' : 'Save changes'}
-          </button>
-        </div>
+        {/* Billing */}
+        {activeTab === 'billing' && (
+          <div className="space-y-5">
+            {/* Current plan */}
+            <div className="rounded-xl border border-[#e5e5ea] p-5">
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-semibold text-sm">Current plan</p>
+                <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
+                  style={{
+                    backgroundColor: subscriptionStatus === 'active' ? '#34C75915' : '#FF3B3015',
+                    color: subscriptionStatus === 'active' ? '#34C759' : '#FF3B30',
+                  }}>
+                  {subscriptionStatus === 'active' ? 'Active' : subscriptionStatus === 'past_due' ? 'Past due' : subscriptionStatus === 'cancelled' ? 'Cancelled' : 'No subscription'}
+                </span>
+              </div>
+
+              {subscriptionStatus === 'active' ? (
+                <div>
+                  <p className="text-2xl font-bold tracking-tight">£9.99<span className="text-sm text-[#8e8e93] font-normal">/month</span></p>
+                  <p className="text-[#8e8e93] text-xs mt-1">GoalCalc Pro — unlimited leads, all features</p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-[#8e8e93] text-sm">
+                    {subscriptionStatus === 'none'
+                      ? 'Subscribe to activate your landing page and start capturing leads.'
+                      : 'Your subscription has ended. Resubscribe to reactivate your page.'}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            {subscriptionStatus === 'active' ? (
+              <button onClick={async () => {
+                setBillingLoading(true);
+                const supabase = (await import('@/lib/auth')).createBrowserClient();
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+                const res = await fetch('/api/billing-portal', {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${session.access_token}` },
+                });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+                setBillingLoading(false);
+              }} disabled={billingLoading}
+                className="w-full py-3.5 rounded-xl bg-[#f5f5f7] text-[#1a1a1a] font-semibold text-sm hover:bg-[#e5e5ea] transition-all active:scale-[0.97] disabled:opacity-40">
+                {billingLoading ? 'Loading...' : 'Manage subscription'}
+              </button>
+            ) : (
+              <button onClick={async () => {
+                setBillingLoading(true);
+                const supabase = (await import('@/lib/auth')).createBrowserClient();
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+                const res = await fetch('/api/checkout', {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${session.access_token}` },
+                });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+                setBillingLoading(false);
+              }} disabled={billingLoading}
+                className="w-full py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40">
+                {billingLoading ? 'Loading...' : 'Subscribe — £9.99/month'}
+              </button>
+            )}
+
+            <p className="text-[#8e8e93] text-[11px] text-center">
+              Payments handled securely by Stripe. Cancel anytime.
+            </p>
+          </div>
+        )}
+
+        {/* Save — hide on billing tab */}
+        {activeTab !== 'billing' && (
+          <div className="mt-8 flex gap-3">
+            <button onClick={handleSave} disabled={saving}
+              className="flex-1 py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm disabled:opacity-40 transition-all active:scale-[0.97]">
+              {saving ? 'Saving...' : saved ? 'Saved!' : 'Save changes'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
