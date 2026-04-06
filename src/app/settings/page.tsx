@@ -204,7 +204,7 @@ export default function SettingsPage() {
         }
       }
     }
-  }, [trainerId, form, specialties, addOns, showPrices, pkgs]);
+  }, [trainerId, form, specialties, addOns, showPrices, pkgs, nutritionService, onlineService, hybridService, customQuestions, customGoals]);
 
   const inputClass = "w-full bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl px-4 py-3 text-[#1a1a1a] text-base placeholder-[#8e8e93] focus:outline-none focus:border-[#8e8e93]";
 
