@@ -39,7 +39,12 @@ export default function SetupChecklist({ trainer, packages }: SetupChecklistProp
       id: 'services',
       label: 'Add your services',
       tab: 'services',
-      done: !!(trainer.services?.add_ons && trainer.services.add_ons.length > 0),
+      done: !!(
+        trainer.services?.nutrition?.enabled ||
+        trainer.services?.online?.enabled ||
+        trainer.services?.hybrid?.enabled ||
+        (trainer.services?.add_ons && trainer.services.add_ons.length > 0)
+      ),
     },
     {
       id: 'packages',
