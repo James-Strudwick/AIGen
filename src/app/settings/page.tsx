@@ -867,6 +867,34 @@ export default function SettingsPage() {
             <p className="text-[#8e8e93] text-[11px] text-center">
               Payments handled securely by Stripe. Cancel anytime.
             </p>
+
+            {/* Delete account */}
+            <div className="pt-6 mt-6 border-t border-[#e5e5ea]">
+              <p className="text-[#8e8e93] text-xs mb-3">Danger zone</p>
+              <button onClick={async () => {
+                if (!confirm('Are you sure you want to delete your account? This will:\n\n• Cancel your subscription\n• Delete all your leads\n• Remove your landing page\n• Delete your account permanently\n\nThis cannot be undone.')) return;
+                if (!confirm('Really? This is permanent and cannot be reversed.')) return;
+
+                const supabase = (await import('@/lib/auth')).createBrowserClient();
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+
+                const res = await fetch('/api/delete-account', {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${session.access_token}` },
+                });
+
+                if (res.ok) {
+                  await supabase.auth.signOut();
+                  window.location.href = '/';
+                } else {
+                  alert('Failed to delete account. Please contact support.');
+                }
+              }}
+                className="text-[#FF3B30] text-xs font-medium hover:underline">
+                Delete my account and all data
+              </button>
+            </div>
           </div>
         )}
 
