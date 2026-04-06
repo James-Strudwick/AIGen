@@ -29,10 +29,38 @@ export interface ServiceAddOn {
   price_per_month: number | null;
 }
 
+export interface NutritionService {
+  enabled: boolean;
+  name: string;
+  description: string;
+  timeline_reduction_percent: number;
+  price_per_month: number | null;
+}
+
+export interface OnlineService {
+  enabled: boolean;
+  name: string;
+  description: string;
+  effectiveness_vs_inperson: number; // 0.0-1.0, e.g. 0.8 means 80% as effective
+  price_per_month: number | null;
+}
+
+export interface HybridService {
+  enabled: boolean;
+  name: string;
+  description: string;
+  price_per_month: number | null;
+}
+
 export interface TrainerServices {
   show_prices: boolean;
+  nutrition: NutritionService | null;
+  online: OnlineService | null;
+  hybrid: HybridService | null;
   add_ons: ServiceAddOn[];
 }
+
+export type TrainingMode = 'inperson' | 'online' | 'hybrid';
 
 export interface TrainerCopy {
   hero_headline: string;
@@ -162,8 +190,10 @@ export interface PackageTimeline {
 }
 
 export interface TimelineConfig {
-  sessionsPerWeek: number;
-  activeAddOnIds: string[];
+  mode: TrainingMode;
+  inPersonDays: number;
+  onlineDays: number;
+  hasNutrition: boolean;
 }
 
 export interface TimelineResult {

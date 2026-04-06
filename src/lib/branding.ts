@@ -85,32 +85,12 @@ function fontStack(font: string): string {
 /** Resolve services config with defaults */
 export function resolveServices(trainer: Trainer): TrainerServices {
   const s = trainer.services;
-
-  // Migrate old format if needed
-  const oldServices = trainer.services as Record<string, unknown> | null;
-  const migratedAddOns: ServiceAddOn[] = [];
-  if (oldServices?.offers_nutrition) {
-    migratedAddOns.push({
-      id: 'nutrition',
-      name: (oldServices.nutrition_label as string) || 'Nutrition support',
-      description: (oldServices.nutrition_description as string) || 'Personalised meal plans & macro tracking to accelerate results',
-      timeline_reduction_percent: 20,
-      price_per_month: null,
-    });
-  }
-  if (oldServices?.offers_online) {
-    migratedAddOns.push({
-      id: 'online',
-      name: (oldServices.online_label as string) || 'Online coaching',
-      description: (oldServices.online_description as string) || 'Accountability check-ins, form reviews & programme adjustments between sessions',
-      timeline_reduction_percent: 10,
-      price_per_month: null,
-    });
-  }
-
   return {
     show_prices: s?.show_prices ?? true,
-    add_ons: s?.add_ons ?? migratedAddOns,
+    nutrition: s?.nutrition ?? null,
+    online: s?.online ?? null,
+    hybrid: s?.hybrid ?? null,
+    add_ons: s?.add_ons ?? [],
   };
 }
 

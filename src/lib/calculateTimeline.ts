@@ -1,4 +1,4 @@
-import { GoalType, ExperienceLevel, Package, PackageTimeline, Milestone, TimelineConfig, ServiceAddOn } from '@/types';
+import { GoalType, ExperienceLevel, Package, PackageTimeline, Milestone, TimelineConfig, TrainerServices } from '@/types';
 
 export interface CalcInput {
   goalType: GoalType;
@@ -191,25 +191,48 @@ export function generateBaseMilestones(
 }
 
 /**
- * Calculate weeks with toggle modifiers applied.
- * Each active add-on reduces the timeline by its configured percentage.
- * Reductions are applied multiplicatively (not additive) to avoid
- * unrealistic timelines when multiple add-ons are enabled.
+ * Calculate weeks based on training mode.
+ *
+ * - In-person: best results, use inPersonDays directly
+ * - Online: same days but reduced effectiveness (e.g. 80% of in-person)
+ * - Hybrid: blend of in-person (full effectiveness) + online (reduced)
+ * - Nutrition: genuine accelerator that stacks on any mode
  */
 export function calculateWithToggles(
   baseInput: CalcInput,
   config: TimelineConfig,
-  addOns: ServiceAddOn[]
+  services: TrainerServices
 ): number {
-  const input = { ...baseInput, availableDays: config.sessionsPerWeek };
+  let effectiveDays: number;
+
+  switch (config.mode) {
+    case 'inperson':
+      effectiveDays = config.inPersonDays;
+      break;
+
+    case 'online': {
+      // Online days are less effective than in-person
+      const effectiveness = services.online?.effectiveness_vs_inperson ?? 0.75;
+      effectiveDays = Math.max(config.onlineDays * effectiveness, 1);
+      break;
+    }
+
+    case 'hybrid': {
+      // In-person days at full effectiveness + online days at reduced
+      const effectiveness = services.online?.effectiveness_vs_inperson ?? 0.75;
+      const onlineEffective = config.onlineDays * effectiveness;
+      effectiveDays = config.inPersonDays + onlineEffective;
+      break;
+    }
+  }
+
+  const input = { ...baseInput, availableDays: Math.round(effectiveDays) || 1 };
   let weeks = calculateBaseWeeks(input);
 
-  // Apply each active add-on's timeline reduction
-  for (const addOn of addOns) {
-    if (config.activeAddOnIds.includes(addOn.id)) {
-      const reduction = addOn.timeline_reduction_percent / 100;
-      weeks = Math.ceil(weeks * (1 - reduction));
-    }
+  // Nutrition is a genuine accelerator — stacks on any mode
+  if (config.hasNutrition && services.nutrition?.enabled) {
+    const reduction = (services.nutrition.timeline_reduction_percent || 20) / 100;
+    weeks = Math.ceil(weeks * (1 - reduction));
   }
 
   return Math.max(weeks, 4);
