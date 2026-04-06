@@ -24,28 +24,28 @@ export default function SetupChecklist({ trainer, packages }: SetupChecklistProp
       done: !!(trainer.contact_value && trainer.contact_value.length >= 8),
     },
     {
-      id: 'booking',
-      label: 'Add a booking link',
+      id: 'bio',
+      label: 'Write a bio about yourself',
       tab: 'details',
-      done: !!(trainer.booking_link && trainer.booking_link.startsWith('http')),
+      done: !!(trainer.bio && trainer.bio.trim().length > 10),
+    },
+    {
+      id: 'specialties',
+      label: 'Add your specialties',
+      tab: 'specialties',
+      done: !!(trainer.specialties && trainer.specialties.length > 0),
+    },
+    {
+      id: 'services',
+      label: 'Add your services',
+      tab: 'services',
+      done: !!(trainer.services?.add_ons && trainer.services.add_ons.length > 0),
     },
     {
       id: 'packages',
       label: 'Add at least one package',
       tab: 'packages',
       done: packages.length > 0,
-    },
-    {
-      id: 'branding',
-      label: 'Choose your brand colour',
-      tab: 'branding',
-      done: !!(trainer.branding?.color_primary && trainer.branding.color_primary !== '#1a1a1a'),
-    },
-    {
-      id: 'bio',
-      label: 'Write a short bio',
-      tab: 'details',
-      done: !!(trainer.bio && trainer.bio.trim().length > 10),
     },
     {
       id: 'subscription',
