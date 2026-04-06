@@ -22,6 +22,9 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Read initial tab from URL query param
+  const [initialTabSet, setInitialTabSet] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('none');
   const [billingLoading, setBillingLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('details');
@@ -90,9 +93,19 @@ export default function SettingsPage() {
       }
 
       setLoading(false);
+
+      // Set initial tab from URL if provided
+      if (!initialTabSet) {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab') as Tab | null;
+        if (tab && ['details', 'branding', 'copy', 'questions', 'specialties', 'services', 'packages', 'billing'].includes(tab)) {
+          setActiveTab(tab);
+        }
+        setInitialTabSet(true);
+      }
     };
     load();
-  }, []);
+  }, [initialTabSet]);
 
   const handleSave = useCallback(async () => {
     if (!trainerId) return;

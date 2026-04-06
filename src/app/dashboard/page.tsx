@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@/lib/auth';
-import { Lead, GoalType, LeadStatus } from '@/types';
+import { Lead, GoalType, LeadStatus, Trainer, Package } from '@/types';
 import Link from 'next/link';
+import SetupChecklist from '@/components/SetupChecklist';
 
 const goalLabels: Record<GoalType, string> = {
   weight_loss: '🔥 Weight Loss',
@@ -22,6 +23,8 @@ const statusLabels: Record<LeadStatus, { label: string; color: string; bg: strin
 export default function DashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [trainer, setTrainer] = useState<Trainer | null>(null);
+  const [trainerPackages, setTrainerPackages] = useState<Package[]>([]);
   const [trainerName, setTrainerName] = useState('');
   const [trainerSlug, setTrainerSlug] = useState('');
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('none');
@@ -47,11 +50,13 @@ export default function DashboardPage() {
       return;
     }
 
-    const { trainer, leads: leadsData } = await res.json();
+    const { trainer: trainerData, packages: pkgData, leads: leadsData } = await res.json();
 
-    setTrainerName(trainer.name);
-    setTrainerSlug(trainer.slug);
-    setSubscriptionStatus(trainer.subscription_status || 'none');
+    setTrainer(trainerData as Trainer);
+    setTrainerPackages((pkgData || []) as Package[]);
+    setTrainerName(trainerData.name);
+    setTrainerSlug(trainerData.slug);
+    setSubscriptionStatus(trainerData.subscription_status || 'none');
     setLeads((leadsData || []) as Lead[]);
     setLoading(false);
   }, []);
@@ -154,8 +159,13 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Subscription banner */}
-        {subscriptionStatus !== 'active' && (
+        {/* Setup checklist */}
+        {trainer && (
+          <SetupChecklist trainer={trainer} packages={trainerPackages} />
+        )}
+
+        {/* Subscription banner — only show if checklist is gone (all setup done) but not subscribed */}
+        {trainer && !trainer.active && subscriptionStatus !== 'active' && trainer.contact_value && trainer.booking_link && trainerPackages.length > 0 && (
           <div className="rounded-xl border border-[#e5e5ea] p-5 mb-6">
             <div className="flex items-center justify-between">
               <div>
