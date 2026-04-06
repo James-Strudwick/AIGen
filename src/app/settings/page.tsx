@@ -290,7 +290,6 @@ export default function SettingsPage() {
             </div>
           );
         })()}
-        )}
 
         {/* Tabs */}
         <div className="flex gap-1 overflow-x-auto pb-2 mb-6 -mx-4 px-4">
