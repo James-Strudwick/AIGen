@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@/lib/auth';
 import { AVAILABLE_FONTS, getGoogleFontsUrl } from '@/lib/branding';
-import { ServiceAddOn, CustomQuestion, CustomGoal, GoalType } from '@/types';
+import { ServiceAddOn, CustomQuestion, CustomGoal, GoalType, Trainer, Package } from '@/types';
 import PhoneInput from '@/components/PhoneInput';
 import { CopyPreview, SpecialtiesPreview, ServicesPreview, PackagesPreview, CustomQuestionsPreview, GoalsPreview } from '@/components/SettingsPreview';
+import SetupChecklist from '@/components/SetupChecklist';
 import Link from 'next/link';
 
 interface PackageInput {
@@ -29,6 +30,9 @@ export default function SettingsPage() {
   const [billingLoading, setBillingLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('details');
   const [trainerId, setTrainerId] = useState<string | null>(null);
+  const [trainerData, setTrainerData] = useState<Trainer | null>(null);
+  const [trainerPackages, setTrainerPackages] = useState<Package[]>([]);
+  const [showChecklist, setShowChecklist] = useState(false);
 
   const [form, setForm] = useState({
     name: '', bio: '', slug: '', photo_url: '', logo_url: '',
@@ -70,6 +74,8 @@ export default function SettingsPage() {
 
       const { trainer, packages: existingPkgs } = await res.json();
       setTrainerId(trainer.id);
+      setTrainerData(trainer as Trainer);
+      setTrainerPackages((existingPkgs || []) as Package[]);
       setSubscriptionStatus(trainer.subscription_status || 'none');
 
       setForm({
@@ -185,6 +191,18 @@ export default function SettingsPage() {
     if (res.ok) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+
+      // Refresh trainer data so checklist updates
+      const supabase = (await import('@/lib/auth')).createBrowserClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const refreshRes = await fetch('/api/me', { headers: { Authorization: `Bearer ${session.access_token}` } });
+        if (refreshRes.ok) {
+          const { trainer: refreshed, packages: refreshedPkgs } = await refreshRes.json();
+          setTrainerData(refreshed as Trainer);
+          setTrainerPackages((refreshedPkgs || []) as Package[]);
+        }
+      }
     }
   }, [trainerId, form, specialties, addOns, showPrices, pkgs]);
 
@@ -225,6 +243,24 @@ export default function SettingsPage() {
             </Link>
           </div>
         </div>
+
+        {/* Collapsible setup progress */}
+        {trainerData && (
+          <div className="mb-4">
+            <button onClick={() => setShowChecklist(!showChecklist)}
+              className="flex items-center gap-2 text-xs text-[#8e8e93] hover:text-[#1a1a1a] transition-colors">
+              <svg className={`w-3 h-3 transition-transform ${showChecklist ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+              Setup progress
+            </button>
+            {showChecklist && (
+              <div className="mt-2">
+                <SetupChecklist trainer={trainerData} packages={trainerPackages} />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-1 overflow-x-auto pb-2 mb-6 -mx-4 px-4">
