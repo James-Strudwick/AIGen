@@ -244,22 +244,52 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Collapsible setup progress */}
-        {trainerData && (
-          <div className="mb-4">
-            <button onClick={() => setShowChecklist(!showChecklist)}
-              className="flex items-center gap-2 text-xs text-[#8e8e93] hover:text-[#1a1a1a] transition-colors">
-              <svg className={`w-3 h-3 transition-transform ${showChecklist ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-              Setup progress
-            </button>
-            {showChecklist && (
-              <div className="mt-2">
-                <SetupChecklist trainer={trainerData} packages={trainerPackages} />
-              </div>
-            )}
-          </div>
+        {/* Setup progress */}
+        {trainerData && (() => {
+          // Calculate progress inline
+          const checks = [
+            !!(trainerData.contact_value && trainerData.contact_value.length >= 8),
+            !!(trainerData.bio && trainerData.bio.trim().length > 10),
+            !!(trainerData.specialties && trainerData.specialties.length > 0),
+            !!(trainerData.services?.nutrition?.enabled || trainerData.services?.online?.enabled || trainerData.services?.hybrid?.enabled || (trainerData.services?.add_ons && trainerData.services.add_ons.length > 0)),
+            trainerPackages.length > 0,
+            trainerData.subscription_status === 'active',
+          ];
+          const completed = checks.filter(Boolean).length;
+          const total = checks.length;
+          const allDone = completed === total;
+          const progress = (completed / total) * 100;
+
+          if (allDone) return null;
+
+          return (
+            <div className="mb-5">
+              <button onClick={() => setShowChecklist(!showChecklist)}
+                className="w-full bg-[#f5f5f7] rounded-xl p-4 text-left transition-colors hover:bg-[#ebebed]">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold">Setup progress</p>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-[#1a1a1a]">
+                      {completed}/{total}
+                    </span>
+                  </div>
+                  <svg className={`w-4 h-4 text-[#8e8e93] transition-transform ${showChecklist ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="h-1.5 bg-[#e5e5ea] rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%`, backgroundColor: '#1a1a1a' }} />
+                </div>
+              </button>
+              {showChecklist && (
+                <div className="mt-2">
+                  <SetupChecklist trainer={trainerData} packages={trainerPackages} />
+                </div>
+              )}
+            </div>
+          );
+        })()}
         )}
 
         {/* Tabs */}
