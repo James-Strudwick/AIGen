@@ -36,6 +36,60 @@ export async function POST(request: NextRequest) {
           subscription_status: 'active',
           active: true,
         }).eq('id', trainerId);
+
+        // Increment referrer's count if this trainer was referred
+        const { data: newTrainer } = await supabase
+          .from('trainers')
+          .select('referred_by')
+          .eq('id', trainerId)
+          .single();
+
+        if (newTrainer?.referred_by) {
+          // Increment referral count
+          const { data: referrer } = await supabase
+            .from('trainers')
+            .select('id, referral_count, has_referral_discount, stripe_subscription_id')
+            .eq('referral_code', newTrainer.referred_by)
+            .single();
+
+          if (referrer) {
+            const newCount = (referrer.referral_count || 0) + 1;
+            const updates: Record<string, unknown> = { referral_count: newCount };
+
+            // Hit 5 referrals — apply 50% discount
+            if (newCount >= 5 && !referrer.has_referral_discount && referrer.stripe_subscription_id) {
+              updates.has_referral_discount = true;
+
+              // Apply 50% coupon to their Stripe subscription
+              try {
+                const stripe = getStripe();
+                // Create a coupon if needed
+                let coupon;
+                try {
+                  coupon = await stripe.coupons.retrieve('REFERRAL50');
+                } catch {
+                  coupon = await stripe.coupons.create({
+                    id: 'REFERRAL50',
+                    percent_off: 50,
+                    duration: 'forever',
+                    name: 'Referral reward — 50% off for life',
+                  });
+                }
+                // Apply discount to the subscription
+                const sub = await stripe.subscriptions.retrieve(referrer.stripe_subscription_id);
+                if (sub.items.data[0]) {
+                  await stripe.subscriptions.update(referrer.stripe_subscription_id, {
+                    discounts: [{ coupon: coupon.id }],
+                  });
+                }
+              } catch (stripeErr) {
+                console.error('Failed to apply referral discount:', stripeErr);
+              }
+            }
+
+            await supabase.from('trainers').update(updates).eq('id', referrer.id);
+          }
+        }
       }
       break;
     }

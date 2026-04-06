@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('none');
   const [filter, setFilter] = useState<'all' | GoalType | LeadStatus>('all');
   const [copied, setCopied] = useState(false);
+  const [refCopied, setRefCopied] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -224,6 +225,54 @@ export default function DashboardPage() {
             {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
+
+        {/* Referral section */}
+        {trainer?.referral_code && (
+          <div className="bg-[#f5f5f7] rounded-xl p-4 mb-6">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-[10px] text-[#8e8e93] uppercase tracking-wider font-semibold mb-0.5">Refer & save</p>
+                <p className="text-sm font-medium">
+                  {trainer.has_referral_discount
+                    ? '🎉 You\'ve earned 50% off for life!'
+                    : `Refer 5 people, get 50% off for life`}
+                </p>
+              </div>
+              {!trainer.has_referral_discount && (
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-white"
+                  style={{ color: (trainer.referral_count || 0) >= 5 ? '#34C759' : '#1a1a1a' }}>
+                  {trainer.referral_count || 0}/5
+                </span>
+              )}
+            </div>
+
+            {/* Progress dots */}
+            {!trainer.has_referral_discount && (
+              <div className="flex gap-1.5 mb-3">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-1.5 flex-1 rounded-full transition-all"
+                    style={{ backgroundColor: i < (trainer.referral_count || 0) ? '#1a1a1a' : '#e5e5ea' }} />
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-white rounded-lg px-3 py-2 text-xs font-mono truncate text-[#1a1a1a]">
+                fomoforms.com/signup?ref={trainer.referral_code}
+              </div>
+              <button onClick={() => {
+                navigator.clipboard.writeText(`https://fomoforms.com/signup?ref=${trainer.referral_code}`).then(() => {
+                  setRefCopied(true);
+                  setTimeout(() => setRefCopied(false), 2000);
+                });
+              }}
+                className="text-xs font-medium px-3 py-2 rounded-lg bg-white flex-shrink-0"
+                style={{ color: refCopied ? '#34C759' : '#007AFF' }}>
+                {refCopied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="flex gap-1.5 overflow-x-auto pb-2 mb-4 -mx-4 px-4">

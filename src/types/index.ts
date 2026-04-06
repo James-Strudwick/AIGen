@@ -115,6 +115,10 @@ export interface Trainer {
   stripe_subscription_id: string | null;
   subscription_status: SubscriptionStatus;
   subscription_ends_at: string | null;
+  referral_code: string | null;
+  referred_by: string | null;
+  referral_count: number;
+  has_referral_discount: boolean;
   active: boolean;
   created_at: string;
 }

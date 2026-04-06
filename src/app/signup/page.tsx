@@ -10,6 +10,12 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [referralCode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('ref') || '';
+    }
+    return '';
+  });
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +45,7 @@ export default function SignupPage() {
           userId: authData.user.id,
           name,
           email,
+          referralCode,
         }),
       });
 
