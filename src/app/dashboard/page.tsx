@@ -138,9 +138,9 @@ export default function DashboardPage() {
             <p className="text-[#8e8e93] text-sm">{trainerName}</p>
           </div>
           <div className="flex gap-2">
-            <Link href={`/${trainerSlug}`} target="_blank"
+            <Link href={subscriptionStatus === 'active' ? `/${trainerSlug}` : `/preview/${trainerSlug}`} target="_blank"
               className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
-              View page
+              {subscriptionStatus === 'active' ? 'View page' : 'Preview page'}
             </Link>
             <Link href="/settings"
               className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">

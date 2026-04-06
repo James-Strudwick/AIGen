@@ -191,9 +191,15 @@ export default function SettingsPage() {
             <h1 className="text-xl font-bold tracking-tight">Settings</h1>
             <p className="text-[#8e8e93] text-sm">{form.name}</p>
           </div>
-          <Link href="/dashboard" className="text-[#8e8e93] text-sm px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
-            Back to dashboard
-          </Link>
+          <div className="flex gap-2">
+            <Link href={`/preview/${form.slug}`} target="_blank"
+              className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
+              Preview
+            </Link>
+            <Link href="/dashboard" className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
+              Dashboard
+            </Link>
+          </div>
         </div>
 
         {/* Tabs */}
