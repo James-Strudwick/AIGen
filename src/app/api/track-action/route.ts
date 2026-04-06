@@ -20,6 +20,9 @@ export async function POST(request: NextRequest) {
       updates.booking_clicked_at = new Date().toISOString();
     } else if (action === 'converted') {
       updates.status = 'converted';
+    } else if (action === 'delete') {
+      await supabase.from('leads').delete().eq('id', leadId);
+      return NextResponse.json({ ok: true });
     } else {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }

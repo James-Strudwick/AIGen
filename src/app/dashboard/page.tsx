@@ -106,6 +106,16 @@ export default function DashboardPage() {
     fetchData();
   };
 
+  const deleteLead = async (leadId: string) => {
+    if (!confirm('Delete this lead? This cannot be undone.')) return;
+    await fetch('/api/track-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId, action: 'delete' }),
+    });
+    fetchData();
+  };
+
   // Filter leads
   const filteredLeads = leads.filter(l => {
     if (filter === 'all') return true;
@@ -302,6 +312,10 @@ export default function DashboardPage() {
                       className="text-[10px] font-medium px-3 py-1.5 rounded-lg bg-white text-[#34C759] border border-[#e5e5ea]">
                       WhatsApp
                     </a>
+                    <button onClick={() => deleteLead(lead.id)}
+                      className="text-[10px] font-medium px-3 py-1.5 rounded-lg bg-white text-[#FF3B30] border border-[#e5e5ea]">
+                      Delete
+                    </button>
                   </div>
                 </div>
               );
