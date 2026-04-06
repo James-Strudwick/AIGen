@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         price_data: {
           currency: 'gbp',
           product_data: {
-            name: 'GoalCalc Pro',
+            name: 'FomoForms Pro',
             description: 'Unlimited leads, branded landing page, AI timelines',
           },
           unit_amount: 999, // £9.99

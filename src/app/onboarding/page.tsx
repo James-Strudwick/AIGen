@@ -255,7 +255,7 @@ export default function OnboardingPage() {
             <div>
               <label className="text-[#8e8e93] text-xs block mb-1">Your URL</label>
               <div className="flex items-center gap-0">
-                <span className="text-[#8e8e93] text-sm bg-[#f5f5f7] border border-[#e5e5ea] border-r-0 rounded-l-xl px-3 py-3">yourdomain.com/</span>
+                <span className="text-[#8e8e93] text-sm bg-[#f5f5f7] border border-[#e5e5ea] border-r-0 rounded-l-xl px-3 py-3">fomoforms.com/</span>
                 <input value={form.slug || slug} onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
                   placeholder="alex-thompson" className={inputClass + ' rounded-l-none'} />
               </div>
@@ -466,7 +466,7 @@ export default function OnboardingPage() {
               Your page will be live at:
             </p>
             <p className="text-lg font-semibold" style={{ color: form.brand_color_primary }}>
-              yourdomain.com/{form.slug || slug}
+              fomoforms.com/{form.slug || slug}
             </p>
 
             <a href={`/${form.slug || slug}`} target="_blank"

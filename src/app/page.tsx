@@ -5,7 +5,7 @@ export default function Home() {
     <div className="min-h-screen bg-white text-[#1a1a1a]">
       {/* Nav */}
       <nav className="flex items-center justify-between max-w-3xl mx-auto px-5 py-5">
-        <p className="font-bold tracking-tight">GoalCalc</p>
+        <p className="font-bold tracking-tight">FomoForms</p>
         <div className="flex gap-2">
           <Link href="/login" className="text-[#8e8e93] text-sm px-4 py-2 rounded-xl hover:bg-[#f5f5f7] transition-colors">
             Log in
@@ -152,7 +152,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-[#e5e5ea] py-8 text-center">
-        <p className="text-[#8e8e93] text-xs">GoalCalc — AI-powered lead generation for coaches</p>
+        <p className="text-[#8e8e93] text-xs">FomoForms — AI-powered lead generation for coaches</p>
       </footer>
     </div>
   );

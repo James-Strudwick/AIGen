@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PT Goal Calculator",
-  description: "AI-powered personalised fitness timelines for personal trainers",
+  title: "FomoForms",
+  description: "AI-powered lead generation for coaches — turn followers into paying clients",
 };
 
 export const viewport: Viewport = {

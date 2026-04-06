@@ -814,7 +814,7 @@ export default function SettingsPage() {
               {subscriptionStatus === 'active' ? (
                 <div>
                   <p className="text-2xl font-bold tracking-tight">£9.99<span className="text-sm text-[#8e8e93] font-normal">/month</span></p>
-                  <p className="text-[#8e8e93] text-xs mt-1">GoalCalc Pro — unlimited leads, all features</p>
+                  <p className="text-[#8e8e93] text-xs mt-1">FomoForms Pro — unlimited leads, all features</p>
                 </div>
               ) : (
                 <div>

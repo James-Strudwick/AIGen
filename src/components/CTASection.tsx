@@ -24,7 +24,7 @@ function buildWhatsAppMessage(trainer: Trainer, formData: FormData, result: Time
   const goalEmoji = formData.goalType ? goalEmojis[formData.goalType] : '';
 
   let message = `Hi ${trainer.name}! ${goalEmoji}\n\n`;
-  message += `I just used your Goal Calculator and I'm interested in working with you.\n\n`;
+  message += `I just used your FomoForm and I'm interested in working with you.\n\n`;
   message += `Here are my details:\n`;
   message += `- Name: ${formData.name}\n`;
   message += `- Goal: ${goalLabel}\n`;
