@@ -15,6 +15,7 @@ import ProgressIndicator from '@/components/ProgressIndicator';
 interface TrainerPageProps {
   trainer: Trainer;
   packages: Package[];
+  isPreview?: boolean;
 }
 
 function getGoalLabel(formData: FormData): string {
@@ -33,7 +34,7 @@ function getGoalLabel(formData: FormData): string {
 
 type Step = 'hero' | 'goal' | 'about' | 'availability' | 'questions' | 'capture' | 'results';
 
-export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
+export default function TrainerPage({ trainer, packages, isPreview = false }: TrainerPageProps) {
   const hasCustomQuestions = (trainer.custom_questions?.length ?? 0) > 0;
   const formSteps: Step[] = useMemo(() => {
     const steps: Step[] = ['goal', 'about', 'availability'];
@@ -105,6 +106,34 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
     const updatedForm = { ...formData, ...data };
     setFormData(updatedForm);
 
+    if (isPreview) {
+      // Preview mode — generate mock results without API call or saving
+      const { calculateBaseWeeks, calculatePackageTimelines, generateBaseMilestones } = await import('@/lib/calculateTimeline');
+      const calcInput = {
+        goalType: updatedForm.goalType!,
+        currentWeightKg: updatedForm.currentWeight,
+        goalWeightKg: updatedForm.goalWeight,
+        age: updatedForm.age,
+        experienceLevel: updatedForm.experienceLevel!,
+        availableDays: updatedForm.availableDays,
+      };
+      const weeks = calculateBaseWeeks(calcInput);
+      const pkgComparisons = calculatePackageTimelines(calcInput, packages);
+      const milestones = generateBaseMilestones(updatedForm.goalType!, weeks);
+
+      setResult({
+        estimatedWeeks: weeks,
+        summary: `${updatedForm.name}, this is a preview of your personalised timeline. In the live version, AI will generate a bespoke narrative based on your details and ${trainer.name}'s expertise.`,
+        narrative: `This is placeholder text for the AI-generated narrative. When a real prospect fills out your form, Claude AI will write a personalised journey description referencing their specific goals, experience level, and how your coaching accelerates their results.`,
+        milestones,
+        packageComparisons: pkgComparisons,
+      });
+      setLeadId(null);
+      setStep('results');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/submit-lead', {
         method: 'POST',
@@ -124,8 +153,8 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
 
       if (!response.ok) throw new Error('Failed to submit');
 
-      const data = await response.json();
-      const { leadId: newLeadId, ...timeline } = data;
+      const respData = await response.json();
+      const { leadId: newLeadId, ...timeline } = respData;
       setResult(timeline as TimelineResult);
       setLeadId(newLeadId || null);
       setStep('results');
@@ -135,7 +164,7 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [formData, trainer, packages]);
+  }, [formData, trainer, packages, isPreview, copy.tone, services.add_ons]);
 
   // Wrap everything in a div that sets CSS custom properties for the branding
   const pageWrapper = (children: React.ReactNode, extraClass?: string) => (
@@ -173,6 +202,7 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
           goalLabel={getGoalLabel(formData)}
           formData={formData}
           leadId={leadId}
+          isPreview={isPreview}
         />
       </div>
     );
