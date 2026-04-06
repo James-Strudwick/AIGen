@@ -153,6 +153,10 @@ export default function DashboardPage() {
               className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
               {subscriptionStatus === 'active' ? 'View page' : 'Preview page'}
             </Link>
+            <Link href={`/share-card/${trainerSlug}`}
+              className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
+              Share card
+            </Link>
             <Link href="/settings"
               className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
               Settings
