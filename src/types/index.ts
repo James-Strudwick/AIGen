@@ -41,6 +41,17 @@ export interface TrainerCopy {
   tone: string;
 }
 
+export interface CustomGoal {
+  id: string;
+  emoji: string;
+  label: string;
+  subtitle: string;
+  needs_target: boolean;
+  target_prompt: string;
+  target_placeholder: string;
+  goal_type: GoalType;
+}
+
 export type CustomQuestionType = 'text' | 'select' | 'multiselect';
 
 export interface CustomQuestion {
@@ -71,6 +82,7 @@ export interface Trainer {
   services: TrainerServices | null;
   copy: TrainerCopy | null;
   custom_questions: CustomQuestion[] | null;
+  custom_goals: CustomGoal[] | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   subscription_status: SubscriptionStatus;

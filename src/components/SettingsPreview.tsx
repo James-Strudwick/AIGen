@@ -1,6 +1,6 @@
 'use client';
 
-import { TrainerSpecialty, ServiceAddOn, CustomQuestion } from '@/types';
+import { TrainerSpecialty, ServiceAddOn, CustomQuestion, CustomGoal } from '@/types';
 import { getGoogleFontsUrl } from '@/lib/branding';
 
 interface PreviewWrapperProps {
@@ -315,6 +315,39 @@ export function CustomQuestionsPreview({ theme, primaryColor, questions }: {
                 <p className="text-[8px]" style={{ color: c.muted }}>Select all that apply</p>
               </div>
             )}
+          </div>
+        ))}
+      </div>
+    </PreviewWrapper>
+  );
+}
+
+// --- Goals Preview ---
+
+export function GoalsPreview({ theme, primaryColor, goals }: {
+  theme: 'light' | 'dark';
+  primaryColor: string;
+  goals: CustomGoal[];
+}) {
+  const c = getColors(theme, primaryColor);
+  const valid = goals.filter(g => g.label.trim());
+
+  if (valid.length === 0) return null;
+
+  return (
+    <PreviewWrapper theme={theme} primaryColor={primaryColor}>
+      <h4 className="text-sm font-bold mb-1 text-center" style={{ color: c.text }}>What&apos;s your main goal?</h4>
+      <p className="text-[11px] text-center mb-3" style={{ color: c.muted }}>Select the goal that matters most</p>
+      <div className="grid grid-cols-2 gap-1.5">
+        {valid.map((g, i) => (
+          <div key={g.id} className="rounded-xl p-3 border text-left"
+            style={{
+              backgroundColor: i === 0 ? c.primary + '12' : c.card,
+              borderColor: i === 0 ? c.primary : c.border,
+            }}>
+            <span className="text-lg block mb-0.5">{g.emoji || '🎯'}</span>
+            <p className="text-[11px] font-semibold leading-tight" style={{ color: c.text }}>{g.label}</p>
+            {g.subtitle && <p className="text-[9px]" style={{ color: c.muted }}>{g.subtitle}</p>}
           </div>
         ))}
       </div>

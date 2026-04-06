@@ -188,7 +188,7 @@ export default function TrainerPage({ trainer, packages }: TrainerPageProps) {
 
       <div className="w-full transition-all duration-300">
         {step === 'goal' && (
-          <GoalSelector branding={branding} onSelect={handleGoalSelect} />
+          <GoalSelector branding={branding} customGoals={trainer.custom_goals} onSelect={handleGoalSelect} />
         )}
 
         {step === 'about' && formData.goalType && (

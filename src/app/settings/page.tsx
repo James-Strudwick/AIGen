@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@/lib/auth';
 import { AVAILABLE_FONTS, getGoogleFontsUrl } from '@/lib/branding';
-import { ServiceAddOn, CustomQuestion } from '@/types';
+import { ServiceAddOn, CustomQuestion, CustomGoal, GoalType } from '@/types';
 import PhoneInput from '@/components/PhoneInput';
-import { CopyPreview, SpecialtiesPreview, ServicesPreview, PackagesPreview, CustomQuestionsPreview } from '@/components/SettingsPreview';
+import { CopyPreview, SpecialtiesPreview, ServicesPreview, PackagesPreview, CustomQuestionsPreview, GoalsPreview } from '@/components/SettingsPreview';
 import Link from 'next/link';
 
 interface PackageInput {
@@ -16,7 +16,7 @@ interface PackageInput {
   is_online: boolean;
 }
 
-type Tab = 'details' | 'branding' | 'copy' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing';
+type Tab = 'details' | 'branding' | 'copy' | 'goals' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -41,6 +41,7 @@ export default function SettingsPage() {
 
   const [addOns, setAddOns] = useState<ServiceAddOn[]>([]);
   const [showPrices, setShowPrices] = useState(true);
+  const [customGoals, setCustomGoals] = useState<CustomGoal[]>([]);
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
   const [specialties, setSpecialties] = useState<{ name: string; description: string }[]>([]);
   const [pkgs, setPkgs] = useState<PackageInput[]>([
@@ -81,6 +82,7 @@ export default function SettingsPage() {
       if (trainer.services?.show_prices !== undefined) setShowPrices(trainer.services.show_prices);
       if (trainer.specialties?.length) setSpecialties(trainer.specialties);
       if (trainer.custom_questions?.length) setCustomQuestions(trainer.custom_questions);
+      if (trainer.custom_goals?.length) setCustomGoals(trainer.custom_goals);
 
       if (existingPkgs?.length > 0) {
         setPkgs(existingPkgs.map((p: Record<string, unknown>) => ({
@@ -98,7 +100,7 @@ export default function SettingsPage() {
       if (!initialTabSet) {
         const params = new URLSearchParams(window.location.search);
         const tab = params.get('tab') as Tab | null;
-        if (tab && ['details', 'branding', 'copy', 'questions', 'specialties', 'services', 'packages', 'billing'].includes(tab)) {
+        if (tab && ['details', 'branding', 'copy', 'goals', 'questions', 'specialties', 'services', 'packages', 'billing'].includes(tab)) {
           setActiveTab(tab);
         }
         setInitialTabSet(true);
@@ -143,6 +145,9 @@ export default function SettingsPage() {
       custom_questions: customQuestions.filter(q => q.question.trim()).length > 0
         ? customQuestions.filter(q => q.question.trim())
         : null,
+      custom_goals: customGoals.filter(g => g.label.trim()).length > 0
+        ? customGoals.filter(g => g.label.trim())
+        : null,
     };
 
     const packageRows = pkgs.filter(p => p.name.trim()).map(p => ({
@@ -175,6 +180,7 @@ export default function SettingsPage() {
     { id: 'details', label: 'Details' },
     { id: 'branding', label: 'Branding' },
     { id: 'copy', label: 'Copy' },
+    { id: 'goals', label: 'Goals' },
     { id: 'questions', label: 'Questions' },
     { id: 'specialties', label: 'Specialties' },
     { id: 'services', label: 'Services' },
@@ -374,6 +380,108 @@ export default function SettingsPage() {
               trainerName={form.name}
               fontHeading={form.font_heading}
               fontBody={form.font_body}
+            />
+          </div>
+        )}
+
+        {/* Goals */}
+        {activeTab === 'goals' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[#8e8e93] text-xs">Customise the goal options prospects see. Leave empty to use the defaults.</p>
+              <button onClick={() => setCustomGoals([...customGoals, {
+                id: `goal-${Date.now()}`, emoji: '🎯', label: '', subtitle: '', needs_target: false,
+                target_prompt: '', target_placeholder: '', goal_type: 'fitness' as GoalType,
+              }])}
+                className="text-xs text-[#007AFF] font-medium flex-shrink-0 ml-3">+ Add</button>
+            </div>
+
+            {customGoals.map((g, i) => (
+              <div key={g.id} className="bg-[#f5f5f7] rounded-xl p-4 space-y-3">
+                <div className="flex gap-2">
+                  <input value={g.emoji}
+                    onChange={(e) => { const u = [...customGoals]; u[i] = { ...u[i], emoji: e.target.value }; setCustomGoals(u); }}
+                    placeholder="🎯"
+                    className="w-14 bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl px-2 py-2.5 text-center text-lg focus:outline-none focus:border-[#8e8e93]" />
+                  <input value={g.label}
+                    onChange={(e) => { const u = [...customGoals]; u[i] = { ...u[i], label: e.target.value }; setCustomGoals(u); }}
+                    placeholder="e.g. Run a 5K"
+                    className={inputClass} />
+                  <button onClick={() => setCustomGoals(customGoals.filter((_, idx) => idx !== i))}
+                    className="text-[#FF3B30] text-xs px-2 flex-shrink-0">Remove</button>
+                </div>
+
+                <input value={g.subtitle}
+                  onChange={(e) => { const u = [...customGoals]; u[i] = { ...u[i], subtitle: e.target.value }; setCustomGoals(u); }}
+                  placeholder="Short description, e.g. From couch to finish line"
+                  className={inputClass} />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[#8e8e93] text-[10px] block mb-1">Timeline calculation</label>
+                    <select value={g.goal_type}
+                      onChange={(e) => { const u = [...customGoals]; u[i] = { ...u[i], goal_type: e.target.value as GoalType }; setCustomGoals(u); }}
+                      className={inputClass}>
+                      <option value="weight_loss">Weight loss</option>
+                      <option value="muscle_gain">Muscle gain</option>
+                      <option value="fitness">Fitness</option>
+                      <option value="performance">Performance</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[#8e8e93] text-[10px] block mb-1">Ask for a target?</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <button onClick={() => { const u = [...customGoals]; u[i] = { ...u[i], needs_target: !u[i].needs_target }; setCustomGoals(u); }}
+                        className="w-10 h-6 rounded-full p-0.5 transition-all duration-300"
+                        style={{ backgroundColor: g.needs_target ? '#34C759' : '#e5e5ea' }}>
+                        <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300"
+                          style={{ transform: g.needs_target ? 'translateX(16px)' : 'translateX(0)' }} />
+                      </button>
+                      <span className="text-[#8e8e93] text-[10px]">{g.needs_target ? 'Yes' : 'No'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {g.needs_target && (
+                  <div className="space-y-2 pt-2 border-t border-[#e5e5ea]">
+                    <div>
+                      <label className="text-[#8e8e93] text-[10px] block mb-0.5">Target question</label>
+                      <input value={g.target_prompt}
+                        onChange={(e) => { const u = [...customGoals]; u[i] = { ...u[i], target_prompt: e.target.value }; setCustomGoals(u); }}
+                        placeholder="e.g. What's your target time?"
+                        className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="text-[#8e8e93] text-[10px] block mb-0.5">Placeholder</label>
+                      <input value={g.target_placeholder}
+                        onChange={(e) => { const u = [...customGoals]; u[i] = { ...u[i], target_placeholder: e.target.value }; setCustomGoals(u); }}
+                        placeholder="e.g. Under 30 minutes"
+                        className={inputClass} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {customGoals.length === 0 && (
+              <div className="space-y-2">
+                <p className="text-[#8e8e93] text-xs text-center py-4">Using default goals (Lose Weight, Build Muscle, Improve Fitness, Performance)</p>
+                <button onClick={() => setCustomGoals([
+                  { id: 'wl', emoji: '🔥', label: 'Lose Weight', subtitle: 'Burn fat & get lean', needs_target: false, target_prompt: '', target_placeholder: '', goal_type: 'weight_loss' },
+                  { id: 'mg', emoji: '💪', label: 'Build Muscle', subtitle: 'Get stronger & bigger', needs_target: false, target_prompt: '', target_placeholder: '', goal_type: 'muscle_gain' },
+                  { id: 'fi', emoji: '❤️', label: 'Improve Fitness', subtitle: 'Feel healthier & fitter', needs_target: true, target_prompt: "What does 'fit' look like for you?", target_placeholder: 'e.g. Run 5K without stopping', goal_type: 'fitness' },
+                  { id: 'pe', emoji: '🏃', label: 'Performance', subtitle: 'Hit a specific target', needs_target: true, target_prompt: "What's your specific target?", target_placeholder: 'e.g. Sub-25min 5K', goal_type: 'performance' },
+                ])}
+                  className="w-full py-4 rounded-xl border border-dashed border-[#e5e5ea] text-[#8e8e93] text-sm hover:border-[#8e8e93] transition-colors">
+                  + Tap to customise the defaults
+                </button>
+              </div>
+            )}
+
+            <GoalsPreview
+              theme={form.theme}
+              primaryColor={form.brand_color_primary}
+              goals={customGoals}
             />
           </div>
         )}
