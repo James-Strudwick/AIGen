@@ -57,33 +57,31 @@ export async function POST(request: NextRequest) {
             const updates: Record<string, unknown> = { referral_count: newCount };
 
             // Hit 5 referrals — apply 50% discount
-            if (newCount >= 5 && !referrer.has_referral_discount && referrer.stripe_subscription_id) {
+            if (newCount >= 5 && !referrer.has_referral_discount) {
               updates.has_referral_discount = true;
 
-              // Apply 50% coupon to their Stripe subscription
-              try {
-                const stripe = getStripe();
-                // Create a coupon if needed
-                let coupon;
+              // Apply 50% coupon if they already have a subscription
+              // If not, the coupon will be applied at checkout time
+              if (referrer.stripe_subscription_id) {
                 try {
-                  coupon = await stripe.coupons.retrieve('REFERRAL50');
-                } catch {
-                  coupon = await stripe.coupons.create({
-                    id: 'REFERRAL50',
-                    percent_off: 50,
-                    duration: 'forever',
-                    name: 'Referral reward — 50% off for life',
-                  });
-                }
-                // Apply discount to the subscription
-                const sub = await stripe.subscriptions.retrieve(referrer.stripe_subscription_id);
-                if (sub.items.data[0]) {
+                  const stripe = getStripe();
+                  let coupon;
+                  try {
+                    coupon = await stripe.coupons.retrieve('REFERRAL50');
+                  } catch {
+                    coupon = await stripe.coupons.create({
+                      id: 'REFERRAL50',
+                      percent_off: 50,
+                      duration: 'forever',
+                      name: 'Referral reward — 50% off for life',
+                    });
+                  }
                   await stripe.subscriptions.update(referrer.stripe_subscription_id, {
                     discounts: [{ coupon: coupon.id }],
                   });
+                } catch (stripeErr) {
+                  console.error('Failed to apply referral discount:', stripeErr);
                 }
-              } catch (stripeErr) {
-                console.error('Failed to apply referral discount:', stripeErr);
               }
             }
 

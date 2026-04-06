@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const supabase = getServiceClient();
     const { data: trainer } = await supabase
       .from('trainers')
-      .select('id, stripe_customer_id, name')
+      .select('id, stripe_customer_id, name, has_referral_discount')
       .eq('user_id', user.id)
       .single();
 
@@ -45,9 +45,26 @@ export async function POST(request: NextRequest) {
       await supabase.from('trainers').update({ stripe_customer_id: customerId }).eq('id', trainer.id);
     }
 
+    // Ensure referral coupon exists if needed
+    const stripe = getStripe();
+    let discounts: { coupon: string }[] | undefined;
+    if (trainer.has_referral_discount) {
+      try {
+        await stripe.coupons.retrieve('REFERRAL50');
+      } catch {
+        await stripe.coupons.create({
+          id: 'REFERRAL50',
+          percent_off: 50,
+          duration: 'forever',
+          name: 'Referral reward — 50% off for life',
+        });
+      }
+      discounts = [{ coupon: 'REFERRAL50' }];
+    }
+
     // Create checkout session
     const { origin } = new URL(request.url);
-    const session = await getStripe().checkout.sessions.create({
+    const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
       line_items: [{
@@ -62,6 +79,7 @@ export async function POST(request: NextRequest) {
         },
         quantity: 1,
       }],
+      ...(discounts ? { discounts } : {}),
       success_url: `${origin}/dashboard?subscribed=true`,
       cancel_url: `${origin}/dashboard`,
       metadata: { trainer_id: trainer.id },
