@@ -229,6 +229,22 @@ export default function FormAnalytics() {
               )}
             </div>
           )}
+          {/* Reset button */}
+          <button onClick={async () => {
+            if (!confirm('Reset all analytics data? This clears your funnel stats so you can measure fresh after making changes.')) return;
+            const supabase = createBrowserClient();
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+            await fetch('/api/analytics', {
+              method: 'DELETE',
+              headers: { Authorization: `Bearer ${session.access_token}` },
+            });
+            setFunnel([]);
+            setTotalSessions(0);
+          }}
+            className="w-full text-center text-[11px] text-[#8e8e93] hover:text-[#FF3B30] transition-colors py-2 mt-2">
+            Reset analytics
+          </button>
           </>
           )}
         </div>

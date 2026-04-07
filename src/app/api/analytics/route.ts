@@ -89,3 +89,35 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }
+
+// DELETE — reset analytics for authenticated trainer
+export async function DELETE(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+
+    const supabase = getServiceClient();
+    const { data: trainer } = await supabase
+      .from('trainers')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!trainer) return NextResponse.json({ error: 'No trainer' }, { status: 404 });
+
+    await supabase.from('form_events').delete().eq('trainer_id', trainer.id);
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('Analytics reset error:', error);
+    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+  }
+}
