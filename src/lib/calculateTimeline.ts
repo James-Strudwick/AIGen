@@ -42,16 +42,17 @@ function getMuscleGainWeeks(input: CalcInput): number {
   const goal = input.goalWeightKg ?? 75;
   const toGain = Math.max(0, goal - current);
 
-  // Monthly rates by experience
+  // Monthly body weight gain rates (not pure lean muscle — includes water, glycogen, etc.)
+  // These are realistic for someone following a structured programme
   let monthlyGainKg: number;
   switch (input.experienceLevel) {
-    case 'beginner': monthlyGainKg = 0.75; break;
-    case 'intermediate': monthlyGainKg = 0.375; break;
-    case 'advanced': monthlyGainKg = 0.175; break;
+    case 'beginner': monthlyGainKg = 1.5; break;   // Newbie gains — fast initial progress
+    case 'intermediate': monthlyGainKg = 0.75; break; // Steady progress
+    case 'advanced': monthlyGainKg = 0.4; break;     // Hard-earned gains
   }
 
   // More sessions = better muscle group coverage
-  const freqMultiplier = 1 + (Math.min(input.availableDays, 6) - 2) * 0.1;
+  const freqMultiplier = 1 + (Math.min(input.availableDays, 6) - 2) * 0.12;
   monthlyGainKg *= Math.max(freqMultiplier, 0.7);
 
   const months = toGain / monthlyGainKg;
