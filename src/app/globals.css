@@ -119,3 +119,35 @@ input[type="range"]::-moz-range-thumb {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* Interactive button feedback — hover shadow + press scale */
+button, a[role="button"], [data-interactive] {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+/* Cards, goal selectors, package buttons, toggle cards */
+button:not(:disabled):hover,
+a[role="button"]:not(:disabled):hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+button:not(:disabled):active {
+  transform: scale(1.02);
+}
+
+/* Larger tappable cards get a slightly bigger hover shadow */
+button[class*="rounded-2xl"]:not(:disabled):hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Primary action buttons (filled backgrounds) get a lift on hover */
+button[class*="text-white"]:not(:disabled):hover,
+a[class*="text-white"]:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+button[class*="text-white"]:not(:disabled):active,
+a[class*="text-white"]:active {
+  transform: translateY(0) scale(1.02);
+}
