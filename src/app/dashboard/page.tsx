@@ -33,6 +33,7 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [refCopied, setRefCopied] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     const supabase = createBrowserClient();
@@ -149,29 +150,47 @@ export default function DashboardPage() {
             <h1 className="text-xl font-bold tracking-tight">Dashboard</h1>
             <p className="text-[#8e8e93] text-sm">{trainerName}</p>
           </div>
-          <div className="flex gap-2">
-            <Link href={subscriptionStatus === 'active' ? `/${trainerSlug}` : `/preview/${trainerSlug}`} target="_blank"
-              className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
-              {subscriptionStatus === 'active' ? 'View page' : 'Preview page'}
-            </Link>
-            <Link href={`/share-card/${trainerSlug}`}
-              className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
-              Share card
-            </Link>
-            <Link href="/settings"
-              className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
-              Settings
-            </Link>
-            {subscriptionStatus === 'active' && (
-              <button onClick={handleManageBilling}
-                className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
-                Billing
-              </button>
-            )}
-            <button onClick={handleLogout}
-              className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
-              Log out
+          <div className="relative">
+            <button onClick={() => setMenuOpen(!menuOpen)}
+              className="w-9 h-9 rounded-xl bg-[#f5f5f7] hover:bg-[#e5e5ea] flex items-center justify-center transition-colors">
+              <svg className="w-5 h-5 text-[#8e8e93]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+              </svg>
             </button>
+
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 top-full mt-1 bg-white border border-[#e5e5ea] rounded-xl shadow-lg z-20 w-48 py-1 overflow-hidden">
+                  <Link href={subscriptionStatus === 'active' ? `/${trainerSlug}` : `/preview/${trainerSlug}`} target="_blank"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#f5f5f7] transition-colors">
+                    {subscriptionStatus === 'active' ? 'View page' : 'Preview page'}
+                  </Link>
+                  <Link href={`/share-card/${trainerSlug}`}
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#f5f5f7] transition-colors">
+                    Share card
+                  </Link>
+                  <Link href="/settings"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#f5f5f7] transition-colors">
+                    Settings
+                  </Link>
+                  {subscriptionStatus === 'active' && (
+                    <button onClick={() => { setMenuOpen(false); handleManageBilling(); }}
+                      className="block w-full text-left px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#f5f5f7] transition-colors">
+                      Billing
+                    </button>
+                  )}
+                  <div className="border-t border-[#e5e5ea] my-1" />
+                  <button onClick={() => { setMenuOpen(false); handleLogout(); }}
+                    className="block w-full text-left px-4 py-2.5 text-sm text-[#FF3B30] hover:bg-[#f5f5f7] transition-colors">
+                    Log out
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
