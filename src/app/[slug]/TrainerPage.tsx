@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Trainer, Package, FormData, GoalType, ExperienceLevel, TimelineResult, TrainerBranding } from '@/types';
 import { resolveBranding, brandingToCssVars, getGoogleFontsUrl, resolveServices, resolveCopy } from '@/lib/branding';
 import HeroSection from '@/components/HeroSection';
@@ -68,10 +68,40 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
 
   const currentFormStep = formSteps.indexOf(step) + 1;
 
+  // Analytics tracking
+  const sessionIdRef = useRef(() => {
+    if (typeof window !== 'undefined') {
+      let id = sessionStorage.getItem('fomo_session');
+      if (!id) { id = crypto.randomUUID(); sessionStorage.setItem('fomo_session', id); }
+      return id;
+    }
+    return 'ssr';
+  });
+
+  const trackStep = useCallback((stepName: string, action: 'entered' | 'completed') => {
+    if (isPreview) return;
+    fetch('/api/analytics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        trainerId: trainer.id,
+        sessionId: sessionIdRef.current(),
+        step: stepName,
+        action,
+      }),
+    }).catch(() => {});
+  }, [trainer.id, isPreview]);
+
+  // Track step entries
+  useEffect(() => {
+    trackStep(step, 'entered');
+  }, [step, trackStep]);
+
   const handleGoalSelect = useCallback((goal: GoalType, performanceTarget?: string) => {
+    trackStep('goal', 'completed');
     setFormData((prev) => ({ ...prev, goalType: goal, performanceTarget }));
     setStep('about');
-  }, []);
+  }, [trackStep]);
 
   const handleAboutSubmit = useCallback((data: {
     age: number;
@@ -88,20 +118,24 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
       weightUnit: data.weightUnit,
       experienceLevel: data.experienceLevel,
     }));
+    trackStep('about', 'completed');
     setStep('availability');
-  }, []);
+  }, [trackStep]);
 
   const handleAvailabilitySelect = useCallback((days: number) => {
     setFormData((prev) => ({ ...prev, availableDays: days }));
+    trackStep('availability', 'completed');
     setStep(hasCustomQuestions ? 'questions' : 'capture');
-  }, [hasCustomQuestions]);
+  }, [hasCustomQuestions, trackStep]);
 
   const handleCustomAnswers = useCallback((answers: Record<string, string | string[]>) => {
+    trackStep('questions', 'completed');
     setFormData((prev) => ({ ...prev, customAnswers: answers }));
     setStep('capture');
-  }, []);
+  }, [trackStep]);
 
   const handleLeadSubmit = useCallback(async (data: { name: string; phone: string }) => {
+    trackStep('capture', 'completed');
     setIsLoading(true);
     const updatedForm = { ...formData, ...data };
     setFormData(updatedForm);
@@ -186,7 +220,7 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
 
   if (step === 'hero') {
     return pageWrapper(
-      <HeroSection trainer={trainer} branding={branding} copy={copy} onStart={() => setStep('goal')} />
+      <HeroSection trainer={trainer} branding={branding} copy={copy} onStart={() => { trackStep('hero', 'completed'); setStep('goal'); }} />
     );
   }
 

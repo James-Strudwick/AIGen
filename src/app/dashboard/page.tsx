@@ -5,6 +5,7 @@ import { createBrowserClient } from '@/lib/auth';
 import { Lead, GoalType, LeadStatus, Trainer, Package } from '@/types';
 import Link from 'next/link';
 import SetupChecklist from '@/components/SetupChecklist';
+import FormAnalytics from '@/components/FormAnalytics';
 
 const goalLabels: Record<GoalType, string> = {
   weight_loss: '🔥 Weight Loss',
@@ -229,6 +230,9 @@ export default function DashboardPage() {
             {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
+
+        {/* Form analytics */}
+        <FormAnalytics />
 
         {/* Referral section */}
         {trainer?.referral_code && (
