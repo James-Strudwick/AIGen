@@ -214,8 +214,8 @@ export default function SettingsPage() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'details', label: 'Details' },
-    { id: 'branding', label: 'Branding' },
     { id: 'copy', label: 'Copy' },
+    { id: 'branding', label: 'Branding' },
     { id: 'goals', label: 'Goals' },
     { id: 'questions', label: 'Questions' },
     { id: 'specialties', label: 'Specialties' },
