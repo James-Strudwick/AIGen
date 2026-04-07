@@ -64,7 +64,8 @@ export default function CTASection({ trainer, branding, formData, result, goalLa
   const phone = trainer.contact_value.replace(/[^0-9]/g, '');
   const message = buildWhatsAppMessage(trainer, formData, result, goalLabel);
   const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-
+  const isDemo = trainer.slug === 'demo-pt';
+  const disableActions = isPreview || isDemo;
   const handleWhatsAppClick = () => {
     trackAction(leadId, 'whatsapp_clicked');
   };
@@ -92,10 +93,10 @@ export default function CTASection({ trainer, branding, formData, result, goalLa
         Tap below to message {trainer.name} with your details
       </p>
 
-      {isPreview ? (
+      {disableActions ? (
         <div className="w-full py-4 rounded-xl text-white font-semibold text-lg text-center opacity-60 cursor-not-allowed"
           style={{ backgroundColor: '#25D366' }}>
-          WhatsApp button (disabled in preview)
+          {isDemo ? 'Message on WhatsApp (demo)' : 'WhatsApp button (disabled in preview)'}
         </div>
       ) : (
         <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={handleWhatsAppClick}
@@ -108,7 +109,7 @@ export default function CTASection({ trainer, branding, formData, result, goalLa
         </a>
       )}
 
-      {trainer.booking_link && !isPreview && (
+      {trainer.booking_link && !disableActions && (
         <a href={trainer.booking_link} target="_blank" rel="noopener noreferrer" onClick={handleBookingClick}
           className="block mt-4 text-sm underline underline-offset-2 transition-colors"
           style={{ color: branding.color_text_muted }}>
