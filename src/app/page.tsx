@@ -151,8 +151,15 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-[#e5e5ea] py-8 text-center">
-        <p className="text-[#8e8e93] text-xs">FomoForms — AI-powered lead generation for coaches</p>
+      <footer className="border-t border-[#e5e5ea] py-8">
+        <div className="max-w-3xl mx-auto px-5 flex items-center justify-between">
+          <p className="text-[#8e8e93] text-xs">FomoForms</p>
+          <div className="flex gap-4">
+            <Link href="/privacy" className="text-[#8e8e93] text-xs hover:text-[#1a1a1a] transition-colors">Privacy</Link>
+            <Link href="/terms" className="text-[#8e8e93] text-xs hover:text-[#1a1a1a] transition-colors">Terms</Link>
+            <Link href="/contact" className="text-[#8e8e93] text-xs hover:text-[#1a1a1a] transition-colors">Contact</Link>
+          </div>
+        </div>
       </footer>
     </div>
   );

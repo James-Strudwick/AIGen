@@ -69,7 +69,8 @@ export default function LeadCaptureForm({ branding, isLoading, onSubmit }: LeadC
       </form>
 
       <p className="text-[11px] text-center mt-4" style={{ color: branding.color_text_muted }}>
-        Your data is kept private and only shared with your trainer
+        Your data is kept private and only shared with your trainer.{' '}
+        <a href="/privacy" target="_blank" className="underline underline-offset-2">Privacy policy</a>
       </p>
     </div>
   );
