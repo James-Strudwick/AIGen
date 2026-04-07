@@ -89,13 +89,13 @@ export default function FormAnalytics() {
     load();
   }, []);
 
-  if (loading || totalSessions === 0) return null;
+  if (loading) return null;
 
-  const currentStep = funnel[activeStep];
-  const dropoffRate = currentStep?.entered > 0
-    ? Math.round((currentStep.dropoff / currentStep.entered) * 100) : 0;
-  const completionRate = currentStep?.entered > 0
-    ? Math.round((currentStep.completed / currentStep.entered) * 100) : 0;
+  const hasData = totalSessions > 0;
+
+  const currentStep = hasData ? funnel[activeStep] : null;
+  const dropoffRate = currentStep?.entered ? Math.round((currentStep.dropoff / currentStep.entered) * 100) : 0;
+  const completionRate = currentStep?.entered ? Math.round((currentStep.completed / currentStep.entered) * 100) : 0;
 
   const overallConversion = totalSessions > 0 && funnel.length > 0
     ? Math.round(((funnel[funnel.length - 1]?.entered || 0) / totalSessions) * 100) : 0;
@@ -107,12 +107,20 @@ export default function FormAnalytics() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <p className="text-sm font-semibold">Form analytics</p>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-[#1a1a1a]">
-              {totalSessions} visits
-            </span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-[#34C759]">
-              {overallConversion}% conversion
-            </span>
+            {hasData ? (
+              <>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-[#1a1a1a]">
+                  {totalSessions} visits
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-[#34C759]">
+                  {overallConversion}% conversion
+                </span>
+              </>
+            ) : (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white text-[#8e8e93]">
+                No data yet
+              </span>
+            )}
           </div>
           <svg className={`w-4 h-4 text-[#8e8e93] transition-transform ${expanded ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
@@ -122,6 +130,13 @@ export default function FormAnalytics() {
 
       {expanded && (
         <div className="mt-3">
+          {!hasData ? (
+            <div className="bg-[#f5f5f7] rounded-xl p-6 text-center">
+              <p className="text-sm text-[#8e8e93]">No data yet</p>
+              <p className="text-xs text-[#8e8e93] mt-1">Share your link and analytics will appear here as prospects use your form</p>
+            </div>
+          ) : (
+          <>
           {/* Mini funnel overview */}
           <div className="flex gap-0.5 mb-4">
             {funnel.map((s, i) => {
@@ -213,6 +228,8 @@ export default function FormAnalytics() {
                 </div>
               )}
             </div>
+          )}
+          </>
           )}
         </div>
       )}
