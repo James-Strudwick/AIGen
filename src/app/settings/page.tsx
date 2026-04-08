@@ -573,11 +573,17 @@ export default function SettingsPage() {
         {activeTab === 'questions' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-[#8e8e93] text-xs">Add custom questions to your form. Answers feed into the AI narrative and appear on each lead.</p>
+              <p className="text-[#8e8e93] text-xs">
+                Add custom questions to your form.
+                {trainerData?.tier !== 'pro' && ' Starter plan: 2 questions max.'}
+              </p>
               <button onClick={() => setCustomQuestions([...customQuestions, {
                 id: `q-${Date.now()}`, question: '', type: 'select', options: ['', ''], placeholder: '',
               }])}
-                className="text-xs text-[#007AFF] font-medium flex-shrink-0 ml-3">+ Add</button>
+                disabled={trainerData?.tier !== 'pro' && customQuestions.length >= 2}
+                className="text-xs text-[#007AFF] font-medium flex-shrink-0 ml-3 disabled:opacity-30 disabled:cursor-not-allowed">
+                {trainerData?.tier !== 'pro' && customQuestions.length >= 2 ? 'Pro: unlimited' : '+ Add'}
+              </button>
             </div>
 
             {customQuestions.map((q, i) => (
@@ -863,70 +869,123 @@ export default function SettingsPage() {
         {/* Billing */}
         {activeTab === 'billing' && (
           <div className="space-y-5">
-            {/* Current plan */}
-            <div className="rounded-xl border border-[#e5e5ea] p-5">
-              <div className="flex items-center justify-between mb-3">
-                <p className="font-semibold text-sm">Current plan</p>
-                <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
-                  style={{
-                    backgroundColor: subscriptionStatus === 'active' ? '#34C75915' : '#FF3B3015',
-                    color: subscriptionStatus === 'active' ? '#34C759' : '#FF3B30',
-                  }}>
-                  {subscriptionStatus === 'active' ? 'Active' : subscriptionStatus === 'past_due' ? 'Past due' : subscriptionStatus === 'cancelled' ? 'Cancelled' : 'No subscription'}
-                </span>
+            {/* Plan comparison */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Starter */}
+              <div className={`rounded-xl p-4 border ${trainerData?.tier === 'starter' && subscriptionStatus === 'active' ? 'border-[#1a1a1a]' : 'border-[#e5e5ea]'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="font-semibold text-sm">Starter</p>
+                  {trainerData?.tier === 'starter' && subscriptionStatus === 'active' && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#1a1a1a] text-white">Current</span>
+                  )}
+                </div>
+                <p className="text-xl font-bold">£9.99<span className="text-xs text-[#8e8e93] font-normal">/mo</span></p>
+                <ul className="mt-3 space-y-1.5">
+                  {['Unlimited leads', 'AI timelines', 'All branding', 'Dashboard & analytics', '2 custom questions', '"Powered by" badge'].map(f => (
+                    <li key={f} className="text-[10px] text-[#8e8e93] flex items-center gap-1.5">
+                      <span className="text-[#34C759]">✓</span> {f}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-              {subscriptionStatus === 'active' ? (
-                <div>
-                  <p className="text-2xl font-bold tracking-tight">£9.99<span className="text-sm text-[#8e8e93] font-normal">/month</span></p>
-                  <p className="text-[#8e8e93] text-xs mt-1">FomoForms Pro — unlimited leads, all features</p>
+              {/* Pro */}
+              <div className={`rounded-xl p-4 border ${trainerData?.tier === 'pro' && subscriptionStatus === 'active' ? 'border-[#1a1a1a]' : 'border-[#e5e5ea]'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="font-semibold text-sm">Pro</p>
+                  {trainerData?.tier === 'pro' && subscriptionStatus === 'active' ? (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#1a1a1a] text-white">Current</span>
+                  ) : (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#007AFF] text-white">Upgrade</span>
+                  )}
                 </div>
-              ) : (
-                <div>
-                  <p className="text-[#8e8e93] text-sm">
-                    {subscriptionStatus === 'none'
-                      ? 'Subscribe to activate your landing page and start capturing leads.'
-                      : 'Your subscription has ended. Resubscribe to reactivate your page.'}
-                  </p>
-                </div>
-              )}
+                <p className="text-xl font-bold">£19.99<span className="text-xs text-[#8e8e93] font-normal">/mo</span></p>
+                <ul className="mt-3 space-y-1.5">
+                  {['Everything in Starter', 'No "Powered by" badge', 'Export leads to CSV', 'Unlimited questions', 'Multiple forms (coming soon)'].map(f => (
+                    <li key={f} className="text-[10px] text-[#1a1a1a] flex items-center gap-1.5">
+                      <span className="text-[#34C759]">✓</span> {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
             {/* Actions */}
             {subscriptionStatus === 'active' ? (
-              <button onClick={async () => {
-                setBillingLoading(true);
-                const supabase = (await import('@/lib/auth')).createBrowserClient();
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) return;
-                const res = await fetch('/api/billing-portal', {
-                  method: 'POST',
-                  headers: { Authorization: `Bearer ${session.access_token}` },
-                });
-                const data = await res.json();
-                if (data.url) window.location.href = data.url;
-                setBillingLoading(false);
-              }} disabled={billingLoading}
-                className="w-full py-3.5 rounded-xl bg-[#f5f5f7] text-[#1a1a1a] font-semibold text-sm hover:bg-[#e5e5ea] transition-all active:scale-[0.97] disabled:opacity-40">
-                {billingLoading ? 'Loading...' : 'Manage subscription'}
-              </button>
+              <div className="space-y-2">
+                {trainerData?.tier === 'starter' && (
+                  <button onClick={async () => {
+                    setBillingLoading(true);
+                    const supabase = (await import('@/lib/auth')).createBrowserClient();
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) return;
+                    const res = await fetch('/api/checkout', {
+                      method: 'POST',
+                      headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ tier: 'pro' }),
+                    });
+                    const data = await res.json();
+                    if (data.url) window.location.href = data.url;
+                    setBillingLoading(false);
+                  }} disabled={billingLoading}
+                    className="w-full py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40">
+                    {billingLoading ? 'Loading...' : 'Upgrade to Pro — £19.99/month'}
+                  </button>
+                )}
+                <button onClick={async () => {
+                  setBillingLoading(true);
+                  const supabase = (await import('@/lib/auth')).createBrowserClient();
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) return;
+                  const res = await fetch('/api/billing-portal', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${session.access_token}` },
+                  });
+                  const data = await res.json();
+                  if (data.url) window.location.href = data.url;
+                  setBillingLoading(false);
+                }} disabled={billingLoading}
+                  className="w-full py-3.5 rounded-xl bg-[#f5f5f7] text-[#1a1a1a] font-semibold text-sm hover:bg-[#e5e5ea] transition-all active:scale-[0.97] disabled:opacity-40">
+                  {billingLoading ? 'Loading...' : 'Manage subscription'}
+                </button>
+              </div>
             ) : (
-              <button onClick={async () => {
-                setBillingLoading(true);
-                const supabase = (await import('@/lib/auth')).createBrowserClient();
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) return;
-                const res = await fetch('/api/checkout', {
-                  method: 'POST',
-                  headers: { Authorization: `Bearer ${session.access_token}` },
-                });
-                const data = await res.json();
-                if (data.url) window.location.href = data.url;
-                setBillingLoading(false);
-              }} disabled={billingLoading}
-                className="w-full py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40">
-                {billingLoading ? 'Loading...' : 'Subscribe — £9.99/month'}
-              </button>
+              <div className="space-y-2">
+                <button onClick={async () => {
+                  setBillingLoading(true);
+                  const supabase = (await import('@/lib/auth')).createBrowserClient();
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) return;
+                  const res = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tier: 'starter' }),
+                  });
+                  const data = await res.json();
+                  if (data.url) window.location.href = data.url;
+                  setBillingLoading(false);
+                }} disabled={billingLoading}
+                  className="w-full py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40">
+                  {billingLoading ? 'Loading...' : 'Subscribe Starter — £9.99/month'}
+                </button>
+                <button onClick={async () => {
+                  setBillingLoading(true);
+                  const supabase = (await import('@/lib/auth')).createBrowserClient();
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) return;
+                  const res = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tier: 'pro' }),
+                  });
+                  const data = await res.json();
+                  if (data.url) window.location.href = data.url;
+                  setBillingLoading(false);
+                }} disabled={billingLoading}
+                  className="w-full py-3.5 rounded-xl bg-[#f5f5f7] text-[#1a1a1a] font-semibold text-sm hover:bg-[#e5e5ea] transition-all active:scale-[0.97] disabled:opacity-40">
+                  {billingLoading ? 'Loading...' : 'Subscribe Pro — £19.99/month'}
+                </button>
+              </div>
             )}
 
             <p className="text-[#8e8e93] text-[11px] text-center">

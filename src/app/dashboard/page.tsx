@@ -301,6 +301,33 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Export + Filters */}
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-semibold text-[#8e8e93] uppercase tracking-wider">Leads</p>
+          {trainer?.tier === 'pro' ? (
+            <button onClick={() => {
+              const headers = ['Name', 'Phone', 'Goal', 'Experience', 'Days/wk', 'Status', 'Date'];
+              const rows = leads.map(l => [
+                l.name, l.phone, l.goal_type, l.experience_level || '', l.available_days_per_week || '',
+                l.status, new Date(l.created_at).toLocaleDateString('en-GB'),
+              ]);
+              const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url; a.download = 'leads.csv'; a.click();
+              URL.revokeObjectURL(url);
+            }}
+              className="text-xs text-[#007AFF] font-medium">
+              Export CSV
+            </button>
+          ) : leads.length > 0 ? (
+            <Link href="/settings?tab=billing" className="text-[10px] text-[#8e8e93]">
+              Pro: export leads →
+            </Link>
+          ) : null}
+        </div>
+
         {/* Filters */}
         <div className="flex gap-1.5 overflow-x-auto pb-2 mb-4 -mx-4 px-4">
           {[

@@ -1,12 +1,15 @@
 'use client';
 
-import { TrainerBranding } from '@/types';
+import { TrainerBranding, Tier } from '@/types';
 
 interface PoweredByBadgeProps {
   branding: TrainerBranding;
+  tier?: Tier;
 }
 
-export default function PoweredByBadge({ branding }: PoweredByBadgeProps) {
+export default function PoweredByBadge({ branding, tier = 'starter' }: PoweredByBadgeProps) {
+  if (tier === 'pro') return null;
+
   return (
     <div className="text-center py-6">
       <a

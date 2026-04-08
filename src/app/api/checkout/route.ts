@@ -9,9 +9,16 @@ function getStripe() {
   });
 }
 
+const TIERS = {
+  starter: { name: 'FomoForms Starter', amount: 999, description: 'Unlimited leads, branded landing page, AI timelines' },
+  pro: { name: 'FomoForms Pro', amount: 1999, description: 'Everything in Starter + no watermark, CSV export, unlimited questions' },
+};
+
 export async function POST(request: NextRequest) {
   try {
-    // Verify the user
+    const { tier = 'starter' } = await request.json().catch(() => ({ tier: 'starter' }));
+    const tierConfig = TIERS[tier as keyof typeof TIERS] || TIERS.starter;
+
     const authHeader = request.headers.get('authorization');
     if (!authHeader) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
@@ -71,10 +78,10 @@ export async function POST(request: NextRequest) {
         price_data: {
           currency: 'gbp',
           product_data: {
-            name: 'FomoForms Pro',
-            description: 'Unlimited leads, branded landing page, AI timelines',
+            name: tierConfig.name,
+            description: tierConfig.description,
           },
-          unit_amount: 999, // £9.99
+          unit_amount: tierConfig.amount,
           recurring: { interval: 'month' },
         },
         quantity: 1,
@@ -82,7 +89,7 @@ export async function POST(request: NextRequest) {
       ...(discounts ? { discounts } : {}),
       success_url: `${origin}/dashboard?subscribed=true`,
       cancel_url: `${origin}/dashboard`,
-      metadata: { trainer_id: trainer.id },
+      metadata: { trainer_id: trainer.id, tier },
     });
 
     return NextResponse.json({ url: session.url });

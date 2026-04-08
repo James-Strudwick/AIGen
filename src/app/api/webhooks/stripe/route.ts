@@ -30,11 +30,13 @@ export async function POST(request: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
       const trainerId = session.metadata?.trainer_id;
+      const tier = session.metadata?.tier || 'starter';
       if (trainerId && session.subscription) {
         await supabase.from('trainers').update({
           stripe_subscription_id: session.subscription as string,
           subscription_status: 'active',
           active: true,
+          tier,
         }).eq('id', trainerId);
 
         // Increment referrer's count if this trainer was referred

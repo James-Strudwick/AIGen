@@ -91,6 +91,7 @@ export interface CustomQuestion {
 }
 
 export type SubscriptionStatus = 'none' | 'active' | 'past_due' | 'cancelled';
+export type Tier = 'starter' | 'pro';
 
 export interface Trainer {
   id: string;
@@ -115,6 +116,7 @@ export interface Trainer {
   stripe_subscription_id: string | null;
   subscription_status: SubscriptionStatus;
   subscription_ends_at: string | null;
+  tier: Tier;
   referral_code: string | null;
   referred_by: string | null;
   referral_count: number;

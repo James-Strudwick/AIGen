@@ -106,35 +106,55 @@ export default function Home() {
       </section>
 
       {/* Pricing */}
-      <section className="max-w-2xl mx-auto px-5 py-16 text-center">
+      <section className="max-w-3xl mx-auto px-5 py-16 text-center">
         <h2 className="text-2xl font-bold tracking-tight mb-2">Simple pricing</h2>
-        <p className="text-[#8e8e93] text-sm mb-8">Less than the cost of one Easter Egg</p>
+        <p className="text-[#8e8e93] text-sm mb-8">Less than the cost of one PT session</p>
 
-        <div className="bg-[#f5f5f7] rounded-2xl p-8 max-w-sm mx-auto">
-          <p className="text-4xl font-bold tracking-tight">£9.99<span className="text-lg text-[#8e8e93] font-normal">/month</span></p>
-          <p className="text-[#8e8e93] text-sm mt-2 mb-6">Unlimited leads. Everything included.</p>
-          <ul className="text-sm text-left space-y-2 mb-6">
-            {[
-              'Branded landing page',
-              'AI-generated timelines',
-              'Interactive package comparison',
-              'WhatsApp lead capture',
-              'Lead dashboard with tracking',
-              'Custom colours, fonts, and copy',
-              'Unlimited prospects',
-            ].map((item) => (
-              <li key={item} className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-[#34C759] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                {item}
-              </li>
-            ))}
-          </ul>
-          <Link href="/signup"
-            className="block w-full py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm text-center hover:bg-black transition-colors">
-            Get started
-          </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+          {/* Starter */}
+          <div className="bg-[#f5f5f7] rounded-2xl p-6 text-left">
+            <p className="font-semibold mb-1">Starter</p>
+            <p className="text-3xl font-bold tracking-tight">£9.99<span className="text-sm text-[#8e8e93] font-normal">/month</span></p>
+            <p className="text-[#8e8e93] text-xs mt-1 mb-5">Everything you need to start</p>
+            <ul className="text-sm space-y-2 mb-6">
+              {['Branded landing page', 'AI-generated timelines', 'Interactive package comparison', 'WhatsApp lead capture', 'Lead dashboard & analytics', 'Custom branding & copy', '2 custom questions'].map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 text-[#34C759] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <Link href="/signup"
+              className="block w-full py-3 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm text-center">
+              Get started
+            </Link>
+          </div>
+
+          {/* Pro */}
+          <div className="bg-[#1a1a1a] text-white rounded-2xl p-6 text-left">
+            <div className="flex items-center justify-between mb-1">
+              <p className="font-semibold">Pro</p>
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white text-[#1a1a1a]">Popular</span>
+            </div>
+            <p className="text-3xl font-bold tracking-tight">£19.99<span className="text-sm text-white/50 font-normal">/month</span></p>
+            <p className="text-white/50 text-xs mt-1 mb-5">For serious coaches</p>
+            <ul className="text-sm space-y-2 mb-6">
+              {['Everything in Starter', 'Remove "Powered by" badge', 'Export leads to CSV', 'Unlimited custom questions', 'Multiple forms (coming soon)', 'Priority support'].map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 text-[#34C759] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <Link href="/signup"
+              className="block w-full py-3 rounded-xl bg-white text-[#1a1a1a] font-semibold text-sm text-center">
+              Get started
+            </Link>
+          </div>
         </div>
       </section>
 

@@ -223,7 +223,7 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
     return pageWrapper(
       <>
         <HeroSection trainer={trainer} branding={branding} copy={copy} onStart={() => { trackStep('hero', 'completed'); setStep('goal'); }} />
-        <PoweredByBadge branding={branding} />
+        <PoweredByBadge branding={branding} tier={trainer.tier} />
       </>
     );
   }
@@ -242,7 +242,7 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
           leadId={leadId}
           isPreview={isPreview}
         />
-        <PoweredByBadge branding={branding} />
+        <PoweredByBadge branding={branding} tier={trainer.tier} />
       </div>
     );
   }
@@ -281,7 +281,7 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
         )}
       </div>
 
-      <PoweredByBadge branding={branding} />
+      <PoweredByBadge branding={branding} tier={trainer.tier} />
     </div>
   );
 }
