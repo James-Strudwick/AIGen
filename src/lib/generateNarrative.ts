@@ -8,6 +8,7 @@ export interface NarrativeInput {
   serviceAddOns: ServiceAddOn[];
   customAnswers?: Record<string, string | string[]>;
   customQuestions?: CustomQuestion[];
+  customAboutFields?: Record<string, string>;
   clientName: string;
   goalType: GoalType;
   currentWeightKg: number | null;
@@ -57,17 +58,28 @@ export function buildPrompt(input: NarrativeInput): string {
 
   // Build custom Q&A context
   let customQAContext = '';
-  if (input.customAnswers && input.customQuestions) {
-    const qaPairs = input.customQuestions
-      .filter(q => input.customAnswers![q.id])
-      .map(q => {
-        const answer = input.customAnswers![q.id];
-        const answerStr = Array.isArray(answer) ? answer.join(', ') : answer;
-        return `- ${q.question}: ${answerStr}`;
-      });
-    if (qaPairs.length > 0) {
-      customQAContext = `\nAdditional information from ${input.clientName}:\n${qaPairs.join('\n')}`;
+  const extraInfo: string[] = [];
+
+  // Custom about fields (injuries, medical conditions, etc.)
+  if (input.customAboutFields) {
+    for (const [, value] of Object.entries(input.customAboutFields)) {
+      if (value?.trim()) extraInfo.push(`- ${value}`);
     }
+  }
+
+  // Custom question answers
+  if (input.customAnswers && input.customQuestions) {
+    for (const q of input.customQuestions) {
+      const answer = input.customAnswers[q.id];
+      if (answer) {
+        const answerStr = Array.isArray(answer) ? answer.join(', ') : answer;
+        extraInfo.push(`- ${q.question}: ${answerStr}`);
+      }
+    }
+  }
+
+  if (extraInfo.length > 0) {
+    customQAContext = `\nAdditional information from ${input.clientName}:\n${extraInfo.join('\n')}`;
   }
 
   // Use PT's custom tone if set, otherwise default by goal type

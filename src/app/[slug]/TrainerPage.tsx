@@ -58,6 +58,7 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
     weightUnit: 'kg',
     experienceLevel: null,
     availableDays: 3,
+    customAboutFields: {},
     customAnswers: {},
     name: '',
     phone: '',
@@ -123,11 +124,12 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
   }, [trackStep, forms, trainer.custom_goals]);
 
   const handleAboutSubmit = useCallback((data: {
-    age: number;
-    currentWeight: number;
+    age: number | null;
+    currentWeight: number | null;
     goalWeight: number | null;
     weightUnit: 'kg' | 'stone';
-    experienceLevel: ExperienceLevel;
+    experienceLevel: ExperienceLevel | null;
+    customAboutFields: Record<string, string>;
   }) => {
     setFormData((prev) => ({
       ...prev,
@@ -136,6 +138,7 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
       goalWeight: data.goalWeight,
       weightUnit: data.weightUnit,
       experienceLevel: data.experienceLevel,
+      customAboutFields: data.customAboutFields,
     }));
     trackStep('about', 'completed');
     setStep('availability');
@@ -280,7 +283,16 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
         )}
 
         {step === 'about' && formData.goalType && (
-          <AboutYouForm goalType={formData.goalType} branding={branding} onSubmit={handleAboutSubmit} />
+          <AboutYouForm
+            goalType={formData.goalType}
+            branding={branding}
+            customFields={(() => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const aboutConfig = (activeForm as any)?.about_config;
+              return aboutConfig?.custom_fields || [];
+            })()}
+            onSubmit={handleAboutSubmit}
+          />
         )}
 
         {step === 'availability' && (

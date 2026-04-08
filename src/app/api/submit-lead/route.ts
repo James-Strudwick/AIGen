@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
           trainerTone,
           serviceAddOns,
           customAnswers: formData.customAnswers,
+          customAboutFields: formData.customAboutFields,
           customQuestions,
           clientName: formData.name,
           goalType: formData.goalType as GoalType,
@@ -110,7 +111,10 @@ export async function POST(request: NextRequest) {
       age: formData.age,
       experience_level: formData.experienceLevel,
       available_days_per_week: formData.availableDays,
-      custom_answers: formData.customAnswers && Object.keys(formData.customAnswers).length > 0 ? formData.customAnswers : null,
+      custom_answers: {
+        ...(formData.customAboutFields && Object.keys(formData.customAboutFields).length > 0 ? formData.customAboutFields : {}),
+        ...(formData.customAnswers && Object.keys(formData.customAnswers).length > 0 ? formData.customAnswers : {}),
+      },
       form_id: formId || null,
       generated_timeline: timelineResult,
     }).select('id').single();

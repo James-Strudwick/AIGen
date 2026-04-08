@@ -172,6 +172,7 @@ export interface FormData {
   weightUnit: 'kg' | 'stone';
   experienceLevel: ExperienceLevel | null;
   availableDays: number;
+  customAboutFields: Record<string, string>;
   customAnswers: Record<string, string | string[]>;
   name: string;
   phone: string;

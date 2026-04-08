@@ -39,6 +39,14 @@ function buildWhatsAppMessage(trainer: Trainer, formData: FormData, result: Time
   message += `- Estimated timeline: ~${result.estimatedWeeks} weeks\n`;
 
   // Include custom answers if any
+  // Custom about fields
+  if (formData.customAboutFields && Object.keys(formData.customAboutFields).length > 0) {
+    for (const [, value] of Object.entries(formData.customAboutFields)) {
+      if (value?.trim()) message += `- ${value}\n`;
+    }
+  }
+
+  // Custom question answers
   if (formData.customAnswers && Object.keys(formData.customAnswers).length > 0) {
     for (const [, value] of Object.entries(formData.customAnswers)) {
       const answerStr = Array.isArray(value) ? value.join(', ') : value;
