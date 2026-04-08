@@ -20,7 +20,7 @@ const CARD_MESSAGES = [
   "See how fast you could reach your goal with me",
 ];
 
-export default function ShareCardPage({ params }: { params: Promise<{ slug: string }> }) {
+export default function ShareCardPage() {
   const [trainer, setTrainer] = useState<Trainer | null>(null);
   const [loading, setLoading] = useState(true);
   const [style, setStyle] = useState('minimal');
@@ -30,7 +30,6 @@ export default function ShareCardPage({ params }: { params: Promise<{ slug: stri
 
   useEffect(() => {
     const load = async () => {
-      const { slug } = await params;
       const supabase = createBrowserClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { setLoading(false); return; }
@@ -41,12 +40,11 @@ export default function ShareCardPage({ params }: { params: Promise<{ slug: stri
       if (!res.ok) { setLoading(false); return; }
 
       const data = await res.json();
-      if (data.trainer.slug !== slug) { setLoading(false); return; }
       setTrainer(data.trainer as Trainer);
       setLoading(false);
     };
     load();
-  }, [params]);
+  }, []);
 
   if (loading) {
     return <div className="min-h-[100dvh] bg-white flex items-center justify-center"><p className="text-[#8e8e93] text-sm">Loading...</p></div>;
