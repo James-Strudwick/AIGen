@@ -26,6 +26,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [trainer, setTrainer] = useState<Trainer | null>(null);
   const [trainerPackages, setTrainerPackages] = useState<Package[]>([]);
+  const [formNames, setFormNames] = useState<Record<string, string>>({});
   const [trainerName, setTrainerName] = useState('');
   const [trainerSlug, setTrainerSlug] = useState('');
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('none');
@@ -53,10 +54,13 @@ export default function DashboardPage() {
       return;
     }
 
-    const { trainer: trainerData, packages: pkgData, leads: leadsData } = await res.json();
+    const { trainer: trainerData, packages: pkgData, forms: formsData, leads: leadsData } = await res.json();
 
     setTrainer(trainerData as Trainer);
     setTrainerPackages((pkgData || []) as Package[]);
+    const fNames: Record<string, string> = {};
+    for (const f of (formsData || [])) { fNames[f.id] = f.name; }
+    setFormNames(fNames);
     setTrainerName(trainerData.name);
     setTrainerSlug(trainerData.slug);
     setSubscriptionStatus(trainerData.subscription_status || 'none');
@@ -251,7 +255,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Form analytics */}
-        <FormAnalytics />
+        <FormAnalytics formNames={formNames} isPro={trainer?.tier === 'pro'} />
 
         {/* Referral section */}
         {trainer?.referral_code && (

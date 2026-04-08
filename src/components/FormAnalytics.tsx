@@ -63,12 +63,24 @@ const stepSuggestions: Record<string, string[]> = {
   ],
 };
 
-export default function FormAnalytics() {
+interface FormFunnelData {
+  funnel: FunnelStep[];
+  sessions: number;
+}
+
+interface Props {
+  formNames?: Record<string, string>;
+  isPro?: boolean;
+}
+
+export default function FormAnalytics({ formNames = {}, isPro = false }: Props) {
   const [funnel, setFunnel] = useState<FunnelStep[]>([]);
   const [totalSessions, setTotalSessions] = useState(0);
+  const [formFunnels, setFormFunnels] = useState<Record<string, FormFunnelData>>({});
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
+  const [selectedForm, setSelectedForm] = useState<string>('all');
 
   useEffect(() => {
     const load = async () => {
@@ -84,6 +96,7 @@ export default function FormAnalytics() {
       const data = await res.json();
       setFunnel(data.funnel || []);
       setTotalSessions(data.totalSessions || 0);
+      setFormFunnels(data.formFunnels || {});
       setLoading(false);
     };
     load();
@@ -92,13 +105,18 @@ export default function FormAnalytics() {
   if (loading) return null;
 
   const hasData = totalSessions > 0;
+  const hasFormFunnels = Object.keys(formFunnels).length > 0;
 
-  const currentStep = hasData ? funnel[activeStep] : null;
+  // Resolve which funnel to show
+  const activeFunnel = selectedForm === 'all' ? funnel : (formFunnels[selectedForm]?.funnel || []);
+  const activeTotal = selectedForm === 'all' ? totalSessions : (formFunnels[selectedForm]?.sessions || 0);
+
+  const currentStep = hasData ? activeFunnel[activeStep] : null;
   const dropoffRate = currentStep?.entered ? Math.round((currentStep.dropoff / currentStep.entered) * 100) : 0;
   const completionRate = currentStep?.entered ? Math.round((currentStep.completed / currentStep.entered) * 100) : 0;
 
-  const overallConversion = totalSessions > 0 && funnel.length > 0
-    ? Math.round(((funnel[funnel.length - 1]?.entered || 0) / totalSessions) * 100) : 0;
+  const overallConversion = activeTotal > 0 && activeFunnel.length > 0
+    ? Math.round(((activeFunnel[activeFunnel.length - 1]?.entered || 0) / activeTotal) * 100) : 0;
 
   return (
     <div className="mb-6">
@@ -137,10 +155,28 @@ export default function FormAnalytics() {
             </div>
           ) : (
           <>
+          {/* Form selector (Pro only, when forms exist) */}
+          {isPro && hasFormFunnels && (
+            <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3 -mx-1 px-1">
+              <button onClick={() => { setSelectedForm('all'); setActiveStep(0); }}
+                className="text-[10px] px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0 transition-all"
+                style={{ backgroundColor: selectedForm === 'all' ? '#1a1a1a' : '#f5f5f7', color: selectedForm === 'all' ? '#fff' : '#8e8e93' }}>
+                All forms
+              </button>
+              {Object.keys(formFunnels).map((fId) => (
+                <button key={fId} onClick={() => { setSelectedForm(fId); setActiveStep(0); }}
+                  className="text-[10px] px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0 transition-all"
+                  style={{ backgroundColor: selectedForm === fId ? '#1a1a1a' : '#f5f5f7', color: selectedForm === fId ? '#fff' : '#8e8e93' }}>
+                  {formNames[fId] || 'Form'}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Mini funnel overview */}
           <div className="flex gap-0.5 mb-4">
-            {funnel.map((s, i) => {
-              const maxEntered = funnel[0]?.entered || 1;
+            {activeFunnel.map((s, i) => {
+              const maxEntered = activeFunnel[0]?.entered || 1;
               const height = Math.max((s.entered / maxEntered) * 40, 4);
               const isActive = i === activeStep;
               const stepDropoff = s.entered > 0 ? s.dropoff / s.entered : 0;
@@ -177,11 +213,11 @@ export default function FormAnalytics() {
 
                 <div className="text-center">
                   <p className="text-sm font-semibold">{stepLabels[currentStep.step] || currentStep.step}</p>
-                  <p className="text-[10px] text-[#8e8e93]">Step {activeStep + 1} of {funnel.length}</p>
+                  <p className="text-[10px] text-[#8e8e93]">Step {activeStep + 1} of {activeFunnel.length}</p>
                 </div>
 
-                <button onClick={() => setActiveStep(Math.min(funnel.length - 1, activeStep + 1))}
-                  disabled={activeStep === funnel.length - 1}
+                <button onClick={() => setActiveStep(Math.min(activeFunnel.length - 1, activeStep + 1))}
+                  disabled={activeStep === activeFunnel.length - 1}
                   className="w-8 h-8 rounded-full bg-white flex items-center justify-center disabled:opacity-30 transition-all active:scale-90">
                   <svg className="w-4 h-4 text-[#1a1a1a]" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />

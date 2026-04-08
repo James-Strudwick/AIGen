@@ -100,9 +100,10 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
         sessionId: sessionIdRef.current(),
         step: stepName,
         action,
+        formId: activeForm?.id || null,
       }),
     }).catch(() => {});
-  }, [trainer.id, isPreview]);
+  }, [trainer.id, isPreview, activeForm]);
 
   // Track step entries
   useEffect(() => {

@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 // POST — track a form event (public, fire-and-forget)
 export async function POST(request: NextRequest) {
   try {
-    const { trainerId, sessionId, step, action } = await request.json();
+    const { trainerId, sessionId, step, action, formId } = await request.json();
     if (!trainerId || !sessionId || !step || !action) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
       session_id: sessionId,
       step,
       action,
+      form_id: formId || null,
     });
 
     return NextResponse.json({ ok: true });
@@ -52,38 +53,55 @@ export async function GET(request: NextRequest) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data: events } = await supabase
       .from('form_events')
-      .select('step, action, session_id')
+      .select('step, action, session_id, form_id')
       .eq('trainer_id', trainer.id)
       .gte('created_at', thirtyDaysAgo);
 
-    // Calculate funnel stats
+    // Calculate overall funnel
     const steps = ['hero', 'goal', 'about', 'availability', 'questions', 'capture', 'results'];
-    const stepEntered: Record<string, Set<string>> = {};
-    const stepCompleted: Record<string, Set<string>> = {};
 
-    for (const s of steps) {
-      stepEntered[s] = new Set();
-      stepCompleted[s] = new Set();
-    }
-
-    for (const event of events || []) {
-      if (event.action === 'entered') {
-        stepEntered[event.step]?.add(event.session_id);
-      } else if (event.action === 'completed') {
-        stepCompleted[event.step]?.add(event.session_id);
+    function buildFunnel(filteredEvents: typeof events) {
+      const stepEntered: Record<string, Set<string>> = {};
+      const stepCompleted: Record<string, Set<string>> = {};
+      for (const s of steps) { stepEntered[s] = new Set(); stepCompleted[s] = new Set(); }
+      for (const event of filteredEvents || []) {
+        if (event.action === 'entered') stepEntered[event.step]?.add(event.session_id);
+        else if (event.action === 'completed') stepCompleted[event.step]?.add(event.session_id);
       }
+      return steps.map((step) => ({
+        step,
+        entered: stepEntered[step]?.size || 0,
+        completed: stepCompleted[step]?.size || 0,
+        dropoff: (stepEntered[step]?.size || 0) - (stepCompleted[step]?.size || 0),
+      })).filter(s => s.entered > 0 || s.completed > 0);
     }
 
-    const funnel = steps.map((step) => ({
-      step,
-      entered: stepEntered[step]?.size || 0,
-      completed: stepCompleted[step]?.size || 0,
-      dropoff: (stepEntered[step]?.size || 0) - (stepCompleted[step]?.size || 0),
-    })).filter(s => s.entered > 0 || s.completed > 0);
+    const funnel = buildFunnel(events);
+    const totalSessions = funnel.find(s => s.step === 'hero')?.entered || funnel.find(s => s.step === 'goal')?.entered || 0;
 
-    const totalSessions = stepEntered['hero']?.size || stepEntered['goal']?.size || 0;
+    // Build per-form funnels
+    const formIds = [...new Set((events || []).map(e => e.form_id).filter(Boolean))] as string[];
+    const formFunnels: Record<string, { funnel: ReturnType<typeof buildFunnel>; sessions: number }> = {};
 
-    return NextResponse.json({ funnel, totalSessions });
+    for (const formId of formIds) {
+      const formEvents = (events || []).filter(e => e.form_id === formId);
+      const ff = buildFunnel(formEvents);
+      formFunnels[formId] = {
+        funnel: ff,
+        sessions: ff.find(s => s.step === 'about')?.entered || ff[0]?.entered || 0,
+      };
+    }
+
+    // Also build funnel for events with no form_id (default form)
+    const defaultEvents = (events || []).filter(e => !e.form_id);
+    const defaultFunnel = buildFunnel(defaultEvents);
+
+    return NextResponse.json({
+      funnel,
+      totalSessions,
+      formFunnels,
+      defaultFunnel: { funnel: defaultFunnel, sessions: defaultFunnel.find(s => s.step === 'hero')?.entered || 0 },
+    });
   } catch (error) {
     console.error('Analytics fetch error:', error);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
