@@ -171,7 +171,7 @@ export default function DashboardPage() {
                     className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#f5f5f7] transition-colors">
                     {subscriptionStatus === 'active' ? 'View page' : 'Preview page'}
                   </Link>
-                  <Link href={`/share-card/${trainerSlug}`}
+                  <Link href="/share-card"
                     onClick={() => setMenuOpen(false)}
                     className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#f5f5f7] transition-colors">
                     Share card
