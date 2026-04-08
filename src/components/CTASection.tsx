@@ -76,6 +76,15 @@ export default function CTASection({ trainer, branding, formData, result, goalLa
   const disableActions = isPreview || isDemo;
   const handleWhatsAppClick = () => {
     trackAction(leadId, 'whatsapp_clicked');
+    // Mark results step as completed in analytics
+    const sessionId = typeof window !== 'undefined' ? sessionStorage.getItem('fomo_session') : null;
+    if (sessionId) {
+      fetch('/api/analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trainerId: trainer.id, sessionId, step: 'results', action: 'completed' }),
+      }).catch(() => {});
+    }
   };
 
   const handleBookingClick = () => {
