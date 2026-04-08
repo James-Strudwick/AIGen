@@ -11,6 +11,7 @@ import CustomQuestions from '@/components/CustomQuestions';
 import LeadCaptureForm from '@/components/LeadCaptureForm';
 import TimelineResults from '@/components/TimelineResults';
 import ProgressIndicator from '@/components/ProgressIndicator';
+import PoweredByBadge from '@/components/PoweredByBadge';
 
 interface TrainerPageProps {
   trainer: Trainer;
@@ -220,7 +221,10 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
 
   if (step === 'hero') {
     return pageWrapper(
-      <HeroSection trainer={trainer} branding={branding} copy={copy} onStart={() => { trackStep('hero', 'completed'); setStep('goal'); }} />
+      <>
+        <HeroSection trainer={trainer} branding={branding} copy={copy} onStart={() => { trackStep('hero', 'completed'); setStep('goal'); }} />
+        <PoweredByBadge branding={branding} />
+      </>
     );
   }
 
@@ -238,6 +242,7 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
           leadId={leadId}
           isPreview={isPreview}
         />
+        <PoweredByBadge branding={branding} />
       </div>
     );
   }
@@ -275,6 +280,8 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
           <LeadCaptureForm branding={branding} isLoading={isLoading} onSubmit={handleLeadSubmit} />
         )}
       </div>
+
+      <PoweredByBadge branding={branding} />
     </div>
   );
 }

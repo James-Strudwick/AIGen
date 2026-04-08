@@ -10,6 +10,7 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [referralCode] = useState(() => {
     if (typeof window !== 'undefined') {
       return new URLSearchParams(window.location.search).get('ref') || '';
@@ -90,11 +91,22 @@ export default function SignupPage() {
               placeholder="Min 6 characters" required minLength={6} autoComplete="new-password" className={inputClass} />
           </div>
 
+          <label className="flex items-start gap-3 py-1">
+            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded" />
+            <span className="text-xs text-[#8e8e93] leading-relaxed">
+              I agree to the{' '}
+              <Link href="/terms" target="_blank" className="text-[#007AFF] underline underline-offset-2">Terms of Service</Link>
+              {' '}and{' '}
+              <Link href="/privacy" target="_blank" className="text-[#007AFF] underline underline-offset-2">Privacy Policy</Link>
+            </span>
+          </label>
+
           {error && (
             <p className="text-[#FF3B30] text-sm bg-[#FF3B30]/5 rounded-xl px-4 py-3">{error}</p>
           )}
 
-          <button type="submit" disabled={loading}
+          <button type="submit" disabled={loading || !agreed}
             className="w-full py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm disabled:opacity-40 transition-all active:scale-[0.97]">
             {loading ? 'Creating account...' : 'Get started'}
           </button>
