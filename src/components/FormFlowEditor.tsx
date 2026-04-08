@@ -33,20 +33,33 @@ interface PackageInput {
   is_online: boolean;
 }
 
+interface AboutField {
+  id: string;
+  label: string;
+  type: 'toggle' | 'custom';
+  enabled: boolean;
+  placeholder?: string;
+}
+
 interface FormConfig {
-  about: { show_age: boolean; show_weight: boolean; show_experience: boolean };
+  about: {
+    show_age: boolean;
+    show_weight: boolean;
+    show_experience: boolean;
+    custom_fields: { id: string; label: string; placeholder: string }[];
+  };
   availability: { max_days: number; default_days: number };
   questions: CustomQuestion[];
-  capture: { ask_email: boolean; heading: string };
+  capture: { show_phone: boolean; show_email: boolean; heading: string };
   results: { heading: string; show_specialties: boolean };
   packages: PackageInput[];
 }
 
 const DEFAULT_CONFIG: FormConfig = {
-  about: { show_age: true, show_weight: true, show_experience: true },
+  about: { show_age: true, show_weight: true, show_experience: true, custom_fields: [] },
   availability: { max_days: 6, default_days: 3 },
   questions: [],
-  capture: { ask_email: false, heading: '' },
+  capture: { show_phone: true, show_email: false, heading: '' },
   results: { heading: '', show_specialties: true },
   packages: [],
 };
@@ -235,22 +248,62 @@ export default function FormFlowEditor({ trainer, goals }: FormFlowEditorProps) 
                 {editingStep === 'about' && (
                   <div className="space-y-3">
                     <p className="text-xs font-semibold">About You fields</p>
-                    <p className="text-[10px] text-[#8e8e93]">Choose which fields to show for this goal</p>
+                    <p className="text-[10px] text-[#8e8e93]">Toggle default fields or add your own</p>
+
+                    {/* Default toggleable fields */}
                     {[
-                      { key: 'show_age', label: 'Age' },
-                      { key: 'show_weight', label: 'Weight (current & goal)' },
-                      { key: 'show_experience', label: 'Experience level' },
+                      { key: 'show_age' as const, label: 'Age' },
+                      { key: 'show_weight' as const, label: 'Weight (current & goal)' },
+                      { key: 'show_experience' as const, label: 'Experience level' },
                     ].map((field) => (
                       <label key={field.key} className="flex items-center justify-between">
                         <span className="text-xs">{field.label}</span>
-                        <button onClick={() => setConfig({ ...config, about: { ...config.about, [field.key]: !config.about[field.key as keyof typeof config.about] } })}
+                        <button onClick={() => setConfig({ ...config, about: { ...config.about, [field.key]: !config.about[field.key] } })}
                           className="w-10 h-6 rounded-full p-0.5 transition-all duration-300"
-                          style={{ backgroundColor: config.about[field.key as keyof typeof config.about] ? '#34C759' : '#e5e5ea' }}>
+                          style={{ backgroundColor: config.about[field.key] ? '#34C759' : '#e5e5ea' }}>
                           <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300"
-                            style={{ transform: config.about[field.key as keyof typeof config.about] ? 'translateX(16px)' : 'translateX(0)' }} />
+                            style={{ transform: config.about[field.key] ? 'translateX(16px)' : 'translateX(0)' }} />
                         </button>
                       </label>
                     ))}
+
+                    {/* Custom fields */}
+                    <div className="pt-2 border-t border-[#e5e5ea]">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[10px] text-[#8e8e93] font-semibold">Custom fields</p>
+                        <button onClick={() => setConfig({
+                          ...config,
+                          about: { ...config.about, custom_fields: [...config.about.custom_fields, { id: `cf-${Date.now()}`, label: '', placeholder: '' }] }
+                        })}
+                          className="text-[10px] text-[#007AFF] font-medium">+ Add field</button>
+                      </div>
+                      {config.about.custom_fields.map((cf, i) => (
+                        <div key={cf.id} className="flex gap-2 mb-2">
+                          <input value={cf.label}
+                            onChange={(e) => {
+                              const u = [...config.about.custom_fields];
+                              u[i] = { ...u[i], label: e.target.value };
+                              setConfig({ ...config, about: { ...config.about, custom_fields: u } });
+                            }}
+                            placeholder="Field label, e.g. Injuries" className={inputClass} />
+                          <input value={cf.placeholder}
+                            onChange={(e) => {
+                              const u = [...config.about.custom_fields];
+                              u[i] = { ...u[i], placeholder: e.target.value };
+                              setConfig({ ...config, about: { ...config.about, custom_fields: u } });
+                            }}
+                            placeholder="Placeholder text" className={inputClass} />
+                          <button onClick={() => setConfig({
+                            ...config,
+                            about: { ...config.about, custom_fields: config.about.custom_fields.filter((_, idx) => idx !== i) }
+                          })}
+                            className="text-[#FF3B30] text-[10px] px-1.5 flex-shrink-0">x</button>
+                        </div>
+                      ))}
+                      {config.about.custom_fields.length === 0 && (
+                        <p className="text-[9px] text-[#8e8e93]">Add fields like injuries, medical conditions, dietary preferences, etc.</p>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -334,12 +387,46 @@ export default function FormFlowEditor({ trainer, goals }: FormFlowEditorProps) 
                 {editingStep === 'capture' && (
                   <div className="space-y-3">
                     <p className="text-xs font-semibold">Contact step</p>
+                    <p className="text-[10px] text-[#8e8e93]">Choose what info to collect. Name is always required.</p>
+
                     <div>
                       <label className="text-[10px] text-[#8e8e93] block mb-1">Custom heading (optional)</label>
                       <input value={config.capture.heading}
                         onChange={(e) => setConfig({ ...config, capture: { ...config.capture, heading: e.target.value } })}
                         placeholder="Almost there!" className={inputClass} />
                     </div>
+
+                    <label className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs">Phone number</span>
+                        <p className="text-[9px] text-[#8e8e93]">Required for WhatsApp CTA</p>
+                      </div>
+                      <button onClick={() => setConfig({ ...config, capture: { ...config.capture, show_phone: !config.capture.show_phone } })}
+                        className="w-10 h-6 rounded-full p-0.5 transition-all duration-300"
+                        style={{ backgroundColor: config.capture.show_phone ? '#34C759' : '#e5e5ea' }}>
+                        <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300"
+                          style={{ transform: config.capture.show_phone ? 'translateX(16px)' : 'translateX(0)' }} />
+                      </button>
+                    </label>
+
+                    <label className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs">Email address</span>
+                        <p className="text-[9px] text-[#8e8e93]">Useful for follow-ups and newsletters</p>
+                      </div>
+                      <button onClick={() => setConfig({ ...config, capture: { ...config.capture, show_email: !config.capture.show_email } })}
+                        className="w-10 h-6 rounded-full p-0.5 transition-all duration-300"
+                        style={{ backgroundColor: config.capture.show_email ? '#34C759' : '#e5e5ea' }}>
+                        <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300"
+                          style={{ transform: config.capture.show_email ? 'translateX(16px)' : 'translateX(0)' }} />
+                      </button>
+                    </label>
+
+                    {!config.capture.show_phone && !config.capture.show_email && (
+                      <p className="text-[10px] text-[#FF9500] bg-[#FF950010] rounded-lg px-3 py-2">
+                        At least name will be collected. Consider enabling phone or email so you can contact the lead.
+                      </p>
+                    )}
                   </div>
                 )}
 

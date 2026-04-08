@@ -20,46 +20,42 @@ const stepLabels: Record<string, string> = {
   results: 'Results',
 };
 
-const stepSuggestions: Record<string, string[]> = {
+const stepSuggestions: Record<string, { text: string; action?: string }[]> = {
   hero: [
-    'Try a more compelling headline — focus on the outcome, not the process',
-    'Add a professional photo to build trust immediately',
-    'Make your CTA button text more specific, e.g. "See my timeline" instead of "Get started"',
-    'Keep the page clean — remove anything that distracts from the main CTA',
+    { text: 'Try a more compelling headline — focus on the outcome, not the process', action: 'Settings → Copy → Hero headline' },
+    { text: 'Add a professional photo to build trust immediately', action: 'Settings → Branding → Profile photo' },
+    { text: 'Make your CTA button text more specific, e.g. "See my timeline"', action: 'Settings → Copy → CTA button text' },
+    { text: 'Keep the page clean — a shorter subtext can improve click-through', action: 'Settings → Copy → Hero subtext' },
   ],
   goal: [
-    'Consider reducing the number of goal options — too many choices causes decision paralysis',
-    'Make sure the goal labels match how your target audience describes their goals',
-    'Add more specific subtitles that resonate with your niche',
-    'If you only serve one niche, consider removing irrelevant goals entirely',
+    { text: 'Too many choices causes decision paralysis — consider removing irrelevant goals', action: 'Settings → Goals → Remove goals' },
+    { text: 'Make sure goal labels match how your audience describes their goals', action: 'Settings → Goals → Edit labels' },
+    { text: 'Add more specific subtitles that resonate with your niche', action: 'Settings → Goals → Edit subtitles' },
   ],
   about: [
-    'This form might feel too long — consider if all fields are essential',
-    'Add reassuring text like "Takes 30 seconds" to reduce friction',
-    'Make sure the weight unit toggle defaults to what your audience uses',
-    'Pre-fill sensible defaults so users have less to think about',
+    { text: 'Turn off fields that aren\'t essential for this goal to shorten the form', action: 'Settings → Forms → About You → Toggle fields' },
+    { text: 'Add a custom field if you need specific info (e.g. injuries, medical conditions)', action: 'Settings → Forms → About You → Add field' },
+    { text: 'Consider whether weight fields are needed for all goals (e.g. fitness goals may not need them)', action: 'Settings → Forms → About You → Toggle weight' },
   ],
   availability: [
-    'Prospects may not know their availability yet — this could feel like commitment',
-    'Pre-select a common option (e.g. 3 days) to reduce decision effort',
-    'Make the copy more encouraging — "even 1 day makes a difference"',
+    { text: 'Set a default selection so prospects don\'t have to think as hard', action: 'Settings → Forms → Availability → Default days' },
+    { text: 'Reduce the max days if your packages only go up to 4-5x per week', action: 'Settings → Forms → Availability → Max days' },
   ],
   questions: [
-    'You may have too many custom questions — each one adds friction',
-    'Consider reducing to 1-2 essential questions only',
-    'Make sure questions feel relevant and easy to answer, not like an interrogation',
-    'Use single-select where possible — multi-select takes more effort',
+    { text: 'Each question adds friction — remove any that aren\'t essential', action: 'Settings → Questions → Remove questions' },
+    { text: 'Use single-select where possible — multi-select takes more effort', action: 'Settings → Questions → Change type' },
+    { text: 'Pro tip: create different questions per goal using custom forms', action: 'Settings → Forms → Questions' },
   ],
   capture: [
-    'Prospects drop off here because they\'re not ready to share their phone number',
-    'Add a trust signal: "Your details are only shared with [your name]"',
-    'Consider asking for just a first name to reduce friction',
-    'Remind them what they\'re about to get: "Enter your details to see your personalised timeline"',
+    { text: 'Prospects drop off here because they\'re not ready to share contact info', action: 'Settings → Forms → Contact' },
+    { text: 'Try removing the phone field and just collecting name + email instead', action: 'Settings → Forms → Contact → Toggle phone' },
+    { text: 'Or remove email and just ask for name + phone for a simpler form', action: 'Settings → Forms → Contact → Toggle email' },
+    { text: 'Add a trust signal in your copy: "Your details are only shared with [your name]"' },
   ],
   results: [
-    'Great — prospects who reach results are highly engaged',
-    'Make sure the WhatsApp CTA is prominent and compelling',
-    'The toggle controls should make the upsell obvious without being pushy',
+    { text: 'Prospects who reach results are highly engaged — great conversion point' },
+    { text: 'Make sure your packages show clear value — the upsell should feel natural' },
+    { text: 'Try enabling nutrition as an add-on if you haven\'t already', action: 'Settings → Services → Nutrition' },
   ],
 };
 
@@ -249,9 +245,14 @@ export default function FormAnalytics({ formNames = {}, isPro = false }: Props) 
                   <p className="text-[10px] font-semibold text-[#8e8e93] uppercase tracking-wider mb-2">💡 Suggestions</p>
                   <div className="space-y-2">
                     {(stepSuggestions[currentStep.step] || []).map((suggestion, i) => (
-                      <div key={i} className="bg-white rounded-lg px-3 py-2.5 text-[11px] text-[#1a1a1a] leading-relaxed flex items-start gap-2">
-                        <span className="text-[#FF9500] mt-0.5 flex-shrink-0">•</span>
-                        {suggestion}
+                      <div key={i} className="bg-white rounded-lg px-3 py-2.5 text-[11px] leading-relaxed">
+                        <div className="flex items-start gap-2">
+                          <span className="text-[#FF9500] mt-0.5 flex-shrink-0">•</span>
+                          <span className="text-[#1a1a1a]">{suggestion.text}</span>
+                        </div>
+                        {suggestion.action && (
+                          <p className="text-[9px] text-[#007AFF] mt-1 ml-4">{suggestion.action}</p>
+                        )}
                       </div>
                     ))}
                   </div>
