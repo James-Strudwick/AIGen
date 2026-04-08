@@ -60,22 +60,33 @@ export default function ShareCardPage({ params }: { params: Promise<{ slug: stri
   const message = customMessage || CARD_MESSAGES[messageIdx];
   const link = `fomoforms.com/${trainer.slug}`;
 
+  const [downloading, setDownloading] = useState(false);
+
   const handleDownload = async () => {
     if (!cardRef.current) return;
+    setDownloading(true);
     try {
-      const html2canvas = (await import('html2canvas')).default;
+      const { default: html2canvas } = await import('html2canvas');
       const canvas = await html2canvas(cardRef.current, {
         scale: 3,
         backgroundColor: null,
         useCORS: true,
+        logging: false,
       });
       const url = canvas.toDataURL('image/png');
       const a = document.createElement('a');
       a.href = url;
       a.download = `${trainer.slug}-share-card.png`;
+      document.body.appendChild(a);
       a.click();
-    } catch {
-      alert('Screenshot failed — try taking a screenshot manually instead');
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download failed:', err);
+      // Fallback: prompt screenshot
+      alert('Download failed — try taking a screenshot of the card instead (hold power + volume up on iPhone)');
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -218,9 +229,9 @@ export default function ShareCardPage({ params }: { params: Promise<{ slug: stri
 
         {/* Actions */}
         <div className="mt-4 flex gap-3">
-          <button onClick={handleDownload}
-            className="flex-1 py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm transition-all active:scale-[0.97]">
-            Download image
+          <button onClick={handleDownload} disabled={downloading}
+            className="flex-1 py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40">
+            {downloading ? 'Generating...' : 'Download image'}
           </button>
         </div>
 
