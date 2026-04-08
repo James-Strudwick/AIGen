@@ -60,17 +60,17 @@ export default function ShareCardPage() {
   const link = `fomoforms.com/${trainer.slug}`;
 
   const handleDownload = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      const { default: html2canvas } = await import('html2canvas');
-      const canvas = await html2canvas(cardRef.current, {
-        scale: 3,
-        backgroundColor: null,
-        useCORS: true,
-        logging: false,
+      const params = new URLSearchParams({
+        slug: trainer.slug,
+        style,
+        message,
       });
-      const url = canvas.toDataURL('image/png');
+      const res = await fetch(`/api/share-image?${params}`);
+      if (!res.ok) throw new Error('Failed to generate');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `${trainer.slug}-share-card.png`;
