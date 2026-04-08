@@ -26,6 +26,7 @@ export default function ShareCardPage() {
   const [style, setStyle] = useState('minimal');
   const [messageIdx, setMessageIdx] = useState(0);
   const [customMessage, setCustomMessage] = useState('');
+  const [downloading, setDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,8 +58,6 @@ export default function ShareCardPage() {
   const branding = resolveBranding(trainer);
   const message = customMessage || CARD_MESSAGES[messageIdx];
   const link = `fomoforms.com/${trainer.slug}`;
-
-  const [downloading, setDownloading] = useState(false);
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
