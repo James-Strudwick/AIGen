@@ -7,6 +7,7 @@ import { ServiceAddOn, CustomQuestion, CustomGoal, GoalType, Trainer, Package } 
 import PhoneInput from '@/components/PhoneInput';
 import { CopyPreview, SpecialtiesPreview, ServicesPreview, PackagesPreview, CustomQuestionsPreview, GoalsPreview } from '@/components/SettingsPreview';
 import SetupChecklist from '@/components/SetupChecklist';
+import FormFlowEditor from '@/components/FormFlowEditor';
 import Link from 'next/link';
 
 interface PackageInput {
@@ -17,7 +18,7 @@ interface PackageInput {
   is_online: boolean;
 }
 
-type Tab = 'details' | 'branding' | 'copy' | 'goals' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing';
+type Tab = 'details' | 'copy' | 'branding' | 'goals' | 'forms' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -118,7 +119,7 @@ export default function SettingsPage() {
       if (!initialTabSet) {
         const params = new URLSearchParams(window.location.search);
         const tab = params.get('tab') as Tab | null;
-        if (tab && ['details', 'branding', 'copy', 'goals', 'questions', 'specialties', 'services', 'packages', 'billing'].includes(tab)) {
+        if (tab && ['details', 'copy', 'branding', 'goals', 'forms', 'questions', 'specialties', 'services', 'packages', 'billing'].includes(tab)) {
           setActiveTab(tab);
         }
         setInitialTabSet(true);
@@ -217,6 +218,7 @@ export default function SettingsPage() {
     { id: 'copy', label: 'Copy' },
     { id: 'branding', label: 'Branding' },
     { id: 'goals', label: 'Goals' },
+    { id: 'forms', label: 'Forms' },
     { id: 'questions', label: 'Questions' },
     { id: 'specialties', label: 'Specialties' },
     { id: 'services', label: 'Services' },
@@ -567,6 +569,11 @@ export default function SettingsPage() {
               goals={customGoals}
             />
           </div>
+        )}
+
+        {/* Forms */}
+        {activeTab === 'forms' && trainerData && (
+          <FormFlowEditor trainer={trainerData} goals={customGoals} />
         )}
 
         {/* Questions */}

@@ -1,5 +1,5 @@
 import { getServiceClient } from '@/lib/supabase';
-import { Trainer, Package } from '@/types';
+import { Trainer, Package, TrainerForm } from '@/types';
 import { notFound } from 'next/navigation';
 import TrainerPage from './TrainerPage';
 
@@ -43,10 +43,18 @@ export default async function PTLandingPage({ params }: Props) {
     .eq('trainer_id', trainer.id)
     .order('sort_order');
 
+  // Load custom forms (Pro only)
+  const { data: forms } = await supabase
+    .from('forms')
+    .select('*')
+    .eq('trainer_id', trainer.id)
+    .eq('active', true);
+
   return (
     <TrainerPage
       trainer={trainer as Trainer}
       packages={(packages ?? []) as Package[]}
+      forms={(forms ?? []) as TrainerForm[]}
     />
   );
 }

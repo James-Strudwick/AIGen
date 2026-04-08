@@ -41,6 +41,13 @@ export async function GET(request: NextRequest) {
       .eq('trainer_id', trainer.id)
       .order('sort_order');
 
+    // Fetch forms
+    const { data: forms } = await supabase
+      .from('forms')
+      .select('*')
+      .eq('trainer_id', trainer.id)
+      .eq('active', true);
+
     // Fetch leads
     const { data: leads } = await supabase
       .from('leads')
@@ -51,6 +58,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       trainer,
       packages: packages || [],
+      forms: forms || [],
       leads: leads || [],
     });
   } catch (error) {

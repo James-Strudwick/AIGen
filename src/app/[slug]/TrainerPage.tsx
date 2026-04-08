@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { Trainer, Package, FormData, GoalType, ExperienceLevel, TimelineResult, TrainerBranding } from '@/types';
+import { Trainer, Package, FormData, GoalType, ExperienceLevel, TimelineResult, TrainerBranding, TrainerForm } from '@/types';
 import { resolveBranding, brandingToCssVars, getGoogleFontsUrl, resolveServices, resolveCopy } from '@/lib/branding';
 import HeroSection from '@/components/HeroSection';
 import GoalSelector from '@/components/GoalSelector';
@@ -16,6 +16,7 @@ import PoweredByBadge from '@/components/PoweredByBadge';
 interface TrainerPageProps {
   trainer: Trainer;
   packages: Package[];
+  forms?: TrainerForm[];
   isPreview?: boolean;
 }
 
@@ -35,14 +36,8 @@ function getGoalLabel(formData: FormData): string {
 
 type Step = 'hero' | 'goal' | 'about' | 'availability' | 'questions' | 'capture' | 'results';
 
-export default function TrainerPage({ trainer, packages, isPreview = false }: TrainerPageProps) {
-  const hasCustomQuestions = (trainer.custom_questions?.length ?? 0) > 0;
-  const formSteps: Step[] = useMemo(() => {
-    const steps: Step[] = ['goal', 'about', 'availability'];
-    if (hasCustomQuestions) steps.push('questions');
-    steps.push('capture');
-    return steps;
-  }, [hasCustomQuestions]);
+export default function TrainerPage({ trainer, packages, forms = [], isPreview = false }: TrainerPageProps) {
+  // formSteps is computed later after activeForm is resolved
 
   const branding = useMemo(() => resolveBranding(trainer), [trainer]);
   const services = useMemo(() => resolveServices(trainer), [trainer]);
@@ -52,6 +47,7 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
 
   const [step, setStep] = useState<Step>('hero');
   const [isLoading, setIsLoading] = useState(false);
+  const [activeForm, setActiveForm] = useState<TrainerForm | null>(null);
   const [result, setResult] = useState<TimelineResult | null>(null);
   const [leadId, setLeadId] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
@@ -66,6 +62,21 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
     name: '',
     phone: '',
   });
+
+  // Resolve form-specific overrides (custom form > default trainer settings)
+  const activeQuestions = activeForm?.questions ?? trainer.custom_questions ?? [];
+  const activePackages = activeForm?.packages
+    ? activeForm.packages.map((p, i) => ({ ...p, id: `form-pkg-${i}`, trainer_id: trainer.id, description: null, sort_order: i + 1 } as Package))
+    : packages;
+  const activeServices = activeForm?.services ?? services;
+  const hasCustomQuestions = activeQuestions.length > 0;
+
+  const formSteps: Step[] = useMemo(() => {
+    const steps: Step[] = ['goal', 'about', 'availability'];
+    if (hasCustomQuestions) steps.push('questions');
+    steps.push('capture');
+    return steps;
+  }, [hasCustomQuestions]);
 
   const currentFormStep = formSteps.indexOf(step) + 1;
 
@@ -101,8 +112,14 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
   const handleGoalSelect = useCallback((goal: GoalType, performanceTarget?: string) => {
     trackStep('goal', 'completed');
     setFormData((prev) => ({ ...prev, goalType: goal, performanceTarget }));
+
+    // Find matching custom form for this goal (from custom_goals id)
+    const goalId = (trainer.custom_goals || []).find(g => g.goal_type === goal)?.id || goal;
+    const matchedForm = forms.find(f => f.goal_id === goalId) || null;
+    setActiveForm(matchedForm);
+
     setStep('about');
-  }, [trackStep]);
+  }, [trackStep, forms, trainer.custom_goals]);
 
   const handleAboutSubmit = useCallback((data: {
     age: number;
@@ -180,9 +197,10 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
           trainerSpecialties: trainer.specialties,
           trainerTone: copy.tone,
           serviceAddOns: services.add_ons,
-          customQuestions: trainer.custom_questions || [],
+          customQuestions: activeQuestions,
+          formId: activeForm?.id || null,
           formData: updatedForm,
-          packages: packages,
+          packages: activePackages,
         }),
       });
 
@@ -234,8 +252,8 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
         <TimelineResults
           trainer={trainer}
           branding={branding}
-          services={services}
-          packages={packages}
+          services={activeServices}
+          packages={activePackages}
           result={result}
           goalLabel={getGoalLabel(formData)}
           formData={formData}
@@ -268,9 +286,9 @@ export default function TrainerPage({ trainer, packages, isPreview = false }: Tr
           <AvailabilitySelector branding={branding} onSelect={handleAvailabilitySelect} />
         )}
 
-        {step === 'questions' && trainer.custom_questions && (
+        {step === 'questions' && activeQuestions.length > 0 && (
           <CustomQuestions
-            questions={trainer.custom_questions}
+            questions={activeQuestions}
             branding={branding}
             onSubmit={handleCustomAnswers}
           />

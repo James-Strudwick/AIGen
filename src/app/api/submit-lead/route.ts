@@ -13,6 +13,7 @@ interface RequestBody {
   trainerTone: string;
   serviceAddOns: ServiceAddOn[];
   customQuestions: CustomQuestion[];
+  formId: string | null;
   formData: FormData;
   packages: Package[];
 }
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     const body: RequestBody = await request.json();
     const {
       trainerId, trainerName, trainerBio, trainerSpecialties,
-      trainerTone, serviceAddOns, customQuestions,
+      trainerTone, serviceAddOns, customQuestions, formId,
       formData, packages,
     } = body;
 
@@ -110,6 +111,7 @@ export async function POST(request: NextRequest) {
       experience_level: formData.experienceLevel,
       available_days_per_week: formData.availableDays,
       custom_answers: formData.customAnswers && Object.keys(formData.customAnswers).length > 0 ? formData.customAnswers : null,
+      form_id: formId || null,
       generated_timeline: timelineResult,
     }).select('id').single();
 

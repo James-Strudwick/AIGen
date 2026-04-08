@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@/lib/auth';
-import { Trainer, Package } from '@/types';
+import { Trainer, Package, TrainerForm } from '@/types';
 import TrainerPage from '../../[slug]/TrainerPage';
 import Link from 'next/link';
 
@@ -11,6 +11,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
   const [authorized, setAuthorized] = useState(false);
   const [trainer, setTrainer] = useState<Trainer | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
+  const [forms, setForms] = useState<TrainerForm[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -43,6 +44,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
 
       setTrainer(data.trainer as Trainer);
       setPackages((data.packages || []) as Package[]);
+      setForms((data.forms || []) as TrainerForm[]);
       setAuthorized(true);
       setLoading(false);
     };
@@ -81,7 +83,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
         </Link>
       </div>
       <div className="pt-8">
-        <TrainerPage trainer={trainer} packages={packages} isPreview />
+        <TrainerPage trainer={trainer} packages={packages} forms={forms} isPreview />
       </div>
     </>
   );
