@@ -22,6 +22,7 @@ type Tab = 'details' | 'copy' | 'branding' | 'goals' | 'forms' | 'questions' | '
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
+  const [isAdminMode, setIsAdminMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -68,7 +69,13 @@ export default function SettingsPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { window.location.href = '/login'; return; }
 
-      const res = await fetch('/api/me', {
+      // Admin mode: load a specific trainer by slug
+      const urlParams = new URLSearchParams(window.location.search);
+      const adminSlug = urlParams.get('admin');
+      const meUrl = adminSlug ? `/api/me?slug=${adminSlug}` : '/api/me';
+      if (adminSlug) setIsAdminMode(true);
+
+      const res = await fetch(meUrl, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (!res.ok) { window.location.href = '/login'; return; }
@@ -240,8 +247,8 @@ export default function SettingsPage() {
               className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
               Preview
             </Link>
-            <Link href="/dashboard" className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
-              Dashboard
+            <Link href={isAdminMode ? '/internal' : '/dashboard'} className="text-[#8e8e93] text-xs px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-[#e5e5ea] transition-colors">
+              {isAdminMode ? 'Back to demos' : 'Dashboard'}
             </Link>
           </div>
         </div>

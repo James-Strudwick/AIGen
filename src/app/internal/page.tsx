@@ -349,6 +349,8 @@ export default function InternalPage() {
                   <div className="flex gap-2">
                     <button onClick={() => navigator.clipboard.writeText(`https://fomoforms.com/${d.slug}`)}
                       className="text-[10px] text-[#007AFF] font-medium px-2 py-1 rounded-lg bg-white">Copy</button>
+                    <a href={`/settings?admin=${d.slug}`}
+                      className="text-[10px] text-[#1a1a1a] font-medium px-2 py-1 rounded-lg bg-white">Edit</a>
                     <a href={`/${d.slug}`} target="_blank"
                       className="text-[10px] text-[#8e8e93] font-medium px-2 py-1 rounded-lg bg-white">View</a>
                     <button onClick={() => handleDelete(d.slug)}
