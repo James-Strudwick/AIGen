@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "FomoForms",
   description: "AI-powered lead generation for coaches — turn followers into paying clients",
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export const viewport: Viewport = {
