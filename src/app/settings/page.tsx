@@ -288,16 +288,16 @@ export default function SettingsPage() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'details', label: 'Details' },
-    { id: 'copy', label: 'Copy' },
     { id: 'branding', label: 'Branding' },
+    { id: 'forms', label: 'Forms' },
     { id: 'account', label: 'Account' },
     { id: 'billing', label: 'Billing' },
   ];
 
   const formSubTabs: { id: Tab; label: string; description: string }[] = [
+    { id: 'copy', label: 'Copy', description: 'Hero headline, subtext & CTA' },
     { id: 'goals', label: 'Goals', description: 'Which goals visitors can pick from' },
-    { id: 'forms', label: 'Forms', description: 'Multiple forms per goal (Pro)' },
-    { id: 'questions', label: 'Questions', description: 'Custom questions library' },
+    { id: 'questions', label: 'Questions', description: 'Custom questions you ask prospects' },
     { id: 'specialties', label: 'Specialties', description: 'What you specialise in' },
     { id: 'services', label: 'Services', description: 'Nutrition, online, hybrid & add-ons' },
     { id: 'packages', label: 'Packages', description: 'Pricing tiers shown to prospects' },
