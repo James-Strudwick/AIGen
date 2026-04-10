@@ -12,11 +12,10 @@ const CARD_STYLES = [
   { id: 'gradient', label: 'Gradient' },
 ];
 
-type Ratio = '9:16' | '4:5' | '1:1';
+type Ratio = '9:16' | '4:5';
 const RATIOS: { id: Ratio; label: string; sub: string }[] = [
   { id: '9:16', label: 'Story', sub: '9:16' },
   { id: '4:5', label: 'Portrait', sub: '4:5' },
-  { id: '1:1', label: 'Square', sub: '1:1' },
 ];
 
 const CARD_MESSAGES = [
@@ -95,8 +94,8 @@ export default function ShareCardPage() {
   const subtext = customSubtext || DEFAULT_SUBTEXT;
   const cta = customCta || DEFAULT_CTA;
   const link = `fomoforms.com/${trainer.slug}`;
-  const aspect = ratio === '1:1' ? '1 / 1' : ratio === '4:5' ? '4 / 5' : '9 / 16';
-  const previewMaxWidth = ratio === '9:16' ? '100%' : ratio === '4:5' ? '360px' : '340px';
+  const aspect = ratio === '4:5' ? '4 / 5' : '9 / 16';
+  const previewMaxWidth = ratio === '4:5' ? '360px' : '100%';
 
   const selectGoal = (goal: CustomGoal | null) => {
     setSelectedGoalId(goal?.id || null);

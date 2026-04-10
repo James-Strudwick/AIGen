@@ -7,7 +7,6 @@ export const runtime = 'edge';
 const RATIO_SIZES: Record<string, { width: number; height: number }> = {
   '9:16': { width: 1080, height: 1920 },
   '4:5': { width: 1080, height: 1350 },
-  '1:1': { width: 1080, height: 1080 },
 };
 
 export async function GET(request: NextRequest) {
@@ -46,7 +45,7 @@ export async function GET(request: NextRequest) {
   const btnText = style === 'minimal' ? '#ffffff' : primary;
 
   // Scale font sizes down a bit for squarer ratios so content doesn't overflow
-  const scale = ratio === '1:1' ? 0.8 : ratio === '4:5' ? 0.9 : 1;
+  const scale = ratio === '4:5' ? 0.9 : 1;
   const initialsSize = Math.round(160 * scale);
   const nameSize = Math.round(24 * scale);
   const messageSize = Math.round(56 * scale);
