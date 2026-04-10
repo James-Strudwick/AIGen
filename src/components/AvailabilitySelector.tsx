@@ -1,39 +1,40 @@
 'use client';
 
 import { useState } from 'react';
+import { TrainerBranding } from '@/types';
 
 interface AvailabilitySelectorProps {
-  primaryColor: string;
+  branding: TrainerBranding;
   onSelect: (days: number) => void;
 }
 
-export default function AvailabilitySelector({ primaryColor, onSelect }: AvailabilitySelectorProps) {
+export default function AvailabilitySelector({ branding, onSelect }: AvailabilitySelectorProps) {
   const [selected, setSelected] = useState<number | null>(null);
   const days = [1, 2, 3, 4, 5, 6];
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <h2 className="text-2xl font-bold text-white mb-2 text-center">
-        How many days per week can you train?
+      <h2 className="text-[1.4rem] font-bold mb-1.5 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
+        How many days can you train?
       </h2>
-      <p className="text-gray-400 text-center mb-8">
+      <p className="text-sm text-center mb-6" style={{ color: branding.color_text_muted }}>
         Be realistic — consistency beats intensity
       </p>
 
-      <div className="grid grid-cols-3 gap-3 mb-8">
+      <div className="grid grid-cols-3 gap-2.5 mb-6">
         {days.map((day) => (
           <button
             key={day}
             onClick={() => setSelected(day)}
-            className="py-5 rounded-2xl text-center transition-all duration-200 hover:scale-[1.03] active:scale-95"
+            className="py-5 rounded-2xl text-center transition-all duration-200 active:scale-[0.95]"
             style={{
-              backgroundColor: selected === day ? primaryColor + '20' : 'rgba(255,255,255,0.03)',
+              backgroundColor: selected === day ? branding.color_primary + '18' : branding.color_card,
               borderWidth: '2px',
-              borderColor: selected === day ? primaryColor : 'rgba(255,255,255,0.1)',
+              borderColor: selected === day ? branding.color_primary : branding.color_border,
             }}
           >
-            <span className="text-3xl font-bold text-white block">{day}</span>
-            <span className="text-gray-500 text-xs">{day === 1 ? 'day' : 'days'}</span>
+            <span className="text-2xl font-bold block" style={{ color: branding.color_text }}>{day}</span>
+            <span className="text-[11px]" style={{ color: branding.color_text_muted }}>{day === 1 ? 'day/wk' : 'days/wk'}</span>
           </button>
         ))}
       </div>
@@ -41,8 +42,8 @@ export default function AvailabilitySelector({ primaryColor, onSelect }: Availab
       <button
         onClick={() => selected && onSelect(selected)}
         disabled={!selected}
-        className="w-full py-3.5 rounded-xl text-white font-semibold transition-all duration-200 disabled:opacity-40"
-        style={{ backgroundColor: primaryColor }}
+        className="w-full py-3.5 rounded-xl font-semibold transition-all duration-200 disabled:opacity-40 active:scale-[0.97] text-sm text-white"
+        style={{ backgroundColor: branding.color_primary }}
       >
         Continue
       </button>

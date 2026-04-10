@@ -1,6 +1,6 @@
-import { GoalType, ExperienceLevel, Package, PackageTimeline, Milestone } from '@/types';
+import { GoalType, ExperienceLevel, Package, PackageTimeline, Milestone, TimelineConfig, TrainerServices } from '@/types';
 
-interface CalcInput {
+export interface CalcInput {
   goalType: GoalType;
   currentWeightKg: number | null;
   goalWeightKg: number | null;
@@ -34,7 +34,7 @@ function getWeightLossWeeks(input: CalcInput): number {
   weeklyRate = Math.min(weeklyRate, 1.0);
 
   const weeks = Math.ceil(tolose / weeklyRate);
-  return Math.max(weeks, 4); // Minimum 4 weeks
+  return Math.min(Math.max(weeks, 4), 78); // Min 4, max 78 weeks
 }
 
 function getMuscleGainWeeks(input: CalcInput): number {
@@ -42,21 +42,22 @@ function getMuscleGainWeeks(input: CalcInput): number {
   const goal = input.goalWeightKg ?? 75;
   const toGain = Math.max(0, goal - current);
 
-  // Monthly rates by experience
+  // Monthly body weight gain rates (not pure lean muscle — includes water, glycogen, etc.)
+  // These are realistic for someone following a structured programme
   let monthlyGainKg: number;
   switch (input.experienceLevel) {
-    case 'beginner': monthlyGainKg = 0.75; break;
-    case 'intermediate': monthlyGainKg = 0.375; break;
-    case 'advanced': monthlyGainKg = 0.175; break;
+    case 'beginner': monthlyGainKg = 1.5; break;   // Newbie gains — fast initial progress
+    case 'intermediate': monthlyGainKg = 0.75; break; // Steady progress
+    case 'advanced': monthlyGainKg = 0.4; break;     // Hard-earned gains
   }
 
   // More sessions = better muscle group coverage
-  const freqMultiplier = 1 + (Math.min(input.availableDays, 6) - 2) * 0.1;
+  const freqMultiplier = 1 + (Math.min(input.availableDays, 6) - 2) * 0.12;
   monthlyGainKg *= Math.max(freqMultiplier, 0.7);
 
   const months = toGain / monthlyGainKg;
   const weeks = Math.ceil(months * 4.33);
-  return Math.max(weeks, 8); // Minimum 8 weeks
+  return Math.min(Math.max(weeks, 8), 78); // Min 8, max 78 weeks (~18 months)
 }
 
 function getFitnessWeeks(input: CalcInput): number {
@@ -101,11 +102,10 @@ export function calculatePackageTimelines(
     .map((pkg) => {
       let estimatedWeeks: number;
 
-      if (pkg.is_online && pkg.sessions_per_week === 0) {
-        // Online coaching: ~85% effectiveness of 2x/week in-person
-        const twoPerWeekInput = { ...input, availableDays: 2 };
-        const twoPerWeekWeeks = calculateBaseWeeks(twoPerWeekInput);
-        estimatedWeeks = Math.ceil(twoPerWeekWeeks * 1.15);
+      if (pkg.sessions_per_week === 0) {
+        // No sessions specified — fallback estimate based on 2x/week
+        const fallbackInput = { ...input, availableDays: 2 };
+        estimatedWeeks = Math.ceil(calculateBaseWeeks(fallbackInput) * 1.15);
       } else {
         const pkgInput = { ...input, availableDays: pkg.sessions_per_week };
         estimatedWeeks = calculateBaseWeeks(pkgInput);
@@ -189,4 +189,53 @@ export function generateBaseMilestones(
   }
 
   return milestones;
+}
+
+/**
+ * Calculate weeks based on training mode.
+ *
+ * - In-person: best results, use inPersonDays directly
+ * - Online: same days but reduced effectiveness (e.g. 80% of in-person)
+ * - Hybrid: blend of in-person (full effectiveness) + online (reduced)
+ * - Nutrition: genuine accelerator that stacks on any mode
+ */
+export function calculateWithToggles(
+  baseInput: CalcInput,
+  config: TimelineConfig,
+  services: TrainerServices
+): number {
+  let effectiveDays: number;
+
+  switch (config.mode) {
+    case 'inperson':
+      effectiveDays = config.inPersonDays;
+      break;
+
+    case 'online': {
+      // Online days are less effective than in-person
+      const effectiveness = services.online?.effectiveness_vs_inperson ?? 0.75;
+      effectiveDays = Math.max(config.onlineDays * effectiveness, 1);
+      break;
+    }
+
+    case 'hybrid': {
+      // In-person days at full effectiveness + online days at reduced
+      const effectiveness = services.online?.effectiveness_vs_inperson ?? 0.75;
+      const onlineEffective = config.onlineDays * effectiveness;
+      effectiveDays = config.inPersonDays + onlineEffective;
+      break;
+    }
+  }
+
+  const input = { ...baseInput, availableDays: Math.floor(effectiveDays) || 1 };
+  let weeks = calculateBaseWeeks(input);
+
+  // Nutrition is a genuine accelerator — stacks on any mode
+  if (config.hasNutrition && services.nutrition?.enabled) {
+    const reduction = (services.nutrition.timeline_reduction_percent || 20) / 100;
+    weeks = Math.ceil(weeks * (1 - reduction));
+  }
+
+  // Cap at reasonable maximum — anything over 52 weeks looks unrealistic
+  return Math.min(Math.max(weeks, 4), 78);
 }

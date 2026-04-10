@@ -1,95 +1,126 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { TrainerBranding } from '@/types';
+import PhoneInput from './PhoneInput';
 
 interface LeadCaptureFormProps {
-  primaryColor: string;
+  branding: TrainerBranding;
   isLoading: boolean;
-  onSubmit: (data: { name: string; email: string; phone: string }) => void;
+  onSubmit: (data: { name: string; phone: string }) => void;
 }
 
-export default function LeadCaptureForm({ primaryColor, isLoading, onSubmit }: LeadCaptureFormProps) {
+function ProgressButton({ branding, isLoading }: { branding: TrainerBranding; isLoading: boolean }) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setProgress(0);
+      return;
+    }
+
+    // Quick jump to 82%
+    setProgress(10);
+    const t1 = setTimeout(() => setProgress(45), 300);
+    const t2 = setTimeout(() => setProgress(68), 800);
+    const t3 = setTimeout(() => setProgress(82), 1500);
+
+    // Then slowly crawl toward 95%
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 95) return prev;
+        return prev + (95 - prev) * 0.05;
+      });
+    }, 200);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearInterval(interval);
+    };
+  }, [isLoading]);
+
+  // Snap to 100% when loading finishes
+  useEffect(() => {
+    if (!isLoading && progress > 0) {
+      setProgress(100);
+    }
+  }, [isLoading, progress]);
+
+  const displayProgress = Math.round(progress);
+
+  return (
+    <div className="w-full relative overflow-hidden rounded-xl" style={{ backgroundColor: branding.color_primary }}>
+      {/* Progress fill */}
+      <div
+        className="absolute inset-0 rounded-xl transition-all duration-500 ease-out"
+        style={{
+          backgroundColor: 'rgba(255,255,255,0.15)',
+          width: `${progress}%`,
+        }}
+      />
+      <div className="relative py-3.5 text-center text-white font-semibold text-sm">
+        Generating your timeline... {displayProgress}%
+      </div>
+    </div>
+  );
+}
+
+export default function LeadCaptureForm({ branding, isLoading, onSubmit }: LeadCaptureFormProps) {
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-  const isValid = name.trim() && email.trim() && email.includes('@');
+  const isValid = name.trim() && phone.length >= 8;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
-    onSubmit({ name: name.trim(), email: email.trim(), phone: phone.trim() });
+    onSubmit({ name: name.trim(), phone });
+  };
+
+  const inputStyle = {
+    backgroundColor: branding.color_card,
+    borderColor: branding.color_border,
+    color: branding.color_text,
   };
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <h2 className="text-2xl font-bold text-white mb-2 text-center">
+      <h2 className="text-[1.4rem] font-bold mb-1.5 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
         Almost there!
       </h2>
-      <p className="text-gray-400 text-center mb-8">
-        Where should we send your personalised timeline?
+      <p className="text-sm text-center mb-6" style={{ color: branding.color_text_muted }}>
+        Enter your details to see your timeline
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="text-gray-300 text-sm block mb-1.5">Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            required
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
-          />
+          <label className="text-xs font-medium block mb-1.5" style={{ color: branding.color_text }}>Your name</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="First name" required autoComplete="given-name"
+            className="w-full rounded-xl px-4 py-3 text-base focus:outline-none transition-colors border"
+            style={inputStyle} />
         </div>
 
         <div>
-          <label className="text-gray-300 text-sm block mb-1.5">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="your@email.com"
-            required
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
-          />
+          <label className="text-xs font-medium block mb-1.5" style={{ color: branding.color_text }}>Phone number</label>
+          <PhoneInput value={phone} onChange={setPhone} style={inputStyle} />
         </div>
 
-        <div>
-          <label className="text-gray-300 text-sm block mb-1.5">
-            Phone <span className="text-gray-600">(optional)</span>
-          </label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+44 7700 000000"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={!isValid || isLoading}
-          className="w-full py-3.5 rounded-xl text-white font-semibold transition-all duration-200 disabled:opacity-40 flex items-center justify-center gap-2"
-          style={{ backgroundColor: primaryColor }}
-        >
-          {isLoading ? (
-            <>
-              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              Generating Your Timeline...
-            </>
-          ) : (
-            'Generate My Timeline'
-          )}
-        </button>
+        {isLoading ? (
+          <ProgressButton branding={branding} isLoading={isLoading} />
+        ) : (
+          <button type="submit" disabled={!isValid}
+            className="w-full py-3.5 rounded-xl font-semibold transition-all duration-200 disabled:opacity-40 active:scale-[0.97] text-sm text-white"
+            style={{ backgroundColor: branding.color_primary }}>
+            Generate My Timeline
+          </button>
+        )}
       </form>
 
-      <p className="text-gray-600 text-xs text-center mt-4">
-        Your data is kept private and only shared with your trainer
+      <p className="text-[11px] text-center mt-4" style={{ color: branding.color_text_muted }}>
+        Your data is kept private and only shared with your trainer.{' '}
+        <a href="/privacy" target="_blank" className="underline underline-offset-2">Privacy policy</a>
       </p>
     </div>
   );
