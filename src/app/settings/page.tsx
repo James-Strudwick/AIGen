@@ -290,9 +290,6 @@ export default function SettingsPage() {
     { id: 'details', label: 'Details' },
     { id: 'copy', label: 'Copy' },
     { id: 'branding', label: 'Branding' },
-    { id: 'specialties', label: 'Specialties' },
-    { id: 'services', label: 'Services' },
-    { id: 'packages', label: 'Packages' },
     { id: 'account', label: 'Account' },
     { id: 'billing', label: 'Billing' },
   ];
@@ -301,6 +298,9 @@ export default function SettingsPage() {
     { id: 'goals', label: 'Goals', description: 'Which goals visitors can pick from' },
     { id: 'forms', label: 'Forms', description: 'Multiple forms per goal (Pro)' },
     { id: 'questions', label: 'Questions', description: 'Custom questions library' },
+    { id: 'specialties', label: 'Specialties', description: 'What you specialise in' },
+    { id: 'services', label: 'Services', description: 'Nutrition, online, hybrid & add-ons' },
+    { id: 'packages', label: 'Packages', description: 'Pricing tiers shown to prospects' },
   ];
 
   const activeFormSubTab = formSubTabs.find((t) => t.id === activeTab);
