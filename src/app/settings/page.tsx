@@ -50,6 +50,9 @@ export default function SettingsPage() {
   const [passwordChanged, setPasswordChanged] = useState(false);
   const [passwordError, setPasswordError] = useState('');
 
+  // Form builder sub-menu
+  const [formMenuOpen, setFormMenuOpen] = useState(false);
+
   const [form, setForm] = useState({
     name: '', bio: '', slug: '', photo_url: '', logo_url: '',
     booking_link: '', contact_method: 'whatsapp', contact_value: '',
@@ -287,15 +290,21 @@ export default function SettingsPage() {
     { id: 'details', label: 'Details' },
     { id: 'copy', label: 'Copy' },
     { id: 'branding', label: 'Branding' },
-    { id: 'goals', label: 'Goals' },
-    { id: 'forms', label: 'Forms' },
-    { id: 'questions', label: 'Questions' },
     { id: 'specialties', label: 'Specialties' },
     { id: 'services', label: 'Services' },
     { id: 'packages', label: 'Packages' },
     { id: 'account', label: 'Account' },
     { id: 'billing', label: 'Billing' },
   ];
+
+  const formSubTabs: { id: Tab; label: string; description: string }[] = [
+    { id: 'goals', label: 'Goals', description: 'Which goals visitors can pick from' },
+    { id: 'forms', label: 'Forms', description: 'Multiple forms per goal (Pro)' },
+    { id: 'questions', label: 'Questions', description: 'Custom questions library' },
+  ];
+
+  const activeFormSubTab = formSubTabs.find((t) => t.id === activeTab);
+  const formTabActive = !!activeFormSubTab;
 
   return (
     <div className="min-h-[100dvh] bg-white">
@@ -366,15 +375,65 @@ export default function SettingsPage() {
 
         {/* Tabs */}
         <div className="flex gap-1 overflow-x-auto pb-2 mb-6 -mx-4 px-4">
-          {tabs.map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className="text-xs px-3 py-1.5 rounded-full whitespace-nowrap transition-all flex-shrink-0"
-              style={{
-                backgroundColor: activeTab === tab.id ? '#1a1a1a' : '#f5f5f7',
-                color: activeTab === tab.id ? '#ffffff' : '#8e8e93',
-              }}>
-              {tab.label}
-            </button>
+          {tabs.map((tab, idx) => (
+            <div key={tab.id} className="flex gap-1 flex-shrink-0">
+              <button onClick={() => setActiveTab(tab.id)}
+                className="text-xs px-3 py-1.5 rounded-full whitespace-nowrap transition-all flex-shrink-0"
+                style={{
+                  backgroundColor: activeTab === tab.id ? '#1a1a1a' : '#f5f5f7',
+                  color: activeTab === tab.id ? '#ffffff' : '#8e8e93',
+                }}>
+                {tab.label}
+              </button>
+              {/* Insert Form dropdown after Details (first tab) */}
+              {idx === 0 && (
+                <div className="relative flex-shrink-0">
+                  <button onClick={() => setFormMenuOpen((v) => !v)}
+                    className="text-xs px-3 py-1.5 rounded-full whitespace-nowrap transition-all flex items-center gap-1.5"
+                    style={{
+                      backgroundColor: formTabActive ? '#1a1a1a' : '#f5f5f7',
+                      color: formTabActive ? '#ffffff' : '#8e8e93',
+                    }}>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                    <span>{activeFormSubTab ? `Form · ${activeFormSubTab.label}` : 'Form builder'}</span>
+                    <svg className={`w-3 h-3 transition-transform ${formMenuOpen ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  {formMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setFormMenuOpen(false)} />
+                      <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-[#e5e5ea] overflow-hidden z-50">
+                        <div className="px-4 py-3 border-b border-[#e5e5ea] bg-[#f5f5f7]">
+                          <p className="text-[10px] font-bold text-[#8e8e93] uppercase tracking-wider">Form builder</p>
+                          <p className="text-[11px] text-[#8e8e93] mt-0.5">What your prospects see and fill out</p>
+                        </div>
+                        {formSubTabs.map((sub) => {
+                          const isActive = activeTab === sub.id;
+                          return (
+                            <button key={sub.id}
+                              onClick={() => { setActiveTab(sub.id); setFormMenuOpen(false); }}
+                              className="w-full text-left px-4 py-3 hover:bg-[#f5f5f7] transition-colors flex items-start gap-3 border-b border-[#e5e5ea] last:border-b-0">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-[#1a1a1a]">{sub.label}</p>
+                                <p className="text-[11px] text-[#8e8e93] mt-0.5 leading-snug">{sub.description}</p>
+                              </div>
+                              {isActive && (
+                                <svg className="w-4 h-4 text-[#1a1a1a] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           ))}
         </div>
 
