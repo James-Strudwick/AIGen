@@ -565,10 +565,6 @@ export default function SettingsPage() {
               <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} className={inputClass} />
             </div>
             <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">Bio</label>
-              <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={2} className={inputClass} />
-            </div>
-            <div>
               <label className="text-[#8e8e93] text-xs block mb-1">WhatsApp number</label>
               <PhoneInput value={form.contact_value} onChange={(v) => setForm({ ...form, contact_value: v })} />
             </div>
@@ -680,6 +676,12 @@ export default function SettingsPage() {
         {activeTab === 'copy' && (
           <div className="space-y-4">
             <p className="text-[#8e8e93] text-xs">Customise the text on your page. Leave blank for defaults.</p>
+            <div>
+              <label className="text-[#8e8e93] text-xs block mb-1">Bio</label>
+              <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                placeholder="A short intro — who you are and who you help" rows={3} className={inputClass} />
+              <p className="text-[#8e8e93] text-[10px] mt-1">Shown on your landing page and used by the AI when writing timelines.</p>
+            </div>
             <div>
               <label className="text-[#8e8e93] text-xs block mb-1">Hero headline</label>
               <input value={form.hero_headline} onChange={(e) => setForm({ ...form, hero_headline: e.target.value })}
