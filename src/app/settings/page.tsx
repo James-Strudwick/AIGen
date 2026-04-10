@@ -1094,7 +1094,7 @@ export default function SettingsPage() {
                 </div>
                 <p className="text-xl font-bold">£19.99<span className="text-xs text-[#8e8e93] font-normal">/mo</span></p>
                 <ul className="mt-3 space-y-1.5">
-                  {['Everything in Starter', 'No "Powered by" badge', 'Export leads to CSV', 'Unlimited questions', 'Multiple forms (coming soon)'].map(f => (
+                  {['Everything in Starter', 'No "Powered by" badge', 'Export leads to CSV', 'Unlimited questions', 'Multiple forms'].map(f => (
                     <li key={f} className="text-[10px] text-[#1a1a1a] flex items-center gap-1.5">
                       <span className="text-[#34C759]">✓</span> {f}
                     </li>
