@@ -1249,13 +1249,20 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Save — hide on billing and account tabs */}
+        {/* Save — hide on billing and account tabs; show upgrade CTA on forms if non-Pro */}
         {activeTab !== 'billing' && activeTab !== 'account' && (
           <div className="mt-8 flex gap-3">
-            <button onClick={handleSave} disabled={saving}
-              className="flex-1 py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm disabled:opacity-40 transition-all active:scale-[0.97]">
-              {saving ? 'Saving...' : saved ? 'Saved!' : 'Save changes'}
-            </button>
+            {activeTab === 'forms' && trainerData?.tier !== 'pro' ? (
+              <button onClick={() => setActiveTab('billing')}
+                className="flex-1 py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm transition-all active:scale-[0.97]">
+                Upgrade to Pro for multi forms
+              </button>
+            ) : (
+              <button onClick={handleSave} disabled={saving}
+                className="flex-1 py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm disabled:opacity-40 transition-all active:scale-[0.97]">
+                {saving ? 'Saving...' : saved ? 'Saved!' : 'Save changes'}
+              </button>
+            )}
           </div>
         )}
       </div>

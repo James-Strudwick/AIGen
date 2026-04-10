@@ -158,10 +158,35 @@ export default function FormFlowEditor({ trainer, goals }: FormFlowEditorProps) 
   if (loading) return <p className="text-[#8e8e93] text-sm">Loading forms...</p>;
 
   if (trainer.tier !== 'pro') {
+    const benefits = [
+      { icon: '🎯', title: 'Tailored questions per goal', body: 'Ask a fat-loss lead about their current diet. Ask a muscle-gain lead about their training split. Stop wasting questions on people they don\u2019t apply to.' },
+      { icon: '📦', title: 'Different packages per goal', body: 'Push higher-intensity plans to performance clients, nutrition-heavy bundles to weight-loss clients. Match the offer to the intent.' },
+      { icon: '💬', title: 'Custom copy & results', body: 'Speak directly to each goal with its own tone, promise and CTA. A generic results page converts way worse than one written for that exact prospect.' },
+      { icon: '📊', title: 'Per-form analytics', body: 'See which goals actually convert to leads so you know where to focus your content and ads.' },
+    ];
     return (
-      <div className="text-center py-8">
-        <p className="text-sm text-[#8e8e93] mb-2">Multiple forms is a Pro feature</p>
-        <p className="text-xs text-[#8e8e93]">Upgrade to create separate forms per goal with custom steps</p>
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-[#e5e5ea] p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#1a1a1a] text-white">Pro</span>
+            <p className="text-sm font-semibold">A different form for every goal</p>
+          </div>
+          <p className="text-xs text-[#8e8e93] leading-relaxed">
+            Right now every prospect walks through the same form, no matter what they want. Pro lets you build a completely separate form per goal — different questions, different packages, different results page. It converts way harder because each lead feels like you built it for them.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {benefits.map((f) => (
+            <div key={f.title} className="flex gap-3 rounded-xl bg-[#f5f5f7] p-4">
+              <span className="text-lg flex-shrink-0">{f.icon}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-[#1a1a1a] mb-0.5">{f.title}</p>
+                <p className="text-[11px] text-[#8e8e93] leading-snug">{f.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
