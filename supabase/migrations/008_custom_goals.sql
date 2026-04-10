@@ -1,0 +1,1 @@
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS custom_goals JSONB;

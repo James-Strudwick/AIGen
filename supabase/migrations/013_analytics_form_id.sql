@@ -1,0 +1,1 @@
+ALTER TABLE form_events ADD COLUMN IF NOT EXISTS form_id UUID;

@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { calculateBaseWeeks, calculatePackageTimelines, generateBaseMilestones } from '@/lib/calculateTimeline';
 import { buildPrompt } from '@/lib/generateNarrative';
-import { FormData, Package, TimelineResult, GoalType, ExperienceLevel } from '@/types';
+import { FormData, Package, TimelineResult, GoalType, ExperienceLevel, TrainerSpecialty, ServiceAddOn, CustomQuestion } from '@/types';
 import Anthropic from '@anthropic-ai/sdk';
 
 interface RequestBody {
   trainerId: string;
   trainerName: string;
+  trainerBio: string | null;
+  trainerSpecialties: TrainerSpecialty[] | null;
+  trainerTone: string;
+  serviceAddOns: ServiceAddOn[];
+  customQuestions: CustomQuestion[];
+  formId: string | null;
   formData: FormData;
   packages: Package[];
 }
@@ -15,13 +21,16 @@ interface RequestBody {
 export async function POST(request: NextRequest) {
   try {
     const body: RequestBody = await request.json();
-    const { trainerId, trainerName, formData, packages } = body;
+    const {
+      trainerId, trainerName, trainerBio, trainerSpecialties,
+      trainerTone, serviceAddOns, customQuestions, formId,
+      formData, packages,
+    } = body;
 
     if (!trainerId || !formData.goalType || !formData.experienceLevel) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Calculate base timeline
     const calcInput = {
       goalType: formData.goalType as GoalType,
       currentWeightKg: formData.currentWeight,
@@ -36,9 +45,9 @@ export async function POST(request: NextRequest) {
     const packageComparisons = calculatePackageTimelines(calcInput, packages);
     const baseMilestones = generateBaseMilestones(formData.goalType as GoalType, estimatedWeeks);
 
-    // Try AI narrative generation, fall back to base milestones
-    let summary = `Based on your profile, reaching your goal will take approximately ${estimatedWeeks} weeks with consistent effort.`;
-    let narrative = `Your journey to ${formData.goalType === 'weight_loss' ? 'a leaner you' : formData.goalType === 'muscle_gain' ? 'a stronger physique' : 'better fitness'} starts now. Training ${formData.availableDays} days per week as a ${formData.experienceLevel}, you can expect steady, sustainable progress over the next ${estimatedWeeks} weeks. Stay consistent and trust the process — working with ${trainerName} will keep you accountable every step of the way.`;
+    // Personalised fallback narrative using client name
+    let summary = `${formData.name}, based on your profile, reaching your goal will take approximately ${estimatedWeeks} weeks with consistent effort and ${trainerName}'s guidance.`;
+    let narrative = `${formData.name}, your journey to ${formData.goalType === 'weight_loss' ? 'a leaner you' : formData.goalType === 'muscle_gain' ? 'a stronger physique' : 'better fitness'} starts now. Training ${formData.availableDays} days per week as a ${formData.experienceLevel}, you can expect steady, sustainable progress over the next ${estimatedWeeks} weeks. ${trainerName} will keep you accountable every step of the way — stay consistent and trust the process.`;
     let milestones = baseMilestones;
 
     if (process.env.ANTHROPIC_API_KEY) {
@@ -46,6 +55,14 @@ export async function POST(request: NextRequest) {
         const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
         const prompt = buildPrompt({
           trainerName,
+          trainerBio,
+          trainerSpecialties,
+          trainerTone,
+          serviceAddOns,
+          customAnswers: formData.customAnswers,
+          customAboutFields: formData.customAboutFields,
+          customQuestions,
+          clientName: formData.name,
           goalType: formData.goalType as GoalType,
           currentWeightKg: formData.currentWeight,
           goalWeightKg: formData.goalWeight,
@@ -82,33 +99,36 @@ export async function POST(request: NextRequest) {
       narrative,
     };
 
-    // Store lead in database
     const supabase = getServiceClient();
-    const { error: dbError } = await supabase.from('leads').insert({
+    const { data: leadData, error: dbError } = await supabase.from('leads').insert({
       trainer_id: trainerId,
       name: formData.name,
-      email: formData.email,
-      phone: formData.phone || null,
+      email: null,
+      phone: formData.phone,
       goal_type: formData.goalType,
       current_weight_kg: formData.currentWeight,
       goal_weight_kg: formData.goalWeight,
       age: formData.age,
       experience_level: formData.experienceLevel,
       available_days_per_week: formData.availableDays,
+      custom_answers: {
+        ...(formData.customAboutFields && Object.keys(formData.customAboutFields).length > 0 ? formData.customAboutFields : {}),
+        ...(formData.customAnswers && Object.keys(formData.customAnswers).length > 0 ? formData.customAnswers : {}),
+      },
+      form_id: formId || null,
       generated_timeline: timelineResult,
-    });
+    }).select('id').single();
 
     if (dbError) {
       console.error('Database error:', dbError);
-      // Still return the timeline even if DB save fails
     }
 
-    return NextResponse.json(timelineResult);
+    return NextResponse.json({
+      ...timelineResult,
+      leadId: leadData?.id || null,
+    });
   } catch (error) {
     console.error('Submit lead error:', error);
-    return NextResponse.json(
-      { error: 'Failed to process request' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
   }
 }
