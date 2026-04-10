@@ -366,7 +366,12 @@ export default function SettingsPage() {
               </button>
               {showChecklist && (
                 <div className="mt-2">
-                  <SetupChecklist trainer={trainerData} packages={trainerPackages} />
+                  <SetupChecklist trainer={trainerData} packages={trainerPackages}
+                    onSelect={(tab) => {
+                      setActiveTab(tab as Tab);
+                      setShowChecklist(false);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }} />
                 </div>
               )}
             </div>
