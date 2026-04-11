@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [referralCode] = useState(() => {
     if (typeof window !== 'undefined') {
       return new URLSearchParams(window.location.search).get('ref') || '';
@@ -26,19 +27,21 @@ export default function SignupPage() {
     try {
       const supabase = createBrowserClient();
 
-      // Create auth user
+      // Create auth user — email confirmation link points back to /auth/callback
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { name },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
       if (authError) throw authError;
       if (!authData.user) throw new Error('Signup failed');
 
-      // Create trainer record via API (uses service role)
+      // Create trainer record via API (uses service role). Safe to run before
+      // email confirmation — the userId is already assigned.
       const res = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,8 +58,13 @@ export default function SignupPage() {
         throw new Error(data.error || 'Failed to create trainer profile');
       }
 
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
+      // If Supabase returned a session, email confirmation is disabled — go
+      // straight to the dashboard. Otherwise, show the "check your email" card.
+      if (authData.session) {
+        window.location.href = '/dashboard';
+      } else {
+        setAwaitingConfirmation(true);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -65,6 +73,29 @@ export default function SignupPage() {
   };
 
   const inputClass = "w-full bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl px-4 py-3 text-[#1a1a1a] text-base placeholder-[#8e8e93] focus:outline-none focus:border-[#8e8e93]";
+
+  if (awaitingConfirmation) {
+    return (
+      <div className="min-h-[100dvh] bg-white flex items-center justify-center px-4">
+        <div className="w-full max-w-sm text-center">
+          <div className="w-16 h-16 rounded-full bg-[#f5f5f7] flex items-center justify-center mx-auto mb-5 text-2xl">
+            📧
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight mb-2">Check your email</h1>
+          <p className="text-[#8e8e93] text-sm leading-relaxed mb-6">
+            We sent a confirmation link to<br />
+            <span className="text-[#1a1a1a] font-medium">{email}</span>
+          </p>
+          <p className="text-[#8e8e93] text-xs leading-relaxed mb-6">
+            Click the link in the email to finish setting up your account. It may take a minute to arrive — check your spam folder if you don&apos;t see it.
+          </p>
+          <Link href="/login" className="block w-full py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm transition-all active:scale-[0.97]">
+            Back to log in
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[100dvh] bg-white flex items-center justify-center px-4">
