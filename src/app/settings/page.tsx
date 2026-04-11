@@ -826,7 +826,14 @@ export default function SettingsPage() {
 
         {/* Forms */}
         {activeTab === 'forms' && trainerData && (
-          <FormFlowEditor trainer={trainerData} goals={customGoals} />
+          <FormFlowEditor
+            trainer={trainerData}
+            goals={customGoals}
+            onEditGoals={() => {
+              setActiveTab('goals');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
         )}
 
         {/* Questions */}

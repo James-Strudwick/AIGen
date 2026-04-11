@@ -24,6 +24,7 @@ import {
 interface FormFlowEditorProps {
   trainer: Trainer;
   goals: CustomGoal[];
+  onEditGoals?: () => void;
 }
 
 const defaultGoals: CustomGoal[] = [
@@ -148,7 +149,7 @@ function configFromForm(form: TrainerForm | undefined): FormConfig {
   };
 }
 
-export default function FormFlowEditor({ trainer, goals }: FormFlowEditorProps) {
+export default function FormFlowEditor({ trainer, goals, onEditGoals }: FormFlowEditorProps) {
   const [forms, setForms] = useState<TrainerForm[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -313,10 +314,24 @@ export default function FormFlowEditor({ trainer, goals }: FormFlowEditorProps) 
           <div key={goal.id} className="rounded-xl border border-[#e5e5ea] overflow-hidden">
             {/* Goal header */}
             <div className="flex items-center justify-between p-4 bg-[#f5f5f7]">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <span className="text-lg">{goal.emoji}</span>
-                <div>
-                  <p className="text-sm font-semibold">{goal.label}</p>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm font-semibold truncate">{goal.label}</p>
+                    {onEditGoals && (
+                      <button
+                        type="button"
+                        onClick={onEditGoals}
+                        title="Change this goal"
+                        aria-label="Change this goal"
+                        className="p-1 -m-1 text-[#8e8e93] hover:text-[#007AFF] transition-colors flex-shrink-0">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                   <p className="text-[9px]" style={{ color: hasCustomForm ? '#007AFF' : '#8e8e93' }}>
                     {hasCustomForm ? 'Custom form' : 'Using default settings'}
                   </p>
