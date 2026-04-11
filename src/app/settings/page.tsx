@@ -18,7 +18,7 @@ interface PackageInput {
   is_online: boolean;
 }
 
-type Tab = 'details' | 'copy' | 'branding' | 'goals' | 'forms' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing';
+type Tab = 'account' | 'details' | 'copy' | 'branding' | 'goals' | 'forms' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -35,6 +35,23 @@ export default function SettingsPage() {
   const [trainerData, setTrainerData] = useState<Trainer | null>(null);
   const [trainerPackages, setTrainerPackages] = useState<Package[]>([]);
   const [showChecklist, setShowChecklist] = useState(false);
+
+  // Account tab state
+  const [userEmail, setUserEmail] = useState('');
+  const [showChangeEmail, setShowChangeEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [emailChanging, setEmailChanging] = useState(false);
+  const [emailChangeSent, setEmailChangeSent] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordChanging, setPasswordChanging] = useState(false);
+  const [passwordChanged, setPasswordChanged] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+
+  // Form builder sub-menu
+  const [formMenuOpen, setFormMenuOpen] = useState(false);
 
   const [form, setForm] = useState({
     name: '', bio: '', slug: '', photo_url: '', logo_url: '',
@@ -68,6 +85,7 @@ export default function SettingsPage() {
       const supabase = createBrowserClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { window.location.href = '/login'; return; }
+      setUserEmail(session.user.email || '');
 
       // Admin mode: load a specific trainer by slug
       const urlParams = new URLSearchParams(window.location.search);
@@ -126,7 +144,7 @@ export default function SettingsPage() {
       if (!initialTabSet) {
         const params = new URLSearchParams(window.location.search);
         const tab = params.get('tab') as Tab | null;
-        if (tab && ['details', 'copy', 'branding', 'goals', 'forms', 'questions', 'specialties', 'services', 'packages', 'billing'].includes(tab)) {
+        if (tab && ['account', 'details', 'copy', 'branding', 'goals', 'forms', 'questions', 'specialties', 'services', 'packages', 'billing'].includes(tab)) {
           setActiveTab(tab);
         }
         setInitialTabSet(true);
@@ -214,6 +232,54 @@ export default function SettingsPage() {
     }
   }, [trainerId, form, specialties, addOns, showPrices, pkgs, nutritionService, onlineService, hybridService, customQuestions, customGoals]);
 
+  const handleChangeEmail = async () => {
+    const trimmed = newEmail.trim();
+    if (!trimmed) return;
+    setEmailChanging(true);
+    setEmailError('');
+    try {
+      const supabase = createBrowserClient();
+      const { error } = await supabase.auth.updateUser({ email: trimmed });
+      if (error) throw error;
+      setEmailChangeSent(true);
+    } catch (err) {
+      setEmailError(err instanceof Error ? err.message : 'Failed to update email');
+    } finally {
+      setEmailChanging(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || newPassword.length < 6) return;
+    setPasswordChanging(true);
+    setPasswordError('');
+    try {
+      const supabase = createBrowserClient();
+      // Re-verify the current password before allowing a change
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password: currentPassword,
+      });
+      if (verifyError) throw new Error('Current password is incorrect');
+
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      if (updateError) throw updateError;
+      setPasswordChanged(true);
+      setCurrentPassword('');
+      setNewPassword('');
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : 'Failed to update password');
+    } finally {
+      setPasswordChanging(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    const supabase = createBrowserClient();
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
+
   const inputClass = "w-full bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl px-4 py-3 text-[#1a1a1a] text-base placeholder-[#8e8e93] focus:outline-none focus:border-[#8e8e93]";
 
   if (loading) {
@@ -222,16 +288,23 @@ export default function SettingsPage() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'details', label: 'Details' },
-    { id: 'copy', label: 'Copy' },
     { id: 'branding', label: 'Branding' },
-    { id: 'goals', label: 'Goals' },
     { id: 'forms', label: 'Forms' },
-    { id: 'questions', label: 'Questions' },
-    { id: 'specialties', label: 'Specialties' },
-    { id: 'services', label: 'Services' },
-    { id: 'packages', label: 'Packages' },
+    { id: 'account', label: 'Account' },
     { id: 'billing', label: 'Billing' },
   ];
+
+  const formSubTabs: { id: Tab; label: string; description: string }[] = [
+    { id: 'copy', label: 'Copy', description: 'Hero headline, subtext & CTA' },
+    { id: 'goals', label: 'Goals', description: 'Which goals visitors can pick from' },
+    { id: 'questions', label: 'Questions', description: 'Custom questions you ask prospects' },
+    { id: 'specialties', label: 'Specialties', description: 'What you specialise in' },
+    { id: 'services', label: 'Services', description: 'Nutrition, online, hybrid & add-ons' },
+    { id: 'packages', label: 'Packages', description: 'Pricing tiers shown to prospects' },
+  ];
+
+  const activeFormSubTab = formSubTabs.find((t) => t.id === activeTab);
+  const formTabActive = !!activeFormSubTab;
 
   return (
     <div className="min-h-[100dvh] bg-white">
@@ -293,7 +366,12 @@ export default function SettingsPage() {
               </button>
               {showChecklist && (
                 <div className="mt-2">
-                  <SetupChecklist trainer={trainerData} packages={trainerPackages} />
+                  <SetupChecklist trainer={trainerData} packages={trainerPackages}
+                    onSelect={(tab) => {
+                      setActiveTab(tab as Tab);
+                      setShowChecklist(false);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }} />
                 </div>
               )}
             </div>
@@ -301,18 +379,184 @@ export default function SettingsPage() {
         })()}
 
         {/* Tabs */}
-        <div className="flex gap-1 overflow-x-auto pb-2 mb-6 -mx-4 px-4">
-          {tabs.map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className="text-xs px-3 py-1.5 rounded-full whitespace-nowrap transition-all flex-shrink-0"
+        <div className="relative flex items-start gap-1 mb-6 -mx-4 px-4">
+          {/* Form builder dropdown — lives outside the scroll container so
+              its popover isn't clipped by overflow-x */}
+          <div className="relative flex-shrink-0">
+            <button onClick={() => setFormMenuOpen((v) => !v)}
+              className="text-xs px-3 py-1.5 rounded-full whitespace-nowrap transition-all flex items-center gap-1.5"
               style={{
-                backgroundColor: activeTab === tab.id ? '#1a1a1a' : '#f5f5f7',
-                color: activeTab === tab.id ? '#ffffff' : '#8e8e93',
+                backgroundColor: formTabActive ? '#1a1a1a' : '#f5f5f7',
+                color: formTabActive ? '#ffffff' : '#8e8e93',
               }}>
-              {tab.label}
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              <span>{activeFormSubTab ? `Form · ${activeFormSubTab.label}` : 'Form builder'}</span>
+              <svg className={`w-3 h-3 transition-transform ${formMenuOpen ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
             </button>
-          ))}
+            {formMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setFormMenuOpen(false)} />
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-[#e5e5ea] overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-[#e5e5ea] bg-[#f5f5f7]">
+                    <p className="text-[10px] font-bold text-[#8e8e93] uppercase tracking-wider">Form builder</p>
+                    <p className="text-[11px] text-[#8e8e93] mt-0.5">What your prospects see and fill out</p>
+                  </div>
+                  {formSubTabs.map((sub) => {
+                    const isActive = activeTab === sub.id;
+                    return (
+                      <button key={sub.id}
+                        onClick={() => { setActiveTab(sub.id); setFormMenuOpen(false); }}
+                        className="w-full text-left px-4 py-3 hover:bg-[#f5f5f7] transition-colors flex items-start gap-3 border-b border-[#e5e5ea] last:border-b-0">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-[#1a1a1a]">{sub.label}</p>
+                          <p className="text-[11px] text-[#8e8e93] mt-0.5 leading-snug">{sub.description}</p>
+                        </div>
+                        {isActive && (
+                          <svg className="w-4 h-4 text-[#1a1a1a] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Scrollable main tabs */}
+          <div className="flex gap-1 overflow-x-auto pb-2 flex-1 min-w-0">
+            {tabs.map((tab) => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className="text-xs px-3 py-1.5 rounded-full whitespace-nowrap transition-all flex-shrink-0"
+                style={{
+                  backgroundColor: activeTab === tab.id ? '#1a1a1a' : '#f5f5f7',
+                  color: activeTab === tab.id ? '#ffffff' : '#8e8e93',
+                }}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* Account */}
+        {activeTab === 'account' && (
+          <div className="space-y-5">
+            {/* Email */}
+            <div>
+              <label className="text-[#8e8e93] text-xs block mb-1">Email</label>
+              {!showChangeEmail ? (
+                <div className="flex items-center justify-between gap-3 bg-[#f5f5f7] rounded-xl px-4 py-3">
+                  <p className="text-[#1a1a1a] text-sm truncate">{userEmail}</p>
+                  <button onClick={() => { setShowChangeEmail(true); setEmailChangeSent(false); setEmailError(''); setNewEmail(''); }}
+                    className="text-[#007AFF] text-xs font-medium flex-shrink-0">Change</button>
+                </div>
+              ) : emailChangeSent ? (
+                <div className="rounded-xl bg-[#f5f5f7] px-4 py-3">
+                  <p className="text-[#1a1a1a] text-sm font-medium mb-1">Check your inbox</p>
+                  <p className="text-[#8e8e93] text-xs leading-relaxed">
+                    We&apos;ve sent a confirmation link to <strong className="text-[#1a1a1a]">{newEmail}</strong>. Click it to finish the change. You may also need to confirm from <strong className="text-[#1a1a1a]">{userEmail}</strong>.
+                  </p>
+                  <button onClick={() => { setShowChangeEmail(false); setNewEmail(''); setEmailChangeSent(false); }}
+                    className="mt-3 text-[#8e8e93] text-xs font-medium hover:underline">Done</button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="new@email.com" autoComplete="email" className={inputClass} />
+                  {emailError && <p className="text-[#FF3B30] text-xs bg-[#FF3B30]/5 rounded-lg px-3 py-2">{emailError}</p>}
+                  <div className="flex gap-2">
+                    <button onClick={handleChangeEmail} disabled={emailChanging || !newEmail.trim()}
+                      className="flex-1 py-2.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-xs disabled:opacity-40 transition-all active:scale-[0.97]">
+                      {emailChanging ? 'Sending...' : 'Send confirmation'}
+                    </button>
+                    <button onClick={() => { setShowChangeEmail(false); setNewEmail(''); setEmailError(''); }}
+                      className="px-4 py-2.5 rounded-xl bg-[#f5f5f7] text-[#1a1a1a] font-semibold text-xs hover:bg-[#e5e5ea] transition-all">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="text-[#8e8e93] text-xs block mb-1">Password</label>
+              {!showChangePassword ? (
+                <div className="flex items-center justify-between gap-3 bg-[#f5f5f7] rounded-xl px-4 py-3">
+                  <p className="text-[#1a1a1a] text-sm tracking-widest">••••••••</p>
+                  <button onClick={() => { setShowChangePassword(true); setPasswordChanged(false); setPasswordError(''); setCurrentPassword(''); setNewPassword(''); }}
+                    className="text-[#007AFF] text-xs font-medium flex-shrink-0">Change</button>
+                </div>
+              ) : passwordChanged ? (
+                <div className="rounded-xl bg-[#f5f5f7] px-4 py-3">
+                  <p className="text-[#1a1a1a] text-sm font-medium mb-1">Password updated</p>
+                  <p className="text-[#8e8e93] text-xs">Use your new password next time you log in.</p>
+                  <button onClick={() => { setShowChangePassword(false); setPasswordChanged(false); }}
+                    className="mt-3 text-[#8e8e93] text-xs font-medium hover:underline">Done</button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Current password" autoComplete="current-password" className={inputClass} />
+                  <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="New password (min 6 characters)" autoComplete="new-password" minLength={6} className={inputClass} />
+                  {passwordError && <p className="text-[#FF3B30] text-xs bg-[#FF3B30]/5 rounded-lg px-3 py-2">{passwordError}</p>}
+                  <div className="flex gap-2">
+                    <button onClick={handleChangePassword} disabled={passwordChanging || !currentPassword || !newPassword || newPassword.length < 6}
+                      className="flex-1 py-2.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-xs disabled:opacity-40 transition-all active:scale-[0.97]">
+                      {passwordChanging ? 'Updating...' : 'Update password'}
+                    </button>
+                    <button onClick={() => { setShowChangePassword(false); setCurrentPassword(''); setNewPassword(''); setPasswordError(''); }}
+                      className="px-4 py-2.5 rounded-xl bg-[#f5f5f7] text-[#1a1a1a] font-semibold text-xs hover:bg-[#e5e5ea] transition-all">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Log out */}
+            <div>
+              <button onClick={handleLogout}
+                className="w-full py-3 rounded-xl bg-[#f5f5f7] text-[#1a1a1a] font-semibold text-sm hover:bg-[#e5e5ea] transition-all active:scale-[0.97]">
+                Log out
+              </button>
+            </div>
+
+            {/* Delete account */}
+            <div className="pt-6 mt-6 border-t border-[#e5e5ea]">
+              <p className="text-[#8e8e93] text-xs mb-3">Danger zone</p>
+              <button onClick={async () => {
+                if (!confirm('Are you sure you want to delete your account? This will:\n\n• Cancel your subscription\n• Delete all your leads\n• Remove your landing page\n• Delete your account permanently\n\nThis cannot be undone.')) return;
+                if (!confirm('Really? This is permanent and cannot be reversed.')) return;
+
+                const supabase = createBrowserClient();
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+
+                const res = await fetch('/api/delete-account', {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${session.access_token}` },
+                });
+
+                if (res.ok) {
+                  await supabase.auth.signOut();
+                  window.location.href = '/';
+                } else {
+                  alert('Failed to delete account. Please contact support.');
+                }
+              }}
+                className="text-[#FF3B30] text-xs font-medium hover:underline">
+                Delete my account and all data
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Details */}
         {activeTab === 'details' && (
@@ -324,10 +568,6 @@ export default function SettingsPage() {
             <div>
               <label className="text-[#8e8e93] text-xs block mb-1">URL slug</label>
               <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} className={inputClass} />
-            </div>
-            <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">Bio</label>
-              <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={2} className={inputClass} />
             </div>
             <div>
               <label className="text-[#8e8e93] text-xs block mb-1">WhatsApp number</label>
@@ -441,6 +681,12 @@ export default function SettingsPage() {
         {activeTab === 'copy' && (
           <div className="space-y-4">
             <p className="text-[#8e8e93] text-xs">Customise the text on your page. Leave blank for defaults.</p>
+            <div>
+              <label className="text-[#8e8e93] text-xs block mb-1">Bio</label>
+              <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                placeholder="A short intro — who you are and who you help" rows={3} className={inputClass} />
+              <p className="text-[#8e8e93] text-[10px] mt-1">Shown on your landing page and used by the AI when writing timelines.</p>
+            </div>
             <div>
               <label className="text-[#8e8e93] text-xs block mb-1">Hero headline</label>
               <input value={form.hero_headline} onChange={(e) => setForm({ ...form, hero_headline: e.target.value })}
@@ -915,7 +1161,7 @@ export default function SettingsPage() {
                 </div>
                 <p className="text-xl font-bold">£19.99<span className="text-xs text-[#8e8e93] font-normal">/mo</span></p>
                 <ul className="mt-3 space-y-1.5">
-                  {['Everything in Starter', 'No "Powered by" badge', 'Export leads to CSV', 'Unlimited questions', 'Multiple forms (coming soon)'].map(f => (
+                  {['Everything in Starter', 'No "Powered by" badge', 'Export leads to CSV', 'Unlimited questions', 'Multiple forms'].map(f => (
                     <li key={f} className="text-[10px] text-[#1a1a1a] flex items-center gap-1.5">
                       <span className="text-[#34C759]">✓</span> {f}
                     </li>
@@ -1005,44 +1251,23 @@ export default function SettingsPage() {
             <p className="text-[#8e8e93] text-[11px] text-center">
               Payments handled securely by Stripe. Cancel anytime.
             </p>
-
-            {/* Delete account */}
-            <div className="pt-6 mt-6 border-t border-[#e5e5ea]">
-              <p className="text-[#8e8e93] text-xs mb-3">Danger zone</p>
-              <button onClick={async () => {
-                if (!confirm('Are you sure you want to delete your account? This will:\n\n• Cancel your subscription\n• Delete all your leads\n• Remove your landing page\n• Delete your account permanently\n\nThis cannot be undone.')) return;
-                if (!confirm('Really? This is permanent and cannot be reversed.')) return;
-
-                const supabase = (await import('@/lib/auth')).createBrowserClient();
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) return;
-
-                const res = await fetch('/api/delete-account', {
-                  method: 'POST',
-                  headers: { Authorization: `Bearer ${session.access_token}` },
-                });
-
-                if (res.ok) {
-                  await supabase.auth.signOut();
-                  window.location.href = '/';
-                } else {
-                  alert('Failed to delete account. Please contact support.');
-                }
-              }}
-                className="text-[#FF3B30] text-xs font-medium hover:underline">
-                Delete my account and all data
-              </button>
-            </div>
           </div>
         )}
 
-        {/* Save — hide on billing tab */}
-        {activeTab !== 'billing' && (
+        {/* Save — hide on billing and account tabs; show upgrade CTA on forms if non-Pro */}
+        {activeTab !== 'billing' && activeTab !== 'account' && (
           <div className="mt-8 flex gap-3">
-            <button onClick={handleSave} disabled={saving}
-              className="flex-1 py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm disabled:opacity-40 transition-all active:scale-[0.97]">
-              {saving ? 'Saving...' : saved ? 'Saved!' : 'Save changes'}
-            </button>
+            {activeTab === 'forms' && trainerData?.tier !== 'pro' ? (
+              <button onClick={() => setActiveTab('billing')}
+                className="flex-1 py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm transition-all active:scale-[0.97]">
+                Upgrade to Pro for multi forms
+              </button>
+            ) : (
+              <button onClick={handleSave} disabled={saving}
+                className="flex-1 py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm disabled:opacity-40 transition-all active:scale-[0.97]">
+                {saving ? 'Saving...' : saved ? 'Saved!' : 'Save changes'}
+              </button>
+            )}
           </div>
         )}
       </div>

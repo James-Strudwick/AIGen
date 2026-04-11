@@ -141,7 +141,7 @@ export default function Home() {
             <p className="text-3xl font-bold tracking-tight">£19.99<span className="text-sm text-white/50 font-normal">/month</span></p>
             <p className="text-white/50 text-xs mt-1 mb-5">For serious coaches</p>
             <ul className="text-sm space-y-2 mb-6">
-              {['Everything in Starter', 'Remove "Powered by" badge', 'Export leads to CSV', 'Unlimited custom questions', 'Multiple forms (coming soon)', 'Priority support'].map((item) => (
+              {['Everything in Starter', 'Remove "Powered by" badge', 'Export leads to CSV', 'Unlimited custom questions', 'Multiple forms', 'Priority support'].map((item) => (
                 <li key={item} className="flex items-center gap-2">
                   <svg className="w-3.5 h-3.5 text-[#34C759] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />

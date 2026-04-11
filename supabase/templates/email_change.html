@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light only">
+<title>Confirm your new email</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f5f5f7;">
+<tr>
+<td align="center" style="padding:48px 16px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:440px;background:#ffffff;border-radius:20px;">
+<tr>
+<td align="center" style="padding:40px 32px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td width="48" height="48" align="center" valign="middle" style="background:#1a1a1a;border-radius:12px;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.5px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,Helvetica,Arial,sans-serif;">FF</td>
+</tr>
+</table>
+</td>
+</tr>
+
+<tr>
+<td align="center" style="padding:24px 32px 8px;">
+<h1 style="margin:0;font-size:24px;line-height:1.2;font-weight:700;color:#1a1a1a;letter-spacing:-0.5px;">Confirm your new email</h1>
+</td>
+</tr>
+<tr>
+<td align="center" style="padding:8px 32px 20px;">
+<p style="margin:0;font-size:15px;line-height:1.5;color:#8e8e93;">You asked to change your FomoForms email from <strong style="color:#1a1a1a;">{{ .Email }}</strong> to <strong style="color:#1a1a1a;">{{ .NewEmail }}</strong>. Tap the button below to confirm.</p>
+</td>
+</tr>
+
+<tr>
+<td align="center" style="padding:8px 32px 36px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td align="center" style="background:#1a1a1a;border-radius:12px;">
+<a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 36px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;letter-spacing:-0.2px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Confirm new email</a>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+
+<tr>
+<td style="padding:0 32px 28px;border-top:1px solid #f5f5f7;"></td>
+</tr>
+<tr>
+<td align="center" style="padding:0 32px 40px;">
+<p style="margin:0 0 8px;font-size:12px;color:#8e8e93;">Button not working? Paste this into your browser:</p>
+<p style="margin:0;font-size:12px;word-break:break-all;"><a href="{{ .ConfirmationURL }}" style="color:#007AFF;text-decoration:none;">{{ .ConfirmationURL }}</a></p>
+</td>
+</tr>
+</table>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:440px;">
+<tr>
+<td align="center" style="padding:24px 16px 0;">
+<p style="margin:0;font-size:12px;line-height:1.5;color:#8e8e93;">If you didn't ask to change your email, ignore this email and your address will stay the same.</p>
+<p style="margin:12px 0 0;font-size:12px;color:#8e8e93;">FomoForms &middot; <a href="https://fomoforms.com" style="color:#8e8e93;text-decoration:none;">fomoforms.com</a></p>
+</td>
+</tr>
+</table>
+
+</td>
+</tr>
+</table>
+</body>
+</html>
