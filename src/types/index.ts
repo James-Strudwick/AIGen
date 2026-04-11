@@ -211,6 +211,19 @@ export interface TimelineResult {
   narrative: string;
 }
 
+export interface CustomAboutField {
+  id: string;
+  label: string;
+  placeholder: string;
+}
+
+export interface FormAboutConfig {
+  show_age: boolean;
+  show_weight: boolean;
+  show_experience: boolean;
+  custom_fields: CustomAboutField[];
+}
+
 export interface TrainerForm {
   id: string;
   trainer_id: string;
@@ -221,6 +234,7 @@ export interface TrainerForm {
   packages: { name: string; sessions_per_week: number; price_per_session: number | null; monthly_price: number | null; is_online: boolean }[] | null;
   copy: Partial<TrainerCopy> | null;
   specialties: TrainerSpecialty[] | null;
+  about_config: FormAboutConfig | null;
   active: boolean;
   created_at: string;
 }

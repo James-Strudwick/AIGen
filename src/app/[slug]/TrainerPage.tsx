@@ -78,14 +78,22 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
     cta_button_text: activeForm?.copy?.cta_button_text || copy.cta_button_text,
     tone: activeForm?.copy?.tone || copy.tone,
   };
+  const aboutConfig = activeForm?.about_config;
+  const showAge = aboutConfig?.show_age ?? true;
+  const showWeight = aboutConfig?.show_weight ?? true;
+  const showExperience = aboutConfig?.show_experience ?? true;
+  const aboutCustomFields = aboutConfig?.custom_fields ?? [];
+  const hasAboutFields = showAge || showWeight || showExperience || aboutCustomFields.length > 0;
   const hasCustomQuestions = activeQuestions.length > 0;
 
   const formSteps: Step[] = useMemo(() => {
-    const steps: Step[] = ['goal', 'about', 'availability'];
+    const steps: Step[] = ['goal'];
+    if (hasAboutFields) steps.push('about');
+    steps.push('availability');
     if (hasCustomQuestions) steps.push('questions');
     steps.push('capture');
     return steps;
-  }, [hasCustomQuestions]);
+  }, [hasAboutFields, hasCustomQuestions]);
 
   const currentFormStep = formSteps.indexOf(step) + 1;
 
@@ -128,7 +136,14 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
     const matchedForm = forms.find(f => f.goal_id === goalId) || null;
     setActiveForm(matchedForm);
 
-    setStep('about');
+    // Skip the About You step entirely when the matched form has no fields.
+    const matchedAbout = matchedForm?.about_config;
+    const matchedHasFields =
+      (matchedAbout?.show_age ?? true) ||
+      (matchedAbout?.show_weight ?? true) ||
+      (matchedAbout?.show_experience ?? true) ||
+      (matchedAbout?.custom_fields?.length ?? 0) > 0;
+    setStep(matchedHasFields ? 'about' : 'availability');
   }, [trackStep, forms, trainer.custom_goals]);
 
   const handleAboutSubmit = useCallback((data: {
@@ -295,7 +310,10 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
           <AboutYouForm
             goalType={formData.goalType}
             branding={branding}
-            customFields={[]}
+            showAge={showAge}
+            showWeight={showWeight}
+            showExperience={showExperience}
+            customFields={aboutCustomFields}
             onSubmit={handleAboutSubmit}
           />
         )}

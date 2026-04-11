@@ -13,12 +13,15 @@ import {
   OnlineService,
   HybridService,
   ServiceAddOn,
+  FormAboutConfig,
+  CustomAboutField,
 } from '@/types';
 import {
   CopyPreview,
   SpecialtiesPreview,
   CustomQuestionsPreview,
   PackagesPreview,
+  AboutPreview,
 } from '@/components/SettingsPreview';
 
 interface FormFlowEditorProps {
@@ -34,10 +37,11 @@ const defaultGoals: CustomGoal[] = [
   { id: 'performance', emoji: '🏃', label: 'Performance', subtitle: '', needs_target: true, target_prompt: '', target_placeholder: '', goal_type: 'performance' },
 ];
 
-type SubTab = 'copy' | 'questions' | 'specialties' | 'services' | 'packages';
+type SubTab = 'copy' | 'about' | 'questions' | 'specialties' | 'services' | 'packages';
 
 const SUB_TABS: { id: SubTab; label: string; description: string }[] = [
   { id: 'copy', label: 'Copy', description: 'Hero headline, subtext & CTA' },
+  { id: 'about', label: 'About You', description: 'Default fields + custom about-you questions' },
   { id: 'questions', label: 'Questions', description: 'Custom questions for this goal' },
   { id: 'specialties', label: 'Specialties', description: 'What you specialise in for this goal' },
   { id: 'services', label: 'Services', description: 'Nutrition, online, hybrid & add-ons' },
@@ -62,11 +66,19 @@ interface ServicesState {
 
 interface FormConfig {
   copy: TrainerCopy;
+  about: FormAboutConfig;
   questions: CustomQuestion[];
   specialties: TrainerSpecialty[];
   services: ServicesState;
   packages: PackageInput[];
 }
+
+const DEFAULT_ABOUT: FormAboutConfig = {
+  show_age: true,
+  show_weight: true,
+  show_experience: true,
+  custom_fields: [],
+};
 
 const DEFAULT_NUTRITION: NutritionService = {
   enabled: false,
@@ -94,6 +106,7 @@ const DEFAULT_HYBRID: HybridService = {
 function makeDefaultConfig(): FormConfig {
   return {
     copy: { hero_headline: '', hero_subtext: '', cta_button_text: '', tone: '' },
+    about: { ...DEFAULT_ABOUT, custom_fields: [] },
     questions: [],
     specialties: [],
     services: {
@@ -135,6 +148,14 @@ function configFromForm(form: TrainerForm | undefined): FormConfig {
       hero_subtext: form.copy?.hero_subtext || '',
       cta_button_text: form.copy?.cta_button_text || '',
       tone: form.copy?.tone || '',
+    },
+    about: {
+      show_age: form.about_config?.show_age ?? true,
+      show_weight: form.about_config?.show_weight ?? true,
+      show_experience: form.about_config?.show_experience ?? true,
+      custom_fields: form.about_config?.custom_fields
+        ? form.about_config.custom_fields.map(f => ({ ...f }))
+        : [],
     },
     questions: form.questions ? form.questions.map(q => ({ ...q, options: [...q.options] })) : [],
     specialties: form.specialties ? form.specialties.map(s => ({ ...s })) : [],
@@ -211,6 +232,20 @@ export default function FormFlowEditor({ trainer, goals, onEditGoals }: FormFlow
     const cleanSpecialties = config.specialties.filter(s => s.name.trim());
     const cleanPackages = config.packages.filter(p => p.name.trim()).map(inputToPkg);
     const cleanAddOns = config.services.add_ons.filter(a => a.name.trim());
+    const cleanAboutFields = config.about.custom_fields.filter(f => f.label.trim());
+
+    // Only persist about config if it actually diverges from defaults
+    const aboutDiffers =
+      !config.about.show_age ||
+      !config.about.show_weight ||
+      !config.about.show_experience ||
+      cleanAboutFields.length > 0;
+    const aboutPayload: FormAboutConfig | null = aboutDiffers ? {
+      show_age: config.about.show_age,
+      show_weight: config.about.show_weight,
+      show_experience: config.about.show_experience,
+      custom_fields: cleanAboutFields,
+    } : null;
 
     const anyService =
       config.services.nutrition.enabled ||
@@ -235,6 +270,7 @@ export default function FormFlowEditor({ trainer, goals, onEditGoals }: FormFlow
         goalId: editingGoalId,
         name: goal?.label || editingGoalId,
         copy: copyPayload,
+        aboutConfig: aboutPayload,
         questions: cleanQuestions.length > 0 ? cleanQuestions : null,
         specialties: cleanSpecialties.length > 0 ? cleanSpecialties : null,
         services: servicesPayload,
@@ -417,6 +453,73 @@ export default function FormFlowEditor({ trainer, goals, onEditGoals }: FormFlow
                         trainerName={trainer.name}
                         fontHeading={trainer.branding?.font_heading}
                         fontBody={trainer.branding?.font_body}
+                      />
+                    </div>
+                  )}
+
+                  {/* About You */}
+                  {activeSubTab === 'about' && (
+                    <div className="space-y-3">
+                      <p className="text-[10px] text-[#8e8e93] font-semibold uppercase tracking-wider mt-1">Default fields</p>
+                      {([
+                        { key: 'show_age' as const, label: 'Age', subtitle: 'Used to personalise the timeline' },
+                        { key: 'show_weight' as const, label: 'Weight (current & goal)', subtitle: 'Required for weight-based goal types' },
+                        { key: 'show_experience' as const, label: 'Experience level', subtitle: 'Beginner / intermediate / advanced' },
+                      ]).map((field) => (
+                        <div key={field.key} className="flex items-center justify-between rounded-xl border border-[#e5e5ea] p-3">
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium">{field.label}</p>
+                            <p className="text-[10px] text-[#8e8e93]">{field.subtitle}</p>
+                          </div>
+                          <button onClick={() => setConfig({ ...config, about: { ...config.about, [field.key]: !config.about[field.key] } })}
+                            className="w-10 h-6 rounded-full p-0.5 transition-all duration-300 flex-shrink-0"
+                            style={{ backgroundColor: config.about[field.key] ? '#34C759' : '#e5e5ea' }}>
+                            <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300"
+                              style={{ transform: config.about[field.key] ? 'translateX(16px)' : 'translateX(0)' }} />
+                          </button>
+                        </div>
+                      ))}
+
+                      <div className="flex items-center justify-between pt-2">
+                        <p className="text-[10px] text-[#8e8e93] font-semibold uppercase tracking-wider">Custom fields</p>
+                        <button onClick={() => setConfig({
+                          ...config,
+                          about: { ...config.about, custom_fields: [...config.about.custom_fields, { id: `cf-${Date.now()}`, label: '', placeholder: '' }] },
+                        })}
+                          className="text-[10px] text-[#007AFF] font-medium">+ Add field</button>
+                      </div>
+                      <p className="text-[10px] text-[#8e8e93] -mt-1">Ask things like injuries, dietary preferences, training background.</p>
+
+                      {config.about.custom_fields.map((cf: CustomAboutField, i) => (
+                        <div key={cf.id} className="bg-[#f5f5f7] rounded-xl p-3 space-y-2">
+                          <div className="flex gap-2">
+                            <input value={cf.label}
+                              onChange={(e) => {
+                                const u = [...config.about.custom_fields];
+                                u[i] = { ...u[i], label: e.target.value };
+                                setConfig({ ...config, about: { ...config.about, custom_fields: u } });
+                              }}
+                              placeholder="Field label, e.g. Any injuries?" className={inputClass} />
+                            <button onClick={() => setConfig({
+                              ...config,
+                              about: { ...config.about, custom_fields: config.about.custom_fields.filter((_, idx) => idx !== i) },
+                            })}
+                              className="text-[#FF3B30] text-[10px] px-2">Remove</button>
+                          </div>
+                          <input value={cf.placeholder}
+                            onChange={(e) => {
+                              const u = [...config.about.custom_fields];
+                              u[i] = { ...u[i], placeholder: e.target.value };
+                              setConfig({ ...config, about: { ...config.about, custom_fields: u } });
+                            }}
+                            placeholder="Placeholder text" className={inputClass} />
+                        </div>
+                      ))}
+
+                      <AboutPreview
+                        theme={brandTheme}
+                        primaryColor={brandColor}
+                        config={config.about}
                       />
                     </div>
                   )}

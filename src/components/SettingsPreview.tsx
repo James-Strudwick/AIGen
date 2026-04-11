@@ -1,6 +1,6 @@
 'use client';
 
-import { TrainerSpecialty, ServiceAddOn, CustomQuestion, CustomGoal } from '@/types';
+import { TrainerSpecialty, ServiceAddOn, CustomQuestion, CustomGoal, FormAboutConfig } from '@/types';
 import { getGoogleFontsUrl } from '@/lib/branding';
 
 interface PreviewWrapperProps {
@@ -315,6 +315,62 @@ export function CustomQuestionsPreview({ theme, primaryColor, questions }: {
                 <p className="text-[8px]" style={{ color: c.muted }}>Select all that apply</p>
               </div>
             )}
+          </div>
+        ))}
+      </div>
+    </PreviewWrapper>
+  );
+}
+
+// --- About You Preview ---
+
+export function AboutPreview({ theme, primaryColor, config }: {
+  theme: 'light' | 'dark';
+  primaryColor: string;
+  config: FormAboutConfig;
+}) {
+  const c = getColors(theme, primaryColor);
+
+  const defaultRows: { key: keyof FormAboutConfig; label: string; placeholder: string }[] = [
+    { key: 'show_age', label: 'Age', placeholder: '25' },
+    { key: 'show_weight', label: 'Current weight (kg)', placeholder: '80' },
+    { key: 'show_experience', label: 'Experience level', placeholder: 'Beginner · Some Exp. · Experienced' },
+  ];
+
+  const enabledDefaults = defaultRows.filter(r => !!config[r.key]);
+  const customFields = config.custom_fields.filter(f => f.label.trim());
+
+  if (enabledDefaults.length === 0 && customFields.length === 0) {
+    return (
+      <PreviewWrapper theme={theme} primaryColor={primaryColor}>
+        <p className="text-[11px] text-center" style={{ color: c.muted }}>
+          No fields enabled — prospects will skip straight past the About You step.
+        </p>
+      </PreviewWrapper>
+    );
+  }
+
+  return (
+    <PreviewWrapper theme={theme} primaryColor={primaryColor}>
+      <h4 className="text-sm font-bold mb-1 text-center" style={{ color: c.text }}>A bit about you</h4>
+      <p className="text-[11px] text-center mb-3" style={{ color: c.muted }}>So we can personalise your timeline</p>
+      <div className="space-y-2">
+        {enabledDefaults.map((row) => (
+          <div key={row.key}>
+            <p className="text-[10px] font-medium mb-1" style={{ color: c.text }}>{row.label}</p>
+            <div className="rounded-lg px-3 py-2 border text-[10px]"
+              style={{ backgroundColor: c.card, borderColor: c.border, color: c.muted }}>
+              {row.placeholder}
+            </div>
+          </div>
+        ))}
+        {customFields.map((f) => (
+          <div key={f.id}>
+            <p className="text-[10px] font-medium mb-1" style={{ color: c.text }}>{f.label}</p>
+            <div className="rounded-lg px-3 py-2 border text-[10px]"
+              style={{ backgroundColor: c.card, borderColor: c.border, color: c.muted }}>
+              {f.placeholder || 'Type your answer...'}
+            </div>
           </div>
         ))}
       </div>

@@ -12,6 +12,9 @@ interface CustomAboutField {
 interface AboutYouFormProps {
   goalType: GoalType;
   branding: TrainerBranding;
+  showAge?: boolean;
+  showWeight?: boolean;
+  showExperience?: boolean;
   customFields?: CustomAboutField[];
   onSubmit: (data: {
     age: number | null;
@@ -29,7 +32,15 @@ const experienceLevels: { value: ExperienceLevel; label: string; desc: string }[
   { value: 'advanced', label: 'Experienced', desc: '2+ years' },
 ];
 
-export default function AboutYouForm({ goalType, branding, customFields = [], onSubmit }: AboutYouFormProps) {
+export default function AboutYouForm({
+  goalType,
+  branding,
+  showAge = true,
+  showWeight = true,
+  showExperience = true,
+  customFields = [],
+  onSubmit,
+}: AboutYouFormProps) {
   const [age, setAge] = useState('');
   const [currentWeight, setCurrentWeight] = useState('');
   const [goalWeight, setGoalWeight] = useState('');
@@ -37,18 +48,26 @@ export default function AboutYouForm({ goalType, branding, customFields = [], on
   const [experience, setExperience] = useState<ExperienceLevel | null>(null);
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
 
-  const needsWeight = goalType === 'weight_loss' || goalType === 'muscle_gain';
+  const needsWeight = showWeight && (goalType === 'weight_loss' || goalType === 'muscle_gain');
   const toKg = (val: number) => weightUnit === 'stone' ? val * 6.35029 : val;
-  const isValid = age && currentWeight && experience && (!needsWeight || goalWeight);
+
+  const isValid =
+    (!showAge || age) &&
+    (!showWeight || currentWeight) &&
+    (!showExperience || experience) &&
+    (!needsWeight || goalWeight) &&
+    customFields.every(f => customValues[f.id]?.trim());
 
   const handleSubmit = () => {
-    if (!isValid || !experience) return;
+    if (!isValid) return;
     onSubmit({
-      age: parseInt(age),
-      currentWeight: toKg(parseFloat(currentWeight)),
-      goalWeight: goalWeight ? toKg(parseFloat(goalWeight)) : null,
+      age: showAge && age ? parseInt(age) : null,
+      currentWeight: showWeight && currentWeight ? toKg(parseFloat(currentWeight)) : null,
+      goalWeight: showWeight && goalWeight ? toKg(parseFloat(goalWeight)) : null,
       weightUnit,
-      experienceLevel: experience,
+      // Fall back to intermediate when experience is hidden — it's the
+      // middle of the 3 tiers so timeline calculations stay reasonable.
+      experienceLevel: showExperience ? experience : 'intermediate',
       customAboutFields: customValues,
     });
   };
@@ -71,67 +90,73 @@ export default function AboutYouForm({ goalType, branding, customFields = [], on
 
       <div className="space-y-4">
         {/* Age */}
-        <div>
-          <label className="text-xs font-medium block mb-1.5" style={{ color: branding.color_text }}>Age</label>
-          <input type="number" inputMode="numeric" value={age} onChange={(e) => setAge(e.target.value)} placeholder="25"
-            className="w-full rounded-xl px-4 py-3 text-base focus:outline-none transition-colors" style={inputStyle} />
-        </div>
-
-        {/* Weight unit */}
-        <div>
-          <label className="text-xs font-medium block mb-1.5" style={{ color: branding.color_text }}>Weight unit</label>
-          <div className="grid grid-cols-2 gap-2">
-            {(['kg', 'stone'] as const).map((unit) => (
-              <button key={unit} onClick={() => setWeightUnit(unit)}
-                className="py-2.5 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.97]"
-                style={{
-                  backgroundColor: weightUnit === unit ? branding.color_primary : branding.color_card,
-                  color: weightUnit === unit ? '#ffffff' : branding.color_text_muted,
-                  borderWidth: '1px',
-                  borderColor: weightUnit === unit ? branding.color_primary : branding.color_border,
-                }}>
-                {unit === 'kg' ? 'Kilograms' : 'Stone'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Current weight */}
-        <div>
-          <label className="text-xs font-medium block mb-1.5" style={{ color: branding.color_text }}>Current weight ({weightUnit})</label>
-          <input type="number" inputMode="decimal" value={currentWeight} onChange={(e) => setCurrentWeight(e.target.value)}
-            placeholder={weightUnit === 'kg' ? '80' : '12.5'}
-            className="w-full rounded-xl px-4 py-3 text-base focus:outline-none transition-colors" style={inputStyle} />
-        </div>
-
-        {/* Goal weight */}
-        {needsWeight && (
+        {showAge && (
           <div>
-            <label className="text-xs font-medium block mb-1.5" style={{ color: branding.color_text }}>Goal weight ({weightUnit})</label>
-            <input type="number" inputMode="decimal" value={goalWeight} onChange={(e) => setGoalWeight(e.target.value)}
-              placeholder={weightUnit === 'kg' ? '70' : '11'}
+            <label className="text-xs font-medium block mb-1.5" style={{ color: branding.color_text }}>Age</label>
+            <input type="number" inputMode="numeric" value={age} onChange={(e) => setAge(e.target.value)} placeholder="25"
               className="w-full rounded-xl px-4 py-3 text-base focus:outline-none transition-colors" style={inputStyle} />
           </div>
         )}
 
+        {/* Weight */}
+        {showWeight && (
+          <>
+            <div>
+              <label className="text-xs font-medium block mb-1.5" style={{ color: branding.color_text }}>Weight unit</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(['kg', 'stone'] as const).map((unit) => (
+                  <button key={unit} onClick={() => setWeightUnit(unit)}
+                    className="py-2.5 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.97]"
+                    style={{
+                      backgroundColor: weightUnit === unit ? branding.color_primary : branding.color_card,
+                      color: weightUnit === unit ? '#ffffff' : branding.color_text_muted,
+                      borderWidth: '1px',
+                      borderColor: weightUnit === unit ? branding.color_primary : branding.color_border,
+                    }}>
+                    {unit === 'kg' ? 'Kilograms' : 'Stone'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium block mb-1.5" style={{ color: branding.color_text }}>Current weight ({weightUnit})</label>
+              <input type="number" inputMode="decimal" value={currentWeight} onChange={(e) => setCurrentWeight(e.target.value)}
+                placeholder={weightUnit === 'kg' ? '80' : '12.5'}
+                className="w-full rounded-xl px-4 py-3 text-base focus:outline-none transition-colors" style={inputStyle} />
+            </div>
+
+            {needsWeight && (
+              <div>
+                <label className="text-xs font-medium block mb-1.5" style={{ color: branding.color_text }}>Goal weight ({weightUnit})</label>
+                <input type="number" inputMode="decimal" value={goalWeight} onChange={(e) => setGoalWeight(e.target.value)}
+                  placeholder={weightUnit === 'kg' ? '70' : '11'}
+                  className="w-full rounded-xl px-4 py-3 text-base focus:outline-none transition-colors" style={inputStyle} />
+              </div>
+            )}
+          </>
+        )}
+
         {/* Experience */}
-        <div>
-          <label className="text-xs font-medium block mb-2" style={{ color: branding.color_text }}>Experience level</label>
-          <div className="grid grid-cols-3 gap-2">
-            {experienceLevels.map((level) => (
-              <button key={level.value} onClick={() => setExperience(level.value)}
-                className="py-3 px-2 rounded-xl text-center transition-all duration-200 active:scale-[0.97]"
-                style={{
-                  backgroundColor: experience === level.value ? branding.color_primary + '18' : branding.color_card,
-                  borderWidth: '1.5px',
-                  borderColor: experience === level.value ? branding.color_primary : branding.color_border,
-                }}>
-                <span className="text-xs font-semibold block" style={{ color: branding.color_text }}>{level.label}</span>
-                <span className="text-[10px] block mt-0.5" style={{ color: branding.color_text_muted }}>{level.desc}</span>
-              </button>
-            ))}
+        {showExperience && (
+          <div>
+            <label className="text-xs font-medium block mb-2" style={{ color: branding.color_text }}>Experience level</label>
+            <div className="grid grid-cols-3 gap-2">
+              {experienceLevels.map((level) => (
+                <button key={level.value} onClick={() => setExperience(level.value)}
+                  className="py-3 px-2 rounded-xl text-center transition-all duration-200 active:scale-[0.97]"
+                  style={{
+                    backgroundColor: experience === level.value ? branding.color_primary + '18' : branding.color_card,
+                    borderWidth: '1.5px',
+                    borderColor: experience === level.value ? branding.color_primary : branding.color_border,
+                  }}>
+                  <span className="text-xs font-semibold block" style={{ color: branding.color_text }}>{level.label}</span>
+                  <span className="text-[10px] block mt-0.5" style={{ color: branding.color_text_muted }}>{level.desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Custom fields */}
         {customFields.map((field) => (
