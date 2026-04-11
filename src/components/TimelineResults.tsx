@@ -9,6 +9,7 @@ interface TimelineResultsProps {
   trainer: Trainer;
   branding: TrainerBranding;
   services: TrainerServices;
+  specialties?: TrainerSpecialty[] | null;
   packages: Package[];
   result: TimelineResult;
   goalLabel: string;
@@ -17,8 +18,8 @@ interface TimelineResultsProps {
   isPreview?: boolean;
 }
 
-export default function TimelineResults({ trainer, branding, services, packages, result, goalLabel, formData, leadId, isPreview }: TimelineResultsProps) {
-  const specialties = trainer.specialties || [];
+export default function TimelineResults({ trainer, branding, services, specialties: specialtiesProp, packages, result, goalLabel, formData, leadId, isPreview }: TimelineResultsProps) {
+  const specialties = specialtiesProp ?? trainer.specialties ?? [];
 
   return (
     <div className="w-full max-w-lg mx-auto space-y-10 pb-8">

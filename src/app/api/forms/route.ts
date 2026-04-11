@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     if (!trainer) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     if (trainer.tier !== 'pro') return NextResponse.json({ error: 'Pro tier required' }, { status: 403 });
 
-    const { formId, goalId, name, questions, services, packages, copy } = await request.json();
+    const { formId, goalId, name, questions, services, packages, copy, specialties } = await request.json();
 
     const supabase = getServiceClient();
 
@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
         services: services || null,
         packages: packages || null,
         copy: copy || null,
+        specialties: specialties || null,
       }).eq('id', formId).eq('trainer_id', trainer.id);
 
       if (error) return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
@@ -77,6 +78,7 @@ export async function POST(request: NextRequest) {
         services: services || null,
         packages: packages || null,
         copy: copy || null,
+        specialties: specialties || null,
       });
 
       if (error) return NextResponse.json({ error: 'Failed to create' }, { status: 500 });

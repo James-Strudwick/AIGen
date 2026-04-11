@@ -44,6 +44,7 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
   const copy = useMemo(() => resolveCopy(trainer), [trainer]);
   const cssVars = useMemo(() => brandingToCssVars(branding), [branding]);
   const fontsUrl = useMemo(() => getGoogleFontsUrl(branding), [branding]);
+  const trainerSpecialties = trainer.specialties ?? [];
 
   const [step, setStep] = useState<Step>('hero');
   const [isLoading, setIsLoading] = useState(false);
@@ -70,6 +71,13 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
     ? activeForm.packages.map((p, i) => ({ ...p, id: `form-pkg-${i}`, trainer_id: trainer.id, description: null, sort_order: i + 1 } as Package))
     : packages;
   const activeServices = activeForm?.services ?? services;
+  const activeSpecialties = activeForm?.specialties ?? trainerSpecialties;
+  const activeCopy = {
+    hero_headline: activeForm?.copy?.hero_headline || copy.hero_headline,
+    hero_subtext: activeForm?.copy?.hero_subtext || copy.hero_subtext,
+    cta_button_text: activeForm?.copy?.cta_button_text || copy.cta_button_text,
+    tone: activeForm?.copy?.tone || copy.tone,
+  };
   const hasCustomQuestions = activeQuestions.length > 0;
 
   const formSteps: Step[] = useMemo(() => {
@@ -198,9 +206,9 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
           trainerId: trainer.id,
           trainerName: trainer.name,
           trainerBio: trainer.bio,
-          trainerSpecialties: trainer.specialties,
-          trainerTone: copy.tone,
-          serviceAddOns: services.add_ons,
+          trainerSpecialties: activeSpecialties,
+          trainerTone: activeCopy.tone,
+          serviceAddOns: activeServices.add_ons,
           customQuestions: activeQuestions,
           formId: activeForm?.id || null,
           formData: updatedForm,
@@ -221,7 +229,7 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
     } finally {
       setIsLoading(false);
     }
-  }, [formData, trainer, packages, isPreview, copy.tone, services.add_ons]);
+  }, [formData, trainer, packages, isPreview, activeForm, activeSpecialties, activeCopy.tone, activeServices.add_ons, activeQuestions, activePackages]);
 
   // Wrap everything in a div that sets CSS custom properties for the branding
   const pageWrapper = (children: React.ReactNode, extraClass?: string) => (
@@ -257,6 +265,7 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
           trainer={trainer}
           branding={branding}
           services={activeServices}
+          specialties={activeSpecialties}
           packages={activePackages}
           result={result}
           goalLabel={getGoalLabel(formData)}
@@ -286,11 +295,7 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
           <AboutYouForm
             goalType={formData.goalType}
             branding={branding}
-            customFields={(() => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const aboutConfig = (activeForm as any)?.about_config;
-              return aboutConfig?.custom_fields || [];
-            })()}
+            customFields={[]}
             onSubmit={handleAboutSubmit}
           />
         )}

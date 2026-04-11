@@ -219,7 +219,8 @@ export interface TrainerForm {
   questions: CustomQuestion[] | null;
   services: TrainerServices | null;
   packages: { name: string; sessions_per_week: number; price_per_session: number | null; monthly_price: number | null; is_online: boolean }[] | null;
-  copy: { hero_subtext: string | null } | null;
+  copy: Partial<TrainerCopy> | null;
+  specialties: TrainerSpecialty[] | null;
   active: boolean;
   created_at: string;
 }
