@@ -120,7 +120,9 @@ export interface Trainer {
   referral_code: string | null;
   referred_by: string | null;
   referral_count: number;
+  referral_tier_reached: number;
   has_referral_discount: boolean;
+  pro_trial_ends_at: string | null;
   active: boolean;
   created_at: string;
 }
