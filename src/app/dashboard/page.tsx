@@ -33,6 +33,7 @@ export default function DashboardPage() {
   const [filter, setFilter] = useState<'all' | GoalType | LeadStatus>('all');
   const [copied, setCopied] = useState(false);
   const [refCopied, setRefCopied] = useState(false);
+  const [refOpen, setRefOpen] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -272,7 +273,7 @@ export default function DashboardPage() {
 
           return (
             <div className="bg-[#f5f5f7] rounded-xl p-4 mb-6">
-              <div className="flex items-start justify-between mb-3">
+              <button onClick={() => setRefOpen(!refOpen)} className="w-full flex items-center justify-between text-left">
                 <div>
                   <p className="text-[10px] text-[#8e8e93] uppercase tracking-wider font-semibold mb-0.5">Refer & earn</p>
                   <p className="text-sm font-medium">
@@ -281,50 +282,59 @@ export default function DashboardPage() {
                       : `Next: ${nextTier?.label}`}
                   </p>
                 </div>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-white"
-                  style={{ color: allUnlocked ? '#34C759' : '#1a1a1a' }}>
-                  {count}/5
-                </span>
-              </div>
-
-              {/* Tier milestones */}
-              <div className="space-y-1.5 mb-3">
-                {TIERS.map((t) => {
-                  const unlocked = count >= t.tier;
-                  return (
-                    <div key={t.tier} className="flex items-center gap-2.5">
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
-                        style={{
-                          backgroundColor: unlocked ? '#1a1a1a' : '#e5e5ea',
-                          color: unlocked ? '#fff' : '#8e8e93',
-                        }}>
-                        {unlocked ? '✓' : t.tier}
-                      </div>
-                      <p className="text-xs flex-1" style={{ color: unlocked ? '#1a1a1a' : '#8e8e93' }}>
-                        {t.label}
-                        {t.tier === 5 && <span className="text-[9px] text-[#8e8e93]"> — first 50 users</span>}
-                      </p>
-                      {unlocked && <span className="text-[9px] font-semibold text-[#34C759]">Earned</span>}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-white rounded-lg px-3 py-2 text-xs font-mono truncate text-[#1a1a1a]">
-                  fomoforms.com/signup?ref={trainer.referral_code}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-white"
+                    style={{ color: allUnlocked ? '#34C759' : '#1a1a1a' }}>
+                    {count}/5
+                  </span>
+                  <svg className={`w-4 h-4 text-[#8e8e93] transition-transform ${refOpen ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
                 </div>
-                <button onClick={() => {
-                  navigator.clipboard.writeText(`https://fomoforms.com/signup?ref=${trainer.referral_code}`).then(() => {
-                    setRefCopied(true);
-                    setTimeout(() => setRefCopied(false), 2000);
-                  });
-                }}
-                  className="text-xs font-medium px-3 py-2 rounded-lg bg-white flex-shrink-0"
-                  style={{ color: refCopied ? '#34C759' : '#007AFF' }}>
-                  {refCopied ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
+              </button>
+
+              {refOpen && (
+                <div className="mt-3">
+                  {/* Tier milestones */}
+                  <div className="space-y-1.5 mb-3">
+                    {TIERS.map((t) => {
+                      const unlocked = count >= t.tier;
+                      return (
+                        <div key={t.tier} className="flex items-center gap-2.5">
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
+                            style={{
+                              backgroundColor: unlocked ? '#1a1a1a' : '#e5e5ea',
+                              color: unlocked ? '#fff' : '#8e8e93',
+                            }}>
+                            {unlocked ? '✓' : t.tier}
+                          </div>
+                          <p className="text-xs flex-1" style={{ color: unlocked ? '#1a1a1a' : '#8e8e93' }}>
+                            {t.label}
+                            {t.tier === 5 && <span className="text-[9px] text-[#8e8e93]"> — first 50 users</span>}
+                          </p>
+                          {unlocked && <span className="text-[9px] font-semibold text-[#34C759]">Earned</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-white rounded-lg px-3 py-2 text-xs font-mono truncate text-[#1a1a1a]">
+                      fomoforms.com/signup?ref={trainer.referral_code}
+                    </div>
+                    <button onClick={() => {
+                      navigator.clipboard.writeText(`https://fomoforms.com/signup?ref=${trainer.referral_code}`).then(() => {
+                        setRefCopied(true);
+                        setTimeout(() => setRefCopied(false), 2000);
+                      });
+                    }}
+                      className="text-xs font-medium px-3 py-2 rounded-lg bg-white flex-shrink-0"
+                      style={{ color: refCopied ? '#34C759' : '#007AFF' }}>
+                      {refCopied ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })()}
