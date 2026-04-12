@@ -269,7 +269,8 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
       <>
         <HeroSection trainer={trainer} branding={branding} copy={copy} onStart={() => { trackStep('hero', 'completed'); setStep('goal'); }} />
         <PoweredByBadge branding={branding} tier={trainer.tier} />
-      </>
+      </>,
+      'flex flex-col',
     );
   }
 
