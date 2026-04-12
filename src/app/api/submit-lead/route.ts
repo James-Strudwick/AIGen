@@ -138,15 +138,30 @@ export async function POST(request: NextRequest) {
     // a malicious client from injecting arbitrary text via trainerBio/tone etc.
     const trainerName: string = trainer.name;
     const trainerBio: string | null = trainer.bio ?? null;
-    const trainerSpecialties: TrainerSpecialty[] | null = trainer.specialties ?? null;
-    const trainerTone: string = clampString(trainer.copy?.tone || 'friendly', 100);
 
-    // Questions + add-ons + packages come from the form/trainer depending on
-    // multi-form setup. For simplicity we trust the DB copy on the trainer row
-    // as the upper bound, and clamp the client-provided list against it.
-    // NOTE: multi-form support can fetch from trainer_forms in a follow-up.
-    const serviceAddOns: ServiceAddOn[] = clampArray(trainer.services?.add_ons ?? [], MAX_ADDONS);
-    const customQuestions: CustomQuestion[] = clampArray(trainer.custom_questions ?? [], MAX_QUESTIONS);
+    // When a per-goal form exists, its overrides take priority over the
+    // trainer-level defaults. Fetch it server-side so we trust the DB, not
+    // the client payload.
+    let trainerSpecialties: TrainerSpecialty[] | null = trainer.specialties ?? null;
+    let trainerTone: string = clampString(trainer.copy?.tone || 'friendly', 100);
+    let serviceAddOns: ServiceAddOn[] = clampArray(trainer.services?.add_ons ?? [], MAX_ADDONS);
+    let customQuestions: CustomQuestion[] = clampArray(trainer.custom_questions ?? [], MAX_QUESTIONS);
+
+    if (formId) {
+      const { data: form } = await supabase
+        .from('forms')
+        .select('specialties, copy, services, questions')
+        .eq('id', formId)
+        .eq('trainer_id', trainerId)
+        .maybeSingle();
+
+      if (form) {
+        if (form.specialties) trainerSpecialties = form.specialties;
+        if (form.copy?.tone) trainerTone = clampString(form.copy.tone, 100);
+        if (form.services?.add_ons) serviceAddOns = clampArray(form.services.add_ons, MAX_ADDONS);
+        if (form.questions) customQuestions = clampArray(form.questions, MAX_QUESTIONS);
+      }
+    }
 
     // Packages drive the timeline comparison shown to the lead. Cap the count
     // but keep the client-provided list — they're already filtered per-form
