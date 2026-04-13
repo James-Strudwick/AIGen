@@ -5,6 +5,7 @@ import { createBrowserClient } from '@/lib/auth';
 import { AVAILABLE_FONTS } from '@/lib/branding';
 import { ServiceAddOn } from '@/types';
 import PhoneInput from '@/components/PhoneInput';
+import { DEFAULT_PACKAGES } from '@/lib/package-defaults';
 
 type Step = 'basics' | 'branding' | 'services' | 'packages' | 'preview';
 const steps: { id: Step; label: string }[] = [
@@ -51,9 +52,7 @@ export default function OnboardingPage() {
   const [addOns, setAddOns] = useState<ServiceAddOn[]>([]);
   const [showPrices, setShowPrices] = useState(true);
 
-  const [pkgs, setPkgs] = useState<PackageInput[]>([
-    { name: '', sessions_per_week: '2', price_per_session: '', monthly_price: '', is_online: false },
-  ]);
+  const [pkgs, setPkgs] = useState<PackageInput[]>(() => DEFAULT_PACKAGES.map(p => ({ ...p })));
 
   // Load trainer data on mount
   useEffect(() => {

@@ -8,6 +8,7 @@ import PhoneInput from '@/components/PhoneInput';
 import { CopyPreview, SpecialtiesPreview, ServicesPreview, PackagesPreview, CustomQuestionsPreview, GoalsPreview } from '@/components/SettingsPreview';
 import SetupChecklist from '@/components/SetupChecklist';
 import FormFlowEditor from '@/components/FormFlowEditor';
+import { DEFAULT_PACKAGES } from '@/lib/package-defaults';
 import Link from 'next/link';
 
 interface PackageInput {
@@ -76,9 +77,7 @@ export default function SettingsPage() {
   const [customGoals, setCustomGoals] = useState<CustomGoal[]>([]);
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
   const [specialties, setSpecialties] = useState<{ name: string; description: string }[]>([]);
-  const [pkgs, setPkgs] = useState<PackageInput[]>([
-    { name: '', sessions_per_week: '2', price_per_session: '', monthly_price: '', is_online: false },
-  ]);
+  const [pkgs, setPkgs] = useState<PackageInput[]>(() => DEFAULT_PACKAGES.map(p => ({ ...p })));
 
   useEffect(() => {
     const load = async () => {
