@@ -4,6 +4,7 @@ import { calculateBaseWeeks, calculatePackageTimelines, generateBaseMilestones }
 import { buildPrompt } from '@/lib/generateNarrative';
 import { FormData, Package, TimelineResult, GoalType, ExperienceLevel, TrainerSpecialty, ServiceAddOn, CustomQuestion } from '@/types';
 import Anthropic from '@anthropic-ai/sdk';
+import { sendNewLeadEmail } from '@/lib/email';
 
 interface RequestBody {
   trainerId: string;
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
     const supabase = getServiceClient();
     const { data: trainer, error: trainerErr } = await supabase
       .from('trainers')
-      .select('id, name, bio, specialties, copy, services, custom_questions, active')
+      .select('id, name, bio, specialties, copy, services, custom_questions, active, user_id, slug')
       .eq('id', trainerId)
       .maybeSingle();
 
@@ -270,6 +271,32 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       console.error('Database error:', dbError);
+    }
+
+    // 9. Notify the coach by email — fire-and-forget so we don't block the
+    // response on email delivery. Internal failures are swallowed inside
+    // sendNewLeadEmail.
+    if (trainer.user_id) {
+      const { data: authUser } = await supabase.auth.admin.getUserById(trainer.user_id);
+      const coachEmail = authUser?.user?.email;
+      if (coachEmail) {
+        const goalLabels: Record<string, string> = {
+          weight_loss: 'Lose weight',
+          muscle_gain: 'Build muscle',
+          fitness: 'Improve fitness',
+          performance: safeFormData.performanceTarget || 'Performance goal',
+        };
+        const goalLabel = goalLabels[safeFormData.goalType as string] || 'reach their goal';
+        const { origin } = new URL(request.url);
+        void sendNewLeadEmail({
+          to: coachEmail,
+          trainerName,
+          lead: safeFormData,
+          goalLabel,
+          timeline: timelineResult,
+          dashboardUrl: `${origin}/dashboard`,
+        });
+      }
     }
 
     return NextResponse.json({
