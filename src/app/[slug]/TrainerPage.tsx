@@ -179,6 +179,16 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
     setStep('capture');
   }, [trackStep]);
 
+  const handleBack = useCallback(() => {
+    const idx = formSteps.indexOf(step);
+    if (idx <= 0) {
+      // First form step — go back to the hero screen
+      setStep('hero');
+      return;
+    }
+    setStep(formSteps[idx - 1]);
+  }, [step, formSteps]);
+
   const handleLeadSubmit = useCallback(async (data: { name: string; phone: string }) => {
     trackStep('capture', 'completed');
     setIsLoading(true);
@@ -295,7 +305,20 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
   }
 
   return pageWrapper(
-    <div className="flex flex-col items-center justify-center min-h-[100dvh] px-4 py-10">
+    <div className="flex flex-col items-center justify-center min-h-[100dvh] px-4 py-10 relative">
+      {/* Back button — visible on every form step (results has no back) */}
+      <button
+        onClick={handleBack}
+        aria-label="Go back a step"
+        className="absolute top-4 left-4 flex items-center gap-1 text-xs font-medium px-3 py-2 rounded-full transition-all active:scale-95"
+        style={{ color: branding.color_text_muted, backgroundColor: branding.color_card, borderWidth: '1px', borderColor: branding.color_border }}
+      >
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back
+      </button>
+
       <ProgressIndicator
         currentStep={currentFormStep}
         totalSteps={formSteps.length}
