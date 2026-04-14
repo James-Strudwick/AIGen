@@ -574,12 +574,52 @@ export default function SettingsPage() {
               <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} className={inputClass} />
             </div>
             <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">WhatsApp number</label>
-              <PhoneInput value={form.contact_value} onChange={(v) => setForm({ ...form, contact_value: v })} />
+              <label className="text-[#8e8e93] text-xs block mb-1">Primary contact method</label>
+              <div className="grid grid-cols-4 gap-1.5 mb-2">
+                {([
+                  { id: 'whatsapp', label: 'WhatsApp' },
+                  { id: 'email', label: 'Email' },
+                  { id: 'calendly', label: 'Calendar' },
+                  { id: 'link', label: 'Link' },
+                ] as const).map((m) => (
+                  <button key={m.id} type="button"
+                    onClick={() => setForm({ ...form, contact_method: m.id })}
+                    className="py-2 rounded-lg text-[11px] font-medium border transition-all"
+                    style={{
+                      backgroundColor: form.contact_method === m.id ? '#1a1a1a' : 'white',
+                      color: form.contact_method === m.id ? '#ffffff' : '#8e8e93',
+                      borderColor: form.contact_method === m.id ? '#1a1a1a' : '#e5e5ea',
+                    }}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              {form.contact_method === 'whatsapp' && (
+                <PhoneInput value={form.contact_value} onChange={(v) => setForm({ ...form, contact_value: v })} />
+              )}
+              {form.contact_method === 'email' && (
+                <input type="email" value={form.contact_value}
+                  onChange={(e) => setForm({ ...form, contact_value: e.target.value })}
+                  placeholder="you@yourdomain.com" className={inputClass} />
+              )}
+              {(form.contact_method === 'calendly' || form.contact_method === 'link') && (
+                <input type="url" value={form.contact_value}
+                  onChange={(e) => setForm({ ...form, contact_value: e.target.value })}
+                  placeholder={form.contact_method === 'calendly' ? 'https://calendly.com/you' : 'https://your-landing-page.com'}
+                  className={inputClass} />
+              )}
+              <p className="text-[#8e8e93] text-[10px] mt-1">
+                {form.contact_method === 'whatsapp' && 'Leads get a pre-filled WhatsApp message with their details.'}
+                {form.contact_method === 'email' && 'Leads open their email client with a pre-filled message.'}
+                {form.contact_method === 'calendly' && 'Perfect for Calendly, Cal.com, or a HighLevel calendar URL.'}
+                {form.contact_method === 'link' && 'Redirect leads to any URL — your CRM, a funnel, or a custom thank-you page.'}
+              </p>
             </div>
             <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">Booking link</label>
-              <input value={form.booking_link} onChange={(e) => setForm({ ...form, booking_link: e.target.value })} className={inputClass} />
+              <label className="text-[#8e8e93] text-xs block mb-1">Secondary booking link (optional)</label>
+              <input value={form.booking_link} onChange={(e) => setForm({ ...form, booking_link: e.target.value })}
+                placeholder="https://calendly.com/you" className={inputClass} />
+              <p className="text-[#8e8e93] text-[10px] mt-1">Shown as a subtle secondary link on the results page.</p>
             </div>
             <div>
               <label className="text-[#8e8e93] text-xs block mb-1">Currency</label>

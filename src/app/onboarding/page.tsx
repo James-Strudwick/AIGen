@@ -271,11 +271,43 @@ export default function OnboardingPage() {
                 placeholder="Certified PT with 8 years experience..." rows={2} className={inputClass} />
             </div>
             <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">WhatsApp number</label>
-              <PhoneInput value={form.contact_value} onChange={(v) => setForm({ ...form, contact_value: v })} />
+              <label className="text-[#8e8e93] text-xs block mb-1">Primary contact method</label>
+              <div className="grid grid-cols-4 gap-1.5 mb-2">
+                {([
+                  { id: 'whatsapp', label: 'WhatsApp' },
+                  { id: 'email', label: 'Email' },
+                  { id: 'calendly', label: 'Calendar' },
+                  { id: 'link', label: 'Link' },
+                ] as const).map((m) => (
+                  <button key={m.id} type="button"
+                    onClick={() => setForm({ ...form, contact_method: m.id })}
+                    className="py-2 rounded-lg text-[11px] font-medium border transition-all"
+                    style={{
+                      backgroundColor: form.contact_method === m.id ? '#1a1a1a' : 'white',
+                      color: form.contact_method === m.id ? '#ffffff' : '#8e8e93',
+                      borderColor: form.contact_method === m.id ? '#1a1a1a' : '#e5e5ea',
+                    }}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              {form.contact_method === 'whatsapp' && (
+                <PhoneInput value={form.contact_value} onChange={(v) => setForm({ ...form, contact_value: v })} />
+              )}
+              {form.contact_method === 'email' && (
+                <input type="email" value={form.contact_value}
+                  onChange={(e) => setForm({ ...form, contact_value: e.target.value })}
+                  placeholder="you@yourdomain.com" className={inputClass} />
+              )}
+              {(form.contact_method === 'calendly' || form.contact_method === 'link') && (
+                <input type="url" value={form.contact_value}
+                  onChange={(e) => setForm({ ...form, contact_value: e.target.value })}
+                  placeholder={form.contact_method === 'calendly' ? 'https://calendly.com/you' : 'https://your-landing-page.com'}
+                  className={inputClass} />
+              )}
             </div>
             <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">Booking link (Calendly, etc.)</label>
+              <label className="text-[#8e8e93] text-xs block mb-1">Secondary booking link (optional)</label>
               <input value={form.booking_link} onChange={(e) => setForm({ ...form, booking_link: e.target.value })}
                 placeholder="https://calendly.com/you" className={inputClass} />
             </div>
@@ -494,7 +526,7 @@ export default function OnboardingPage() {
             </button>
 
             {!form.contact_value && (
-              <p className="text-[#FF3B30] text-xs">Add a WhatsApp number in step 1 to go live</p>
+              <p className="text-[#FF3B30] text-xs">Add a contact method in step 1 to go live</p>
             )}
           </div>
         )}
