@@ -18,6 +18,9 @@ interface TrainerPageProps {
   packages: Package[];
   forms?: TrainerForm[];
   isPreview?: boolean;
+  /** Rendered inside a parent page's iframe — skip the standalone hero and
+   *  postMessage height changes up so the iframe can auto-resize. */
+  isEmbed?: boolean;
 }
 
 function getGoalLabel(formData: FormData): string {
@@ -36,7 +39,7 @@ function getGoalLabel(formData: FormData): string {
 
 type Step = 'hero' | 'goal' | 'about' | 'availability' | 'questions' | 'capture' | 'results';
 
-export default function TrainerPage({ trainer, packages, forms = [], isPreview = false }: TrainerPageProps) {
+export default function TrainerPage({ trainer, packages, forms = [], isPreview = false, isEmbed = false }: TrainerPageProps) {
   // formSteps is computed later after activeForm is resolved
 
   const branding = useMemo(() => resolveBranding(trainer), [trainer]);
@@ -46,7 +49,7 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
   const fontsUrl = useMemo(() => getGoogleFontsUrl(branding), [branding]);
   const trainerSpecialties = trainer.specialties ?? [];
 
-  const [step, setStep] = useState<Step>('hero');
+  const [step, setStep] = useState<Step>(isEmbed ? 'goal' : 'hero');
   const [isLoading, setIsLoading] = useState(false);
   const [activeForm, setActiveForm] = useState<TrainerForm | null>(null);
   const [result, setResult] = useState<TimelineResult | null>(null);
@@ -126,6 +129,23 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
   useEffect(() => {
     trackStep(step, 'entered');
   }, [step, trackStep]);
+
+  // Iframe auto-resize: when embedded, report our scroll height to the parent
+  // on step changes + window resize. The parent's embed.js listens for this.
+  useEffect(() => {
+    if (!isEmbed || typeof window === 'undefined') return;
+    const send = () => {
+      const height = Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight,
+      );
+      window.parent.postMessage({ type: 'fomoforms:height', slug: trainer.slug, height }, '*');
+    };
+    send();
+    const t = setTimeout(send, 150); // after animations settle
+    window.addEventListener('resize', send);
+    return () => { clearTimeout(t); window.removeEventListener('resize', send); };
+  }, [isEmbed, step, trainer.slug, result]);
 
   const handleGoalSelect = useCallback((goal: GoalType, performanceTarget?: string) => {
     trackStep('goal', 'completed');

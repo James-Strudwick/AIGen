@@ -20,7 +20,7 @@ interface PackageInput {
   is_online: boolean;
 }
 
-type Tab = 'account' | 'details' | 'copy' | 'branding' | 'goals' | 'forms' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing';
+type Tab = 'account' | 'details' | 'copy' | 'branding' | 'goals' | 'forms' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing' | 'embed';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -147,7 +147,7 @@ export default function SettingsPage() {
       if (!initialTabSet) {
         const params = new URLSearchParams(window.location.search);
         const tab = params.get('tab') as Tab | null;
-        if (tab && ['account', 'details', 'copy', 'branding', 'goals', 'forms', 'questions', 'specialties', 'services', 'packages', 'billing'].includes(tab)) {
+        if (tab && ['account', 'details', 'copy', 'branding', 'goals', 'forms', 'questions', 'specialties', 'services', 'packages', 'billing', 'embed'].includes(tab)) {
           setActiveTab(tab);
         }
         setInitialTabSet(true);
@@ -294,6 +294,7 @@ export default function SettingsPage() {
     { id: 'details', label: 'Details' },
     { id: 'branding', label: 'Branding' },
     { id: 'forms', label: 'Forms' },
+    { id: 'embed', label: 'Embed' },
     { id: 'account', label: 'Account' },
     { id: 'billing', label: 'Billing' },
   ];
@@ -1187,6 +1188,11 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* Embed */}
+        {activeTab === 'embed' && (
+          <EmbedTab slug={form.slug} />
+        )}
+
         {/* Billing */}
         {activeTab === 'billing' && (
           <div className="space-y-5">
@@ -1331,6 +1337,87 @@ export default function SettingsPage() {
             )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function EmbedTab({ slug }: { slug: string }) {
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://fomoforms.com';
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const iframeSnippet = `<iframe src="${origin}/embed/${slug || 'your-slug'}" width="100%" height="800" frameborder="0" style="border:0;"></iframe>`;
+
+  const loaderSnippet = `<div data-fomoforms="${slug || 'your-slug'}"></div>
+<script src="${origin}/embed.js" async></script>`;
+
+  const copy = (value: string, key: string) => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  };
+
+  if (!slug) {
+    return (
+      <div className="rounded-xl bg-[#f5f5f7] p-4">
+        <p className="text-sm text-[#8e8e93]">Set a URL slug under Details before you can embed your form.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-[#e5e5ea] p-5">
+        <p className="text-sm font-semibold mb-1">Drop your form into any website</p>
+        <p className="text-[11px] text-[#8e8e93] leading-relaxed">
+          Works with GoHighLevel, WordPress, Webflow, Wix, Squarespace, Kajabi — anywhere you can paste HTML.
+          The iframe auto-resizes as prospects move through the steps.
+        </p>
+      </div>
+
+      {/* Recommended: auto-resize loader */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-xs font-semibold">Recommended — auto-resize</p>
+          <button onClick={() => copy(loaderSnippet, 'loader')}
+            className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-[#f5f5f7]"
+            style={{ color: copied === 'loader' ? '#34C759' : '#007AFF' }}>
+            {copied === 'loader' ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+        <pre className="bg-[#1a1a1a] text-[#f5f5f7] rounded-xl p-3 text-[10px] font-mono overflow-x-auto leading-relaxed whitespace-pre-wrap break-all">{loaderSnippet}</pre>
+        <p className="text-[10px] text-[#8e8e93] mt-1.5">Paste this anywhere on the page — the script handles iframe creation and auto-resizing.</p>
+      </div>
+
+      {/* Manual iframe */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-xs font-semibold">Plain iframe (fixed height)</p>
+          <button onClick={() => copy(iframeSnippet, 'iframe')}
+            className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-[#f5f5f7]"
+            style={{ color: copied === 'iframe' ? '#34C759' : '#007AFF' }}>
+            {copied === 'iframe' ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+        <pre className="bg-[#1a1a1a] text-[#f5f5f7] rounded-xl p-3 text-[10px] font-mono overflow-x-auto leading-relaxed whitespace-pre-wrap break-all">{iframeSnippet}</pre>
+        <p className="text-[10px] text-[#8e8e93] mt-1.5">Use this if your CMS blocks external scripts. You may need to manually tweak the height.</p>
+      </div>
+
+      {/* HighLevel tip */}
+      <div className="rounded-xl bg-[#f5f5f7] p-4">
+        <p className="text-xs font-semibold mb-1">Using GoHighLevel?</p>
+        <p className="text-[11px] text-[#8e8e93] leading-relaxed">
+          In a GHL funnel or website: add a <strong className="text-[#1a1a1a]">Custom HTML</strong> element and paste the snippet above. Set your Primary contact method (Details tab) to <strong className="text-[#1a1a1a]">Calendar</strong> with your GHL calendar URL so leads click straight through to book.
+        </p>
+      </div>
+
+      {/* Preview */}
+      <div>
+        <p className="text-[10px] text-[#8e8e93] uppercase tracking-wider font-semibold mb-2">Live preview</p>
+        <div className="rounded-2xl overflow-hidden border border-[#e5e5ea]">
+          <iframe src={`${origin}/embed/${slug}`} width="100%" height="600" frameBorder={0} style={{ border: 0, display: 'block' }} title="FomoForms preview" />
+        </div>
       </div>
     </div>
   );
