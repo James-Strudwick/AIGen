@@ -1462,11 +1462,11 @@ function EmbedTab({ slug, webhookUrl, onWebhookChange }: {
         <p className="text-[10px] text-[#8e8e93] mt-1.5">Use this if your CMS blocks external scripts. You may need to manually tweak the height.</p>
       </div>
 
-      {/* HighLevel tip */}
+      {/* Setup tip */}
       <div className="rounded-xl bg-[#f5f5f7] p-4">
-        <p className="text-xs font-semibold mb-1">Using GoHighLevel?</p>
+        <p className="text-xs font-semibold mb-1">Setup tip</p>
         <p className="text-[11px] text-[#8e8e93] leading-relaxed">
-          In a GHL funnel or website: add a <strong className="text-[#1a1a1a]">Custom HTML</strong> element and paste the snippet above. Set your Primary contact method (Details tab) to <strong className="text-[#1a1a1a]">Calendar</strong> with your GHL calendar URL so leads click straight through to book.
+          Most website builders (WordPress, Webflow, Wix, Squarespace, Kajabi, GoHighLevel, Bubble, etc.) have a <strong className="text-[#1a1a1a]">Custom HTML / Embed</strong> block — drop the snippet above into it and save. Pair this with your <strong className="text-[#1a1a1a]">Primary contact method</strong> in the Details tab so the final CTA routes prospects straight to your calendar, WhatsApp, or wherever you take bookings.
         </p>
       </div>
 
@@ -1474,7 +1474,7 @@ function EmbedTab({ slug, webhookUrl, onWebhookChange }: {
       <div className="pt-3 border-t border-[#e5e5ea]">
         <p className="text-sm font-semibold mb-1">Lead webhook</p>
         <p className="text-[11px] text-[#8e8e93] mb-3 leading-relaxed">
-          Auto-send every new lead as JSON to any URL. Works with HighLevel inbound webhooks, Zapier, Make, n8n, Slack incoming webhooks, or any custom backend.
+          Auto-send every new lead as JSON to any URL. Plug into Zapier, Make, n8n, HighLevel inbound webhooks, Slack, HubSpot, Pipedrive, or any custom backend — if it accepts webhooks, it works.
         </p>
         <div className="flex gap-2">
           <input type="url" value={webhookUrl}
@@ -1497,9 +1497,18 @@ function EmbedTab({ slug, webhookUrl, onWebhookChange }: {
           <a href={`${origin}/embed.js`} target="_blank" rel="noopener noreferrer" className="underline">docs</a>.
         </p>
 
-        {/* HighLevel webhook tip */}
         <details className="mt-3 rounded-xl bg-[#f5f5f7] p-3">
-          <summary className="text-[11px] font-semibold cursor-pointer">How to set this up in HighLevel →</summary>
+          <summary className="text-[11px] font-semibold cursor-pointer">Setup: Zapier / Make / n8n →</summary>
+          <ol className="text-[11px] text-[#8e8e93] mt-2 space-y-1 list-decimal pl-5 leading-relaxed">
+            <li>Create a new Zap / scenario / workflow</li>
+            <li>Set the trigger to <strong className="text-[#1a1a1a]">Webhooks → Catch Hook</strong> (Zapier) or <strong className="text-[#1a1a1a]">Webhook → Custom Webhook</strong> (Make/n8n)</li>
+            <li>Copy the generated URL and paste it above</li>
+            <li>Hit <strong className="text-[#1a1a1a]">Test</strong> to send a sample lead — the trigger picks up the payload and you can map fields to Gmail, Sheets, HubSpot, Notion, 500+ other apps</li>
+          </ol>
+        </details>
+
+        <details className="mt-2 rounded-xl bg-[#f5f5f7] p-3">
+          <summary className="text-[11px] font-semibold cursor-pointer">Setup: GoHighLevel →</summary>
           <ol className="text-[11px] text-[#8e8e93] mt-2 space-y-1 list-decimal pl-5 leading-relaxed">
             <li>In HighLevel: Automation → Workflows → Create a workflow</li>
             <li>Add trigger: <strong className="text-[#1a1a1a]">Inbound Webhook</strong></li>
@@ -1510,7 +1519,7 @@ function EmbedTab({ slug, webhookUrl, onWebhookChange }: {
         </details>
 
         <details className="mt-2 rounded-xl bg-[#f5f5f7] p-3">
-          <summary className="text-[11px] font-semibold cursor-pointer">Example payload →</summary>
+          <summary className="text-[11px] font-semibold cursor-pointer">Show payload schema (for developers) →</summary>
           <pre className="text-[10px] font-mono text-[#1a1a1a] mt-2 overflow-x-auto whitespace-pre-wrap">{`{
   "event": "lead.created",
   "timestamp": "2026-04-14T12:34:56Z",
