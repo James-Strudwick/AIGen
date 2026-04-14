@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     const supabase = getServiceClient();
     const { data: trainer, error: trainerErr } = await supabase
       .from('trainers')
-      .select('id, name, bio, specialties, copy, services, custom_questions, active, user_id, slug, webhook_url')
+      .select('id, name, bio, specialties, copy, services, custom_questions, active, user_id, slug, webhook_url, tier')
       .eq('id', trainerId)
       .maybeSingle();
 
@@ -303,9 +303,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 9b. Outbound webhook — coach can plug the lead into HighLevel,
-    //     Zapier, Make, n8n, Slack, or any custom backend.
-    if (trainer.webhook_url) {
+    // 9b. Outbound webhook (Pro-only) — coach can plug the lead into
+    //     HighLevel, Zapier, Make, n8n, Slack, or any custom backend.
+    if (trainer.webhook_url && trainer.tier === 'pro') {
       const payload = buildLeadWebhookPayload({
         trainer: { id: trainer.id, name: trainerName, slug: trainer.slug },
         form: matchedForm,

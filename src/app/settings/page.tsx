@@ -1296,6 +1296,7 @@ export default function SettingsPage() {
             slug={form.slug}
             webhookUrl={form.webhook_url}
             onWebhookChange={(v) => setForm({ ...form, webhook_url: v })}
+            isPro={trainerData?.tier === 'pro'}
           />
         )}
 
@@ -1448,10 +1449,11 @@ export default function SettingsPage() {
   );
 }
 
-function EmbedTab({ slug, webhookUrl, onWebhookChange }: {
+function EmbedTab({ slug, webhookUrl, onWebhookChange, isPro }: {
   slug: string;
   webhookUrl: string;
   onWebhookChange: (v: string) => void;
+  isPro: boolean;
 }) {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://fomoforms.com';
   const [copied, setCopied] = useState<string | null>(null);
@@ -1570,12 +1572,28 @@ function EmbedTab({ slug, webhookUrl, onWebhookChange }: {
         </p>
       </div>
 
-      {/* Webhook */}
+      {/* Webhook — Pro only */}
       <div className="pt-3 border-t border-[#e5e5ea]">
-        <p className="text-sm font-semibold mb-1">Lead webhook</p>
+        <div className="flex items-center gap-2 mb-1">
+          <p className="text-sm font-semibold">Lead webhook</p>
+          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#1a1a1a] text-white">Pro</span>
+        </div>
         <p className="text-[11px] text-[#8e8e93] mb-3 leading-relaxed">
           Auto-send every new lead as JSON to any URL. Plug into Zapier, Make, n8n, HighLevel inbound webhooks, Slack, HubSpot, Pipedrive, or any custom backend — if it accepts webhooks, it works.
         </p>
+
+        {!isPro ? (
+          <div className="rounded-xl bg-[#f5f5f7] p-4 text-center">
+            <p className="text-xs text-[#1a1a1a] font-medium mb-1">Upgrade to Pro to unlock lead webhooks</p>
+            <p className="text-[11px] text-[#8e8e93] mb-3 leading-relaxed">
+              Push every lead straight into your CRM, automation tool, or team chat the moment it lands.
+            </p>
+            <a href="/settings?tab=billing" className="inline-block text-[11px] font-semibold px-3 py-2 rounded-lg bg-[#1a1a1a] text-white">
+              Upgrade to Pro
+            </a>
+          </div>
+        ) : (
+        <>
         <div className="flex gap-2">
           <input type="url" value={webhookUrl}
             onChange={(e) => onWebhookChange(e.target.value)}
@@ -1643,6 +1661,8 @@ function EmbedTab({ slug, webhookUrl, onWebhookChange }: {
   }
 }`}</pre>
         </details>
+        </>
+        )}
       </div>
 
       {/* Preview */}
