@@ -23,6 +23,7 @@ import {
   PackagesPreview,
   AboutPreview,
 } from '@/components/SettingsPreview';
+import { currencySymbol } from '@/lib/currency';
 
 interface FormFlowEditorProps {
   trainer: Trainer;
@@ -171,6 +172,7 @@ function configFromForm(form: TrainerForm | undefined): FormConfig {
 }
 
 export default function FormFlowEditor({ trainer, goals, onEditGoals }: FormFlowEditorProps) {
+  const sym = currencySymbol(trainer.currency);
   const [forms, setForms] = useState<TrainerForm[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -662,7 +664,7 @@ export default function FormFlowEditor({ trainer, goals, onEditGoals }: FormFlow
                             </div>
                           </div>
                           <div>
-                            <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
+                            <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
                             <input type="number" value={config.services.nutrition.price_per_month ?? ''}
                               onChange={(e) => setConfig({ ...config, services: { ...config.services, nutrition: { ...config.services.nutrition, price_per_month: e.target.value ? parseFloat(e.target.value) : null } } })}
                               placeholder="Optional" className={inputClass} />
@@ -694,7 +696,7 @@ export default function FormFlowEditor({ trainer, goals, onEditGoals }: FormFlow
                             </div>
                           </div>
                           <div>
-                            <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
+                            <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
                             <input type="number" value={config.services.online.price_per_month ?? ''}
                               onChange={(e) => setConfig({ ...config, services: { ...config.services, online: { ...config.services.online, price_per_month: e.target.value ? parseFloat(e.target.value) : null } } })}
                               placeholder="Optional" className={inputClass} />
@@ -716,7 +718,7 @@ export default function FormFlowEditor({ trainer, goals, onEditGoals }: FormFlow
                           onChange={(e) => setConfig({ ...config, services: { ...config.services, hybrid: { ...config.services.hybrid, description: e.target.value } } })}
                           rows={2} placeholder="What's included..." className={inputClass} />
                         <div>
-                          <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
+                          <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
                           <input type="number" value={config.services.hybrid.price_per_month ?? ''}
                             onChange={(e) => setConfig({ ...config, services: { ...config.services, hybrid: { ...config.services.hybrid, price_per_month: e.target.value ? parseFloat(e.target.value) : null } } })}
                             placeholder="Optional" className={inputClass} />
@@ -753,13 +755,13 @@ export default function FormFlowEditor({ trainer, goals, onEditGoals }: FormFlow
                                 className={inputClass} />
                             </div>
                             <div>
-                              <label className="text-[#8e8e93] text-[9px] block mb-0.5">£/session</label>
+                              <label className="text-[#8e8e93] text-[9px] block mb-0.5">{sym}/session</label>
                               <input type="number" value={pkg.price_per_session}
                                 onChange={(e) => { const u = [...config.packages]; u[i] = { ...u[i], price_per_session: e.target.value }; setConfig({ ...config, packages: u }); }}
                                 className={inputClass} />
                             </div>
                             <div>
-                              <label className="text-[#8e8e93] text-[9px] block mb-0.5">£/month</label>
+                              <label className="text-[#8e8e93] text-[9px] block mb-0.5">{sym}/month</label>
                               <input type="number" value={pkg.monthly_price}
                                 onChange={(e) => { const u = [...config.packages]; u[i] = { ...u[i], monthly_price: e.target.value }; setConfig({ ...config, packages: u }); }}
                                 className={inputClass} />
@@ -778,6 +780,7 @@ export default function FormFlowEditor({ trainer, goals, onEditGoals }: FormFlow
                         primaryColor={brandColor}
                         packages={config.packages}
                         showPrices={config.services.show_prices}
+                        currency={trainer.currency}
                       />
                     </div>
                   )}

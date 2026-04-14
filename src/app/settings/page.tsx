@@ -9,6 +9,7 @@ import { CopyPreview, SpecialtiesPreview, ServicesPreview, PackagesPreview, Cust
 import SetupChecklist from '@/components/SetupChecklist';
 import FormFlowEditor from '@/components/FormFlowEditor';
 import { DEFAULT_PACKAGES } from '@/lib/package-defaults';
+import { CURRENCIES, currencySymbol } from '@/lib/currency';
 import Link from 'next/link';
 
 interface PackageInput {
@@ -60,8 +61,10 @@ export default function SettingsPage() {
     brand_color_primary: '#1a1a1a', color_text: '', color_text_muted: '',
     font_heading: 'system-ui', font_body: 'system-ui',
     theme: 'light' as 'light' | 'dark', hero_headline: '', hero_subtext: '',
-    cta_button_text: '', tone: '',
+    cta_button_text: '', tone: '', currency: 'GBP',
   });
+
+  const sym = currencySymbol(form.currency);
 
   const [addOns, setAddOns] = useState<ServiceAddOn[]>([]);
   const [nutritionService, setNutritionService] = useState<{ enabled: boolean; name: string; description: string; timeline_reduction_percent: number; price_per_month: number | null }>({
@@ -116,6 +119,7 @@ export default function SettingsPage() {
         theme: trainer.branding?.theme || 'light',
         hero_headline: trainer.copy?.hero_headline || '', hero_subtext: trainer.copy?.hero_subtext || '',
         cta_button_text: trainer.copy?.cta_button_text || '', tone: trainer.copy?.tone || '',
+        currency: trainer.currency || 'GBP',
       });
 
       if (trainer.services?.add_ons?.length) setAddOns(trainer.services.add_ons);
@@ -180,6 +184,7 @@ export default function SettingsPage() {
       booking_link: form.booking_link, contact_method: form.contact_method,
       contact_value: form.contact_value, brand_color_primary: form.brand_color_primary,
       brand_color_secondary: form.theme === 'dark' ? '#0a0a0a' : '#f5f5f7',
+      currency: form.currency,
       branding: brandingData, copy: copyData,
       specialties: specialties.filter(s => s.name.trim()).length > 0
         ? specialties.filter(s => s.name.trim()).map(s => ({ name: s.name.trim(), description: s.description.trim() }))
@@ -575,6 +580,15 @@ export default function SettingsPage() {
             <div>
               <label className="text-[#8e8e93] text-xs block mb-1">Booking link</label>
               <input value={form.booking_link} onChange={(e) => setForm({ ...form, booking_link: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="text-[#8e8e93] text-xs block mb-1">Currency</label>
+              <select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} className={inputClass}>
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>{c.label}</option>
+                ))}
+              </select>
+              <p className="text-[#8e8e93] text-[10px] mt-1">Used for your package and service prices shown to prospects.</p>
             </div>
           </div>
         )}
@@ -1026,7 +1040,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
+                  <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
                   <input type="number" value={nutritionService.price_per_month || ''}
                     onChange={(e) => setNutritionService({ ...nutritionService, price_per_month: e.target.value ? parseFloat(e.target.value) : null })}
                     placeholder="Optional" className={inputClass} />
@@ -1056,7 +1070,7 @@ export default function SettingsPage() {
                   <p className="text-[#8e8e93] text-[9px] mt-0.5">e.g. 75% means online takes ~25% longer than in-person</p>
                 </div>
                 <div>
-                  <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
+                  <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
                   <input type="number" value={onlineService.price_per_month || ''}
                     onChange={(e) => setOnlineService({ ...onlineService, price_per_month: e.target.value ? parseFloat(e.target.value) : null })}
                     placeholder="Optional" className={inputClass} />
@@ -1076,7 +1090,7 @@ export default function SettingsPage() {
               <textarea value={hybridService.description} onChange={(e) => setHybridService({ ...hybridService, description: e.target.value })}
                 placeholder="What's included..." rows={2} className={inputClass} />
               <div>
-                <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
+                <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
                 <input type="number" value={hybridService.price_per_month || ''}
                   onChange={(e) => setHybridService({ ...hybridService, price_per_month: e.target.value ? parseFloat(e.target.value) : null })}
                   placeholder="Optional" className={inputClass} />
@@ -1108,11 +1122,11 @@ export default function SettingsPage() {
                     <input type="number" value={pkg.sessions_per_week} onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], sessions_per_week: e.target.value }; setPkgs(u); }} className={inputClass} />
                   </div>
                   <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/session</label>
+                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/session</label>
                     <input type="number" value={pkg.price_per_session} onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], price_per_session: e.target.value }; setPkgs(u); }} className={inputClass} />
                   </div>
                   <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
+                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
                     <input type="number" value={pkg.monthly_price} onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], monthly_price: e.target.value }; setPkgs(u); }} className={inputClass} />
                   </div>
                 </div>
@@ -1128,6 +1142,7 @@ export default function SettingsPage() {
               primaryColor={form.brand_color_primary}
               packages={pkgs}
               showPrices={showPrices}
+              currency={form.currency}
             />
           </div>
         )}

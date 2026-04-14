@@ -6,6 +6,7 @@ import { AVAILABLE_FONTS } from '@/lib/branding';
 import { ServiceAddOn } from '@/types';
 import PhoneInput from '@/components/PhoneInput';
 import { DEFAULT_PACKAGES } from '@/lib/package-defaults';
+import { CURRENCIES, currencySymbol } from '@/lib/currency';
 
 type Step = 'basics' | 'branding' | 'services' | 'packages' | 'preview';
 const steps: { id: Step; label: string }[] = [
@@ -47,7 +48,10 @@ export default function OnboardingPage() {
     theme: 'light' as 'light' | 'dark',
     hero_headline: '',
     tone: '',
+    currency: 'GBP',
   });
+
+  const sym = currencySymbol(form.currency);
 
   const [addOns, setAddOns] = useState<ServiceAddOn[]>([]);
   const [showPrices, setShowPrices] = useState(true);
@@ -94,6 +98,7 @@ export default function OnboardingPage() {
           booking_link: trainer.booking_link || '',
           contact_method: trainer.contact_method || 'whatsapp',
           contact_value: trainer.contact_value || '',
+          currency: trainer.currency || 'GBP',
           brand_color_primary: trainer.brand_color_primary || '#1a1a1a',
           ...(trainer.branding ? {
             font_heading: trainer.branding.font_heading || 'system-ui',
@@ -159,6 +164,7 @@ export default function OnboardingPage() {
       booking_link: form.booking_link,
       contact_method: form.contact_method,
       contact_value: form.contact_value,
+      currency: form.currency,
       brand_color_primary: form.brand_color_primary,
       brand_color_secondary: form.theme === 'dark' ? '#0a0a0a' : '#f5f5f7',
       branding: brandingData,
@@ -273,6 +279,15 @@ export default function OnboardingPage() {
               <input value={form.booking_link} onChange={(e) => setForm({ ...form, booking_link: e.target.value })}
                 placeholder="https://calendly.com/you" className={inputClass} />
             </div>
+            <div>
+              <label className="text-[#8e8e93] text-xs block mb-1">Currency</label>
+              <select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} className={inputClass}>
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>{c.label}</option>
+                ))}
+              </select>
+              <p className="text-[#8e8e93] text-[10px] mt-1">Used for your package and service prices shown to prospects.</p>
+            </div>
           </div>
         )}
 
@@ -383,7 +398,7 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
+                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
                     <input type="number" value={addOn.price_per_month || ''}
                       onChange={(e) => { const u = [...addOns]; u[i] = { ...u[i], price_per_month: e.target.value ? parseFloat(e.target.value) : null }; setAddOns(u); }}
                       placeholder="Optional" className={inputClass} />
@@ -430,13 +445,13 @@ export default function OnboardingPage() {
                       className={inputClass} />
                   </div>
                   <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/session</label>
+                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/session</label>
                     <input type="number" value={pkg.price_per_session}
                       onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], price_per_session: e.target.value }; setPkgs(u); }}
                       className={inputClass} />
                   </div>
                   <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
+                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
                     <input type="number" value={pkg.monthly_price}
                       onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], monthly_price: e.target.value }; setPkgs(u); }}
                       className={inputClass} />

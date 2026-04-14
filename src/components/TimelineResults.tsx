@@ -58,6 +58,7 @@ export default function TimelineResults({ trainer, branding, services, specialti
         services={services}
         packages={packages}
         trainerName={trainer.name}
+        currency={trainer.currency}
       />
 
       {/* Coach Specialties */}

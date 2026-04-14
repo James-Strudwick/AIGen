@@ -123,6 +123,7 @@ export interface Trainer {
   referral_tier_reached: number;
   has_referral_discount: boolean;
   pro_trial_ends_at: string | null;
+  currency: string;
   active: boolean;
   created_at: string;
 }

@@ -2,6 +2,7 @@
 
 import { TrainerSpecialty, ServiceAddOn, CustomQuestion, CustomGoal, FormAboutConfig } from '@/types';
 import { getGoogleFontsUrl } from '@/lib/branding';
+import { currencySymbol } from '@/lib/currency';
 
 interface PreviewWrapperProps {
   theme: 'light' | 'dark';
@@ -125,13 +126,15 @@ export function SpecialtiesPreview({ theme, primaryColor, specialties }: {
 
 // --- Services Preview ---
 
-export function ServicesPreview({ theme, primaryColor, addOns, showPrices }: {
+export function ServicesPreview({ theme, primaryColor, addOns, showPrices, currency }: {
   theme: 'light' | 'dark';
   primaryColor: string;
   addOns: ServiceAddOn[];
   showPrices: boolean;
+  currency?: string;
 }) {
   const c = getColors(theme, primaryColor);
+  const sym = currencySymbol(currency);
   const validAddOns = addOns.filter(a => a.name.trim());
 
   if (validAddOns.length === 0) return null;
@@ -166,7 +169,7 @@ export function ServicesPreview({ theme, primaryColor, addOns, showPrices }: {
                       Up to {addOn.timeline_reduction_percent}% faster
                     </span>
                     {showPrices && addOn.price_per_month && (
-                      <span className="text-[9px]" style={{ color: c.muted }}>+£{addOn.price_per_month}/mo</span>
+                      <span className="text-[9px]" style={{ color: c.muted }}>+{sym}{addOn.price_per_month}/mo</span>
                     )}
                   </div>
                 </div>
@@ -194,13 +197,15 @@ interface PackageInput {
   is_online: boolean;
 }
 
-export function PackagesPreview({ theme, primaryColor, packages, showPrices }: {
+export function PackagesPreview({ theme, primaryColor, packages, showPrices, currency }: {
   theme: 'light' | 'dark';
   primaryColor: string;
   packages: PackageInput[];
   showPrices: boolean;
+  currency?: string;
 }) {
   const c = getColors(theme, primaryColor);
+  const sym = currencySymbol(currency);
   const valid = packages.filter(p => p.name.trim());
 
   if (valid.length === 0) return null;
@@ -235,7 +240,7 @@ export function PackagesPreview({ theme, primaryColor, packages, showPrices }: {
               </div>
               {showPrices && pkg.monthly_price && (
                 <p className="text-xs font-bold" style={{ color: isFirst ? c.primary : c.text }}>
-                  £{pkg.monthly_price}<span className="text-[9px] font-normal" style={{ color: c.muted }}>/mo</span>
+                  {sym}{pkg.monthly_price}<span className="text-[9px] font-normal" style={{ color: c.muted }}>/mo</span>
                 </p>
               )}
             </div>
