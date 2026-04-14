@@ -86,6 +86,25 @@ export default function SettingsPage() {
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
   const [specialties, setSpecialties] = useState<{ name: string; description: string }[]>([]);
   const [pkgs, setPkgs] = useState<PackageInput[]>(() => DEFAULT_PACKAGES.map(p => ({ ...p })));
+  const [lastAddedPkgIdx, setLastAddedPkgIdx] = useState<number | null>(null);
+
+  // Scroll + focus + flash-highlight the most recently added package card
+  // so users get a clear "yes that worked" signal after clicking Add /
+  // Add challenge — especially useful when the list scrolls below the fold.
+  useEffect(() => {
+    if (lastAddedPkgIdx === null) return;
+    const el = document.querySelector(`[data-pkg-idx="${lastAddedPkgIdx}"]`);
+    if (el instanceof HTMLElement) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Focus the name input shortly after scroll settles.
+      window.setTimeout(() => {
+        const input = el.querySelector('input[type="text"]') as HTMLInputElement | null;
+        input?.focus();
+      }, 350);
+    }
+    const t = window.setTimeout(() => setLastAddedPkgIdx(null), 1600);
+    return () => window.clearTimeout(t);
+  }, [lastAddedPkgIdx]);
 
   useEffect(() => {
     const load = async () => {
@@ -1173,17 +1192,29 @@ export default function SettingsPage() {
               <p className="font-medium text-sm">Training packages</p>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => canAddChallenge && setPkgs([...pkgs, { name: '', sessions_per_week: '0', price_per_session: '', monthly_price: '', is_online: false, is_challenge: true, challenge_duration_weeks: '4', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '10' }])}
+                  onClick={() => {
+                    if (!canAddChallenge) return;
+                    setPkgs(curr => {
+                      setLastAddedPkgIdx(curr.length);
+                      return [...curr, { name: '', sessions_per_week: '0', price_per_session: '', monthly_price: '', is_online: false, is_challenge: true, challenge_duration_weeks: '4', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '10' }];
+                    });
+                  }}
                   disabled={!canAddChallenge}
                   title={canAddChallenge ? 'Create a time-bound challenge' : 'Starter tier allows 1 challenge. Upgrade to Pro for unlimited.'}
-                  className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#1a1a1a] text-white flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed">
+                  className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#1a1a1a] text-white flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed transition-transform active:scale-95">
                   <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
                   </svg>
                   Add challenge
                 </button>
-                <button onClick={() => setPkgs([...pkgs, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false, is_challenge: false, challenge_duration_weeks: '', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '' }])}
-                  className="text-xs text-[#007AFF] font-medium">+ Add</button>
+                <button
+                  onClick={() => {
+                    setPkgs(curr => {
+                      setLastAddedPkgIdx(curr.length);
+                      return [...curr, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false, is_challenge: false, challenge_duration_weeks: '', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '' }];
+                    });
+                  }}
+                  className="text-xs text-[#007AFF] font-medium transition-transform active:scale-95">+ Add</button>
               </div>
             </div>
             <>
@@ -1192,8 +1223,11 @@ export default function SettingsPage() {
                       const u = [...pkgs]; u[i] = { ...u[i], ...patch }; setPkgs(u);
                     };
                     const canToggleChallenge = pkg.is_challenge || challengeCount < maxChallenges;
+                    const isJustAdded = lastAddedPkgIdx === i;
                     return (
-                      <div key={i} className="bg-[#f5f5f7] rounded-xl p-4 space-y-3"
+                      <div key={i}
+                        data-pkg-idx={i}
+                        className={`bg-[#f5f5f7] rounded-xl p-4 space-y-3 transition-all duration-500 ${isJustAdded ? 'ring-2 ring-offset-2 ring-[#007AFF]' : ''}`}
                         style={pkg.is_challenge ? { borderWidth: '1.5px', borderColor: '#1a1a1a', backgroundColor: '#fff' } : {}}>
                         <div className="flex gap-2">
                           <input value={pkg.name} onChange={(e) => update({ name: e.target.value })}
