@@ -124,6 +124,7 @@ export interface Trainer {
   has_referral_discount: boolean;
   pro_trial_ends_at: string | null;
   currency: string;
+  webhook_url: string | null;
   active: boolean;
   created_at: string;
 }

@@ -61,7 +61,7 @@ export default function SettingsPage() {
     brand_color_primary: '#1a1a1a', color_text: '', color_text_muted: '',
     font_heading: 'system-ui', font_body: 'system-ui',
     theme: 'light' as 'light' | 'dark', hero_headline: '', hero_subtext: '',
-    cta_button_text: '', tone: '', currency: 'GBP',
+    cta_button_text: '', tone: '', currency: 'GBP', webhook_url: '',
   });
 
   const sym = currencySymbol(form.currency);
@@ -120,6 +120,7 @@ export default function SettingsPage() {
         hero_headline: trainer.copy?.hero_headline || '', hero_subtext: trainer.copy?.hero_subtext || '',
         cta_button_text: trainer.copy?.cta_button_text || '', tone: trainer.copy?.tone || '',
         currency: trainer.currency || 'GBP',
+        webhook_url: trainer.webhook_url || '',
       });
 
       if (trainer.services?.add_ons?.length) setAddOns(trainer.services.add_ons);
@@ -185,6 +186,7 @@ export default function SettingsPage() {
       contact_value: form.contact_value, brand_color_primary: form.brand_color_primary,
       brand_color_secondary: form.theme === 'dark' ? '#0a0a0a' : '#f5f5f7',
       currency: form.currency,
+      webhook_url: form.webhook_url.trim() || null,
       branding: brandingData, copy: copyData,
       specialties: specialties.filter(s => s.name.trim()).length > 0
         ? specialties.filter(s => s.name.trim()).map(s => ({ name: s.name.trim(), description: s.description.trim() }))
@@ -294,7 +296,7 @@ export default function SettingsPage() {
     { id: 'details', label: 'Details' },
     { id: 'branding', label: 'Branding' },
     { id: 'forms', label: 'Forms' },
-    { id: 'embed', label: 'Embed' },
+    { id: 'embed', label: 'Integrations' },
     { id: 'account', label: 'Account' },
     { id: 'billing', label: 'Billing' },
   ];
@@ -1190,7 +1192,11 @@ export default function SettingsPage() {
 
         {/* Embed */}
         {activeTab === 'embed' && (
-          <EmbedTab slug={form.slug} />
+          <EmbedTab
+            slug={form.slug}
+            webhookUrl={form.webhook_url}
+            onWebhookChange={(v) => setForm({ ...form, webhook_url: v })}
+          />
         )}
 
         {/* Billing */}
@@ -1342,9 +1348,61 @@ export default function SettingsPage() {
   );
 }
 
-function EmbedTab({ slug }: { slug: string }) {
+function EmbedTab({ slug, webhookUrl, onWebhookChange }: {
+  slug: string;
+  webhookUrl: string;
+  onWebhookChange: (v: string) => void;
+}) {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://fomoforms.com';
   const [copied, setCopied] = useState<string | null>(null);
+  const [webhookStatus, setWebhookStatus] = useState<'idle' | 'testing' | 'success' | 'failed'>('idle');
+  const [webhookError, setWebhookError] = useState<string>('');
+
+  const testWebhook = async () => {
+    if (!webhookUrl.trim()) return;
+    setWebhookStatus('testing');
+    setWebhookError('');
+    try {
+      const res = await fetch(webhookUrl.trim(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'lead.created',
+          test: true,
+          timestamp: new Date().toISOString(),
+          trainer: { id: 'test-trainer-id', name: 'Test Trainer', slug: slug || 'test-slug' },
+          form: null,
+          lead: {
+            id: 'test-lead-id',
+            name: 'Test Lead',
+            phone: '+441234567890',
+            goal: 'Lose Weight',
+            goalType: 'weight_loss',
+            performanceTarget: '',
+            age: 30,
+            currentWeightKg: 80,
+            goalWeightKg: 70,
+            experienceLevel: 'beginner',
+            availableDaysPerWeek: 3,
+            estimatedWeeks: 14,
+            bestPackage: '3x Per Week',
+            customAnswers: {},
+            customAboutFields: {},
+          },
+        }),
+      });
+      if (res.ok || res.status < 400) {
+        setWebhookStatus('success');
+      } else {
+        setWebhookStatus('failed');
+        setWebhookError(`Receiver returned ${res.status}`);
+      }
+    } catch (err) {
+      setWebhookStatus('failed');
+      setWebhookError(err instanceof Error ? err.message : 'Request failed');
+    }
+    setTimeout(() => setWebhookStatus('idle'), 4000);
+  };
 
   const iframeSnippet = `<iframe src="${origin}/embed/${slug || 'your-slug'}" width="100%" height="800" frameborder="0" style="border:0;"></iframe>`;
 
@@ -1410,6 +1468,72 @@ function EmbedTab({ slug }: { slug: string }) {
         <p className="text-[11px] text-[#8e8e93] leading-relaxed">
           In a GHL funnel or website: add a <strong className="text-[#1a1a1a]">Custom HTML</strong> element and paste the snippet above. Set your Primary contact method (Details tab) to <strong className="text-[#1a1a1a]">Calendar</strong> with your GHL calendar URL so leads click straight through to book.
         </p>
+      </div>
+
+      {/* Webhook */}
+      <div className="pt-3 border-t border-[#e5e5ea]">
+        <p className="text-sm font-semibold mb-1">Lead webhook</p>
+        <p className="text-[11px] text-[#8e8e93] mb-3 leading-relaxed">
+          Auto-send every new lead as JSON to any URL. Works with HighLevel inbound webhooks, Zapier, Make, n8n, Slack incoming webhooks, or any custom backend.
+        </p>
+        <div className="flex gap-2">
+          <input type="url" value={webhookUrl}
+            onChange={(e) => onWebhookChange(e.target.value)}
+            placeholder="https://services.leadconnectorhq.com/hooks/..."
+            className="flex-1 bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl px-4 py-3 text-[#1a1a1a] text-sm placeholder-[#8e8e93] focus:outline-none focus:border-[#8e8e93]" />
+          <button onClick={testWebhook} disabled={!webhookUrl.trim() || webhookStatus === 'testing'}
+            className="px-4 py-3 rounded-xl bg-[#1a1a1a] text-white text-xs font-semibold disabled:opacity-40 flex-shrink-0">
+            {webhookStatus === 'testing' ? 'Testing...' : 'Test'}
+          </button>
+        </div>
+        {webhookStatus === 'success' && (
+          <p className="text-[11px] text-[#34C759] mt-2 font-medium">✓ Receiver accepted the test payload.</p>
+        )}
+        {webhookStatus === 'failed' && (
+          <p className="text-[11px] text-[#FF3B30] mt-2 font-medium">✗ {webhookError || 'Test failed.'}</p>
+        )}
+        <p className="text-[10px] text-[#8e8e93] mt-2">
+          Save settings after pasting. Payload shape documented in the{' '}
+          <a href={`${origin}/embed.js`} target="_blank" rel="noopener noreferrer" className="underline">docs</a>.
+        </p>
+
+        {/* HighLevel webhook tip */}
+        <details className="mt-3 rounded-xl bg-[#f5f5f7] p-3">
+          <summary className="text-[11px] font-semibold cursor-pointer">How to set this up in HighLevel →</summary>
+          <ol className="text-[11px] text-[#8e8e93] mt-2 space-y-1 list-decimal pl-5 leading-relaxed">
+            <li>In HighLevel: Automation → Workflows → Create a workflow</li>
+            <li>Add trigger: <strong className="text-[#1a1a1a]">Inbound Webhook</strong></li>
+            <li>Copy the webhook URL HighLevel generates and paste it above</li>
+            <li>Add a workflow action (e.g. Create/Update Contact with the fields from the payload)</li>
+            <li>Publish the workflow — every new FomoForms lead lands in your HighLevel contacts</li>
+          </ol>
+        </details>
+
+        <details className="mt-2 rounded-xl bg-[#f5f5f7] p-3">
+          <summary className="text-[11px] font-semibold cursor-pointer">Example payload →</summary>
+          <pre className="text-[10px] font-mono text-[#1a1a1a] mt-2 overflow-x-auto whitespace-pre-wrap">{`{
+  "event": "lead.created",
+  "timestamp": "2026-04-14T12:34:56Z",
+  "trainer": { "id": "...", "name": "...", "slug": "..." },
+  "form": null,
+  "lead": {
+    "id": "...",
+    "name": "Sarah Mitchell",
+    "phone": "+447...",
+    "goal": "Lose Weight",
+    "goalType": "weight_loss",
+    "age": 32,
+    "currentWeightKg": 78,
+    "goalWeightKg": 68,
+    "experienceLevel": "beginner",
+    "availableDaysPerWeek": 3,
+    "estimatedWeeks": 14,
+    "bestPackage": "3x Per Week",
+    "customAnswers": { "...": "..." },
+    "customAboutFields": { "...": "..." }
+  }
+}`}</pre>
+        </details>
       </div>
 
       {/* Preview */}

@@ -5,6 +5,7 @@ import { buildPrompt } from '@/lib/generateNarrative';
 import { FormData, Package, TimelineResult, GoalType, ExperienceLevel, TrainerSpecialty, ServiceAddOn, CustomQuestion } from '@/types';
 import Anthropic from '@anthropic-ai/sdk';
 import { sendNewLeadEmail } from '@/lib/email';
+import { buildLeadWebhookPayload, sendLeadWebhook } from '@/lib/webhook';
 
 interface RequestBody {
   trainerId: string;
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
     const supabase = getServiceClient();
     const { data: trainer, error: trainerErr } = await supabase
       .from('trainers')
-      .select('id, name, bio, specialties, copy, services, custom_questions, active, user_id, slug')
+      .select('id, name, bio, specialties, copy, services, custom_questions, active, user_id, slug, webhook_url')
       .eq('id', trainerId)
       .maybeSingle();
 
@@ -147,16 +148,18 @@ export async function POST(request: NextRequest) {
     let trainerTone: string = clampString(trainer.copy?.tone || 'friendly', 100);
     let serviceAddOns: ServiceAddOn[] = clampArray(trainer.services?.add_ons ?? [], MAX_ADDONS);
     let customQuestions: CustomQuestion[] = clampArray(trainer.custom_questions ?? [], MAX_QUESTIONS);
+    let matchedForm: { id: string; goal_id: string; name: string } | null = null;
 
     if (formId) {
       const { data: form } = await supabase
         .from('forms')
-        .select('specialties, copy, services, questions')
+        .select('id, goal_id, name, specialties, copy, services, questions')
         .eq('id', formId)
         .eq('trainer_id', trainerId)
         .maybeSingle();
 
       if (form) {
+        matchedForm = { id: form.id, goal_id: form.goal_id, name: form.name };
         if (form.specialties) trainerSpecialties = form.specialties;
         if (form.copy?.tone) trainerTone = clampString(form.copy.tone, 100);
         if (form.services?.add_ons) serviceAddOns = clampArray(form.services.add_ons, MAX_ADDONS);
@@ -273,20 +276,21 @@ export async function POST(request: NextRequest) {
       console.error('Database error:', dbError);
     }
 
-    // 9. Notify the coach by email — fire-and-forget so we don't block the
-    // response on email delivery. Internal failures are swallowed inside
-    // sendNewLeadEmail.
+    // 9. Post-save notifications — all fire-and-forget so slow/failing
+    //    downstream systems never block the response or kill the lead.
+    const goalLabels: Record<string, string> = {
+      weight_loss: 'Lose weight',
+      muscle_gain: 'Build muscle',
+      fitness: 'Improve fitness',
+      performance: safeFormData.performanceTarget || 'Performance goal',
+    };
+    const goalLabel = goalLabels[safeFormData.goalType as string] || 'reach their goal';
+
+    // 9a. Email notification to the coach
     if (trainer.user_id) {
       const { data: authUser } = await supabase.auth.admin.getUserById(trainer.user_id);
       const coachEmail = authUser?.user?.email;
       if (coachEmail) {
-        const goalLabels: Record<string, string> = {
-          weight_loss: 'Lose weight',
-          muscle_gain: 'Build muscle',
-          fitness: 'Improve fitness',
-          performance: safeFormData.performanceTarget || 'Performance goal',
-        };
-        const goalLabel = goalLabels[safeFormData.goalType as string] || 'reach their goal';
         const { origin } = new URL(request.url);
         void sendNewLeadEmail({
           to: coachEmail,
@@ -297,6 +301,20 @@ export async function POST(request: NextRequest) {
           dashboardUrl: `${origin}/dashboard`,
         });
       }
+    }
+
+    // 9b. Outbound webhook — coach can plug the lead into HighLevel,
+    //     Zapier, Make, n8n, Slack, or any custom backend.
+    if (trainer.webhook_url) {
+      const payload = buildLeadWebhookPayload({
+        trainer: { id: trainer.id, name: trainerName, slug: trainer.slug },
+        form: matchedForm,
+        leadId: leadData?.id || null,
+        formData: safeFormData,
+        goalLabel,
+        timeline: timelineResult,
+      });
+      void sendLeadWebhook(trainer.webhook_url, payload);
     }
 
     return NextResponse.json({
