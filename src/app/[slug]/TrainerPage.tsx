@@ -71,7 +71,19 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
   // Resolve form-specific overrides (custom form > default trainer settings)
   const activeQuestions = activeForm?.questions ?? trainer.custom_questions ?? [];
   const activePackages = activeForm?.packages
-    ? activeForm.packages.map((p, i) => ({ ...p, id: `form-pkg-${i}`, trainer_id: trainer.id, description: null, sort_order: i + 1 } as Package))
+    ? activeForm.packages.map((p, i) => ({
+        ...p,
+        id: `form-pkg-${i}`,
+        trainer_id: trainer.id,
+        description: null,
+        sort_order: i + 1,
+        is_challenge: false,
+        challenge_duration_weeks: null,
+        challenge_start_date: null,
+        challenge_outcome: null,
+        challenge_spots_total: null,
+        challenge_spots_remaining: null,
+      } as Package))
     : packages;
   const activeServices = activeForm?.services ?? services;
   const activeSpecialties = activeForm?.specialties ?? trainerSpecialties;

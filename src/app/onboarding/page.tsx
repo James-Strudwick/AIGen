@@ -23,6 +23,11 @@ interface PackageInput {
   price_per_session: string;
   monthly_price: string;
   is_online: boolean;
+  is_challenge: boolean;
+  challenge_duration_weeks: string;
+  challenge_start_date: string;
+  challenge_outcome: string;
+  challenge_spots_total: string;
 }
 
 export default function OnboardingPage() {
@@ -124,6 +129,11 @@ export default function OnboardingPage() {
             price_per_session: p.price_per_session ? String(p.price_per_session) : '',
             monthly_price: p.monthly_price ? String(p.monthly_price) : '',
             is_online: p.is_online as boolean,
+            is_challenge: !!p.is_challenge,
+            challenge_duration_weeks: p.challenge_duration_weeks ? String(p.challenge_duration_weeks) : '',
+            challenge_start_date: p.challenge_start_date ? String(p.challenge_start_date) : '',
+            challenge_outcome: (p.challenge_outcome as string) || '',
+            challenge_spots_total: p.challenge_spots_total ? String(p.challenge_spots_total) : '',
           })));
         }
       }
@@ -199,6 +209,11 @@ export default function OnboardingPage() {
       price_per_session: p.price_per_session ? parseFloat(p.price_per_session) : null,
       monthly_price: p.monthly_price ? parseFloat(p.monthly_price) : null,
       is_online: p.is_online,
+      is_challenge: p.is_challenge,
+      challenge_duration_weeks: p.is_challenge && p.challenge_duration_weeks ? parseInt(p.challenge_duration_weeks) : null,
+      challenge_start_date: p.is_challenge && p.challenge_start_date ? p.challenge_start_date : null,
+      challenge_outcome: p.is_challenge && p.challenge_outcome.trim() ? p.challenge_outcome.trim() : null,
+      challenge_spots_total: p.is_challenge && p.challenge_spots_total ? parseInt(p.challenge_spots_total) : null,
     }));
 
     const res = await fetch('/api/onboarding', {
@@ -497,7 +512,7 @@ export default function OnboardingPage() {
               </div>
             ))}
 
-            <button onClick={() => setPkgs([...pkgs, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false }])}
+            <button onClick={() => setPkgs([...pkgs, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false, is_challenge: false, challenge_duration_weeks: '', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '' }])}
               className="w-full py-3 rounded-xl border border-dashed border-[#e5e5ea] text-[#8e8e93] text-sm hover:border-[#8e8e93] transition-colors">
               + Add package
             </button>

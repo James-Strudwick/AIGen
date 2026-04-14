@@ -18,6 +18,11 @@ interface PackageInput {
   price_per_session: string;
   monthly_price: string;
   is_online: boolean;
+  is_challenge: boolean;
+  challenge_duration_weeks: string;
+  challenge_start_date: string;
+  challenge_outcome: string;
+  challenge_spots_total: string;
 }
 
 type Tab = 'account' | 'details' | 'copy' | 'branding' | 'goals' | 'forms' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing' | 'embed';
@@ -139,6 +144,11 @@ export default function SettingsPage() {
           price_per_session: p.price_per_session ? String(p.price_per_session) : '',
           monthly_price: p.monthly_price ? String(p.monthly_price) : '',
           is_online: p.is_online as boolean,
+          is_challenge: !!p.is_challenge,
+          challenge_duration_weeks: p.challenge_duration_weeks ? String(p.challenge_duration_weeks) : '',
+          challenge_start_date: p.challenge_start_date ? String(p.challenge_start_date) : '',
+          challenge_outcome: (p.challenge_outcome as string) || '',
+          challenge_spots_total: p.challenge_spots_total ? String(p.challenge_spots_total) : '',
         })));
       }
 
@@ -206,12 +216,22 @@ export default function SettingsPage() {
         : null,
     };
 
-    const packageRows = pkgs.filter(p => p.name.trim()).map(p => ({
-      name: p.name, sessions_per_week: parseInt(p.sessions_per_week) || 0,
-      price_per_session: p.price_per_session ? parseFloat(p.price_per_session) : null,
-      monthly_price: p.monthly_price ? parseFloat(p.monthly_price) : null,
-      is_online: p.is_online,
-    }));
+    const packageRows = pkgs.filter(p => p.name.trim()).map(p => {
+      const spotsTotal = p.challenge_spots_total ? parseInt(p.challenge_spots_total) : null;
+      return {
+        name: p.name,
+        sessions_per_week: parseInt(p.sessions_per_week) || 0,
+        price_per_session: p.price_per_session ? parseFloat(p.price_per_session) : null,
+        monthly_price: p.monthly_price ? parseFloat(p.monthly_price) : null,
+        is_online: p.is_online,
+        is_challenge: p.is_challenge,
+        challenge_duration_weeks: p.is_challenge && p.challenge_duration_weeks ? parseInt(p.challenge_duration_weeks) : null,
+        challenge_start_date: p.is_challenge && p.challenge_start_date ? p.challenge_start_date : null,
+        challenge_outcome: p.is_challenge && p.challenge_outcome.trim() ? p.challenge_outcome.trim() : null,
+        challenge_spots_total: p.is_challenge ? spotsTotal : null,
+        // Server preserves remaining across saves; don't overwrite it here.
+      };
+    });
 
     const res = await fetch('/api/onboarding', {
       method: 'POST',
@@ -1147,38 +1167,118 @@ export default function SettingsPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="font-medium text-sm">Training packages</p>
-              <button onClick={() => setPkgs([...pkgs, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false }])}
+              <button onClick={() => setPkgs([...pkgs, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false, is_challenge: false, challenge_duration_weeks: '', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '' }])}
                 className="text-xs text-[#007AFF] font-medium">+ Add</button>
             </div>
-            {pkgs.map((pkg, i) => (
-              <div key={i} className="bg-[#f5f5f7] rounded-xl p-4 space-y-3">
-                <div className="flex gap-2">
-                  <input value={pkg.name} onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], name: e.target.value }; setPkgs(u); }}
-                    placeholder="e.g. 2x Per Week" className={inputClass} />
-                  {pkgs.length > 1 && (
-                    <button onClick={() => setPkgs(pkgs.filter((_, idx) => idx !== i))} className="text-[#FF3B30] text-xs px-2">Remove</button>
-                  )}
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">Sessions/wk</label>
-                    <input type="number" value={pkg.sessions_per_week} onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], sessions_per_week: e.target.value }; setPkgs(u); }} className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/session</label>
-                    <input type="number" value={pkg.price_per_session} onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], price_per_session: e.target.value }; setPkgs(u); }} className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
-                    <input type="number" value={pkg.monthly_price} onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], monthly_price: e.target.value }; setPkgs(u); }} className={inputClass} />
-                  </div>
-                </div>
-                <label className="flex items-center gap-2 text-xs text-[#8e8e93]">
-                  <input type="checkbox" checked={pkg.is_online} onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], is_online: e.target.checked }; setPkgs(u); }} />
-                  Online package
-                </label>
-              </div>
-            ))}
+            {(() => {
+              const challengeCount = pkgs.filter(p => p.is_challenge).length;
+              const maxChallenges = trainerData?.tier === 'pro' ? Infinity : 1;
+              return (
+                <>
+                  {pkgs.map((pkg, i) => {
+                    const update = (patch: Partial<PackageInput>) => {
+                      const u = [...pkgs]; u[i] = { ...u[i], ...patch }; setPkgs(u);
+                    };
+                    const canToggleChallenge = pkg.is_challenge || challengeCount < maxChallenges;
+                    return (
+                      <div key={i} className="bg-[#f5f5f7] rounded-xl p-4 space-y-3"
+                        style={pkg.is_challenge ? { borderWidth: '1.5px', borderColor: '#1a1a1a', backgroundColor: '#fff' } : {}}>
+                        <div className="flex gap-2">
+                          <input value={pkg.name} onChange={(e) => update({ name: e.target.value })}
+                            placeholder={pkg.is_challenge ? 'e.g. 28-Day Shred' : 'e.g. 2x Per Week'} className={inputClass} />
+                          {pkgs.length > 1 && (
+                            <button onClick={() => setPkgs(pkgs.filter((_, idx) => idx !== i))} className="text-[#FF3B30] text-xs px-2">Remove</button>
+                          )}
+                        </div>
+
+                        {/* Challenge toggle */}
+                        <label className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium">Make this a challenge</p>
+                            <p className="text-[10px] text-[#8e8e93] leading-snug">
+                              {canToggleChallenge
+                                ? 'Time-bound programme with a fixed duration, start date, and optional cohort cap.'
+                                : 'Starter tier allows 1 challenge. Upgrade to Pro for unlimited.'}
+                            </p>
+                          </div>
+                          <button type="button"
+                            disabled={!canToggleChallenge}
+                            onClick={() => update({ is_challenge: !pkg.is_challenge })}
+                            className="w-10 h-6 rounded-full p-0.5 transition-all duration-300 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={{ backgroundColor: pkg.is_challenge ? '#1a1a1a' : '#e5e5ea' }}>
+                            <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300"
+                              style={{ transform: pkg.is_challenge ? 'translateX(16px)' : 'translateX(0)' }} />
+                          </button>
+                        </label>
+
+                        {pkg.is_challenge ? (
+                          <>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">Duration (weeks)</label>
+                                <input type="number" min={1} max={52} value={pkg.challenge_duration_weeks}
+                                  onChange={(e) => update({ challenge_duration_weeks: e.target.value })}
+                                  placeholder="4" className={inputClass} />
+                              </div>
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">Start date</label>
+                                <input type="date" value={pkg.challenge_start_date}
+                                  onChange={(e) => update({ challenge_start_date: e.target.value })}
+                                  className={inputClass} />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-[#8e8e93] text-[10px] block mb-0.5">The promise (optional)</label>
+                              <input value={pkg.challenge_outcome}
+                                onChange={(e) => update({ challenge_outcome: e.target.value })}
+                                placeholder="e.g. Drop 8lb and rebuild your discipline" className={inputClass} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">Total spots (optional)</label>
+                                <input type="number" min={1} max={500} value={pkg.challenge_spots_total}
+                                  onChange={(e) => update({ challenge_spots_total: e.target.value })}
+                                  placeholder="10" className={inputClass} />
+                              </div>
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym} price</label>
+                                <input type="number" value={pkg.monthly_price}
+                                  onChange={(e) => update({ monthly_price: e.target.value })}
+                                  placeholder="297" className={inputClass} />
+                              </div>
+                            </div>
+                            <p className="text-[9px] text-[#8e8e93]">
+                              Spots decrement automatically as leads sign up. We&apos;ll email you when it drops below 5 to double-check the count.
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">Sessions/wk</label>
+                                <input type="number" value={pkg.sessions_per_week} onChange={(e) => update({ sessions_per_week: e.target.value })} className={inputClass} />
+                              </div>
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/session</label>
+                                <input type="number" value={pkg.price_per_session} onChange={(e) => update({ price_per_session: e.target.value })} className={inputClass} />
+                              </div>
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
+                                <input type="number" value={pkg.monthly_price} onChange={(e) => update({ monthly_price: e.target.value })} className={inputClass} />
+                              </div>
+                            </div>
+                            <label className="flex items-center gap-2 text-xs text-[#8e8e93]">
+                              <input type="checkbox" checked={pkg.is_online} onChange={(e) => update({ is_online: e.target.checked })} />
+                              Online package
+                            </label>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </>
+              );
+            })()}
 
             <PackagesPreview
               theme={form.theme}

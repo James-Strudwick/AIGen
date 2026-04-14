@@ -105,3 +105,51 @@ export async function sendNewLeadEmail(input: SendNewLeadEmailInput): Promise<vo
     console.error('[email] Failed to send new-lead notification:', err);
   }
 }
+
+interface SendLowSpotsEmailInput {
+  to: string;
+  trainerName: string;
+  challengeName: string;
+  spotsRemaining: number;
+  spotsTotal: number;
+  dashboardUrl: string;
+}
+
+/** Notify the coach when a challenge drops to 5 or fewer spots remaining. */
+export async function sendLowSpotsEmail(input: SendLowSpotsEmailInput): Promise<void> {
+  const resend = getResend();
+  if (!resend) return;
+  const from = process.env.EMAIL_FROM || 'FomoForms <leads@fomoforms.com>';
+  const { to, trainerName, challengeName, spotsRemaining, spotsTotal, dashboardUrl } = input;
+  const subject = `⚡ ${challengeName} is nearly full — ${spotsRemaining} spots left`;
+
+  const html = `<!doctype html>
+<html>
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f5f5f7; margin:0; padding:24px; color:#1a1a1a;">
+    <div style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:16px; overflow:hidden; border:1px solid #e5e5ea;">
+      <div style="padding:24px;">
+        <p style="font-size:11px; color:#8e8e93; text-transform:uppercase; letter-spacing:0.1em; margin:0 0 4px;">Heads up</p>
+        <h1 style="font-size:20px; margin:0 0 12px;">${escapeHtml(challengeName)} is filling up</h1>
+        <p style="font-size:14px; color:#1a1a1a; margin:0 0 16px; line-height:1.5;">
+          You have <strong>${spotsRemaining} of ${spotsTotal}</strong> spots left. Worth double-checking this matches reality — update the total in Settings &rarr; Packages if not.
+        </p>
+        <div style="padding:16px; background:#f5f5f7; border-radius:12px; margin-bottom:16px;">
+          <p style="font-size:12px; color:#8e8e93; margin:0 0 4px;">Your next lead might close it out. Prep your follow-up messaging to drop a &ldquo;last X spots&rdquo; line in your next Instagram post.</p>
+        </div>
+        <div style="text-align:center;">
+          <a href="${dashboardUrl}?tab=packages" style="display:inline-block; background:#1a1a1a; color:#ffffff; padding:12px 24px; border-radius:12px; font-size:14px; font-weight:600; text-decoration:none;">Manage this challenge</a>
+        </div>
+      </div>
+    </div>
+    <p style="text-align:center; font-size:11px; color:#8e8e93; margin:16px 0 0;">Sent to ${escapeHtml(trainerName)} by FomoForms</p>
+  </body>
+</html>`;
+
+  const text = `${challengeName} is filling up — ${spotsRemaining} of ${spotsTotal} spots left. Update the total at ${dashboardUrl}?tab=packages if this doesn't match reality.`;
+
+  try {
+    await resend.emails.send({ from, to, subject, html, text });
+  } catch (err) {
+    console.error('[email] Failed to send low-spots notification:', err);
+  }
+}

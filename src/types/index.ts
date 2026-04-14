@@ -139,6 +139,12 @@ export interface Package {
   description: string | null;
   is_online: boolean;
   sort_order: number;
+  is_challenge: boolean;
+  challenge_duration_weeks: number | null;
+  challenge_start_date: string | null;
+  challenge_outcome: string | null;
+  challenge_spots_total: number | null;
+  challenge_spots_remaining: number | null;
 }
 
 export type LeadStatus = 'form_completed' | 'whatsapp_sent' | 'call_booked' | 'converted';
