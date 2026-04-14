@@ -195,6 +195,11 @@ interface PackageInput {
   monthly_price: string;
   price_per_session: string;
   is_online: boolean;
+  is_challenge?: boolean;
+  challenge_duration_weeks?: string;
+  challenge_start_date?: string;
+  challenge_outcome?: string;
+  challenge_spots_total?: string;
 }
 
 export function PackagesPreview({ theme, primaryColor, packages, showPrices, currency }: {
@@ -210,6 +215,15 @@ export function PackagesPreview({ theme, primaryColor, packages, showPrices, cur
 
   if (valid.length === 0) return null;
 
+  const formatStartDate = (iso?: string) => {
+    if (!iso) return null;
+    try {
+      return new Date(iso + 'T00:00:00').toLocaleDateString(undefined, {
+        day: 'numeric', month: 'short',
+      });
+    } catch { return iso; }
+  };
+
   return (
     <PreviewWrapper theme={theme} primaryColor={primaryColor}>
       {/* Mini weeks display */}
@@ -223,24 +237,41 @@ export function PackagesPreview({ theme, primaryColor, packages, showPrices, cur
       <div className="space-y-1.5">
         {valid.map((pkg, i) => {
           const isFirst = i === 0;
+          const isChallenge = !!pkg.is_challenge;
+          const startDate = formatStartDate(pkg.challenge_start_date);
+          const subtitleBits: string[] = [];
+          if (isChallenge) {
+            if (pkg.challenge_duration_weeks) subtitleBits.push(`${pkg.challenge_duration_weeks} weeks`);
+            if (startDate) subtitleBits.push(`starts ${startDate}`);
+            else subtitleBits.push('rolling start');
+          } else if (parseInt(pkg.sessions_per_week) > 0) {
+            subtitleBits.push(`${pkg.sessions_per_week}x per week${pkg.is_online ? ' (online)' : ''}`);
+          } else {
+            subtitleBits.push('Contact for details');
+          }
           return (
             <div key={i} className="flex items-center justify-between rounded-lg p-2.5"
               style={{
                 backgroundColor: isFirst ? c.primary + '12' : c.card,
                 borderWidth: '1px',
-                borderColor: isFirst ? c.primary : c.border,
+                borderColor: isChallenge ? c.primary : (isFirst ? c.primary : c.border),
               }}>
-              <div>
-                <p className="text-xs font-semibold" style={{ color: c.text }}>{pkg.name}</p>
-                <p className="text-[10px]" style={{ color: c.muted }}>
-                  {parseInt(pkg.sessions_per_week) > 0
-                    ? `${pkg.sessions_per_week}x per week${pkg.is_online ? ' (online)' : ''}`
-                    : 'Contact for details'}
-                </p>
+              <div className="min-w-0 pr-2">
+                <div className="flex items-center gap-1.5">
+                  {isChallenge && (
+                    <span className="text-[8px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded"
+                      style={{ backgroundColor: c.primary, color: '#ffffff' }}>
+                      Challenge
+                    </span>
+                  )}
+                  <p className="text-xs font-semibold truncate" style={{ color: c.text }}>{pkg.name}</p>
+                </div>
+                <p className="text-[10px]" style={{ color: c.muted }}>{subtitleBits.join(' · ')}</p>
               </div>
               {showPrices && pkg.monthly_price && (
-                <p className="text-xs font-bold" style={{ color: isFirst ? c.primary : c.text }}>
-                  {sym}{pkg.monthly_price}<span className="text-[9px] font-normal" style={{ color: c.muted }}>/mo</span>
+                <p className="text-xs font-bold whitespace-nowrap" style={{ color: isFirst ? c.primary : c.text }}>
+                  {sym}{pkg.monthly_price}
+                  {!isChallenge && <span className="text-[9px] font-normal" style={{ color: c.muted }}>/mo</span>}
                 </p>
               )}
             </div>
