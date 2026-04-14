@@ -1163,18 +1163,30 @@ export default function SettingsPage() {
         )}
 
         {/* Packages */}
-        {activeTab === 'packages' && (
+        {activeTab === 'packages' && (() => {
+          const challengeCount = pkgs.filter(p => p.is_challenge).length;
+          const maxChallenges = trainerData?.tier === 'pro' ? Infinity : 1;
+          const canAddChallenge = challengeCount < maxChallenges;
+          return (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <p className="font-medium text-sm">Training packages</p>
-              <button onClick={() => setPkgs([...pkgs, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false, is_challenge: false, challenge_duration_weeks: '', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '' }])}
-                className="text-xs text-[#007AFF] font-medium">+ Add</button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => canAddChallenge && setPkgs([...pkgs, { name: '', sessions_per_week: '0', price_per_session: '', monthly_price: '', is_online: false, is_challenge: true, challenge_duration_weeks: '4', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '10' }])}
+                  disabled={!canAddChallenge}
+                  title={canAddChallenge ? 'Create a time-bound challenge' : 'Starter tier allows 1 challenge. Upgrade to Pro for unlimited.'}
+                  className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#1a1a1a] text-white flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed">
+                  <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
+                  </svg>
+                  Add challenge
+                </button>
+                <button onClick={() => setPkgs([...pkgs, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false, is_challenge: false, challenge_duration_weeks: '', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '' }])}
+                  className="text-xs text-[#007AFF] font-medium">+ Add</button>
+              </div>
             </div>
-            {(() => {
-              const challengeCount = pkgs.filter(p => p.is_challenge).length;
-              const maxChallenges = trainerData?.tier === 'pro' ? Infinity : 1;
-              return (
-                <>
+            <>
                   {pkgs.map((pkg, i) => {
                     const update = (patch: Partial<PackageInput>) => {
                       const u = [...pkgs]; u[i] = { ...u[i], ...patch }; setPkgs(u);
@@ -1276,9 +1288,7 @@ export default function SettingsPage() {
                       </div>
                     );
                   })}
-                </>
-              );
-            })()}
+            </>
 
             <PackagesPreview
               theme={form.theme}
@@ -1288,7 +1298,8 @@ export default function SettingsPage() {
               currency={form.currency}
             />
           </div>
-        )}
+          );
+        })()}
 
         {/* Embed */}
         {activeTab === 'embed' && (
