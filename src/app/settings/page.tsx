@@ -8,6 +8,7 @@ import PhoneInput from '@/components/PhoneInput';
 import { CopyPreview, SpecialtiesPreview, ServicesPreview, PackagesPreview, CustomQuestionsPreview, GoalsPreview } from '@/components/SettingsPreview';
 import SetupChecklist from '@/components/SetupChecklist';
 import FormFlowEditor from '@/components/FormFlowEditor';
+import FlowsTab from '@/components/FlowsTab';
 import { DEFAULT_PACKAGES } from '@/lib/package-defaults';
 import { CURRENCIES, currencySymbol } from '@/lib/currency';
 import Link from 'next/link';
@@ -25,7 +26,7 @@ interface PackageInput {
   challenge_spots_total: string;
 }
 
-type Tab = 'account' | 'details' | 'copy' | 'branding' | 'goals' | 'forms' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing' | 'embed';
+type Tab = 'account' | 'details' | 'copy' | 'branding' | 'goals' | 'flows' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing' | 'embed';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -177,7 +178,7 @@ export default function SettingsPage() {
       if (!initialTabSet) {
         const params = new URLSearchParams(window.location.search);
         const tab = params.get('tab') as Tab | null;
-        if (tab && ['account', 'details', 'copy', 'branding', 'goals', 'forms', 'questions', 'specialties', 'services', 'packages', 'billing', 'embed'].includes(tab)) {
+        if (tab && ['account', 'details', 'copy', 'branding', 'goals', 'flows', 'questions', 'specialties', 'services', 'packages', 'billing', 'embed'].includes(tab)) {
           setActiveTab(tab);
         }
         setInitialTabSet(true);
@@ -334,7 +335,7 @@ export default function SettingsPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'details', label: 'Details' },
     { id: 'branding', label: 'Branding' },
-    { id: 'forms', label: 'Forms' },
+    { id: 'flows', label: 'Flows' },
     { id: 'embed', label: 'Integrations' },
     { id: 'account', label: 'Account' },
     { id: 'billing', label: 'Billing' },
@@ -919,9 +920,9 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Forms */}
-        {activeTab === 'forms' && trainerData && (
-          <FormFlowEditor
+        {/* Flows */}
+        {activeTab === 'flows' && trainerData && (
+          <FlowsTab
             trainer={trainerData}
             goals={customGoals}
             onEditGoals={() => {
@@ -1476,7 +1477,7 @@ export default function SettingsPage() {
         {/* Save — hide on billing and account tabs; show upgrade CTA on forms if non-Pro */}
         {activeTab !== 'billing' && activeTab !== 'account' && (
           <div className="mt-8 flex gap-3">
-            {activeTab === 'forms' && trainerData?.tier !== 'pro' ? (
+            {activeTab === 'flows' && trainerData?.tier !== 'pro' ? (
               <button onClick={() => setActiveTab('billing')}
                 className="flex-1 py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm transition-all active:scale-[0.97]">
                 Upgrade to Pro for multi forms

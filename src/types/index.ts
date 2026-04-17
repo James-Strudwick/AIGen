@@ -129,7 +129,21 @@ export interface Trainer {
   created_at: string;
 }
 
-export interface Package {
+export interface Flow {
+  id: string;
+  trainer_id: string;
+  slug: string;
+  name: string;
+  goals: CustomGoal[] | null;
+  questions: CustomQuestion[] | null;
+  specialties: TrainerSpecialty[] | null;
+  services: TrainerServices | null;
+  packages: Package[] | null;
+  copy: Partial<TrainerCopy> | null;
+  about_config: FormAboutConfig | null;
+  active: boolean;
+  created_at: string;
+}export interface Package {
   id: string;
   trainer_id: string;
   name: string;
