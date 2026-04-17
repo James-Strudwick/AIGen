@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import AuthRedirectCatcher from '@/components/AuthRedirectCatcher';
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-white text-[#1a1a1a]">
+      <AuthRedirectCatcher />
       {/* Nav */}
       <nav className="flex items-center justify-between max-w-3xl mx-auto px-5 py-5">
         <div className="flex items-center gap-2">
