@@ -43,7 +43,7 @@ function StepCard({ children, reveal, s, bg, border }: {
     <div style={{
       opacity: reveal,
       transform: `translateY(${(1 - reveal) * 10 * s}px)`,
-      borderRadius: 10 * s, padding: `${7 * s}px ${9 * s}px`,
+      borderRadius: 12 * s, padding: `${10 * s}px ${12 * s}px`,
       background: bg || 'rgba(255,255,255,0.04)',
       border: `1px solid ${border || 'rgba(255,255,255,0.06)'}`,
     }}>
@@ -59,22 +59,22 @@ function GoalColumn({ goal, reveal, s }: {
     interpolate(reveal, [start, end], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 * s, width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 * s, width: '100%' }}>
       {/* Timeline pill */}
       <StepCard reveal={r(0, 0.15)} s={s} bg={goal.color + '15'} border={goal.color + '30'}>
-        <p style={{ fontSize: 22 * s, fontWeight: 800, color: goal.color, margin: 0, textAlign: 'center', lineHeight: 1 }}>~{goal.weeks}</p>
-        <p style={{ fontSize: 7 * s, color: goal.color + '90', margin: `${2 * s}px 0 0`, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center' }}>weeks</p>
+        <p style={{ fontSize: 28 * s, fontWeight: 800, color: goal.color, margin: 0, textAlign: 'center', lineHeight: 1 }}>~{goal.weeks}</p>
+        <p style={{ fontSize: 9 * s, color: goal.color + '90', margin: `${3 * s}px 0 0`, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center' }}>weeks</p>
       </StepCard>
 
       {/* About You */}
       <StepCard reveal={r(0.12, 0.3)} s={s}>
-        <p style={{ fontSize: 7 * s, color: 'rgba(255,255,255,0.35)', margin: `0 0 ${3 * s}px`, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>About you</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 * s }}>
+        <p style={{ fontSize: 9 * s, color: 'rgba(255,255,255,0.35)', margin: `0 0 ${4 * s}px`, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>About you</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 * s }}>
           {goal.aboutFields.map((f) => (
             <div key={f} style={{
-              borderRadius: 5 * s, padding: `${3 * s}px ${5 * s}px`,
+              borderRadius: 6 * s, padding: `${5 * s}px ${7 * s}px`,
               background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)',
-              fontSize: 7 * s, color: 'rgba(255,255,255,0.3)', fontWeight: 500,
+              fontSize: 9 * s, color: 'rgba(255,255,255,0.3)', fontWeight: 500,
             }}>{f}</div>
           ))}
         </div>
@@ -82,12 +82,12 @@ function GoalColumn({ goal, reveal, s }: {
 
       {/* Question */}
       <StepCard reveal={r(0.28, 0.48)} s={s}>
-        <p style={{ fontSize: 7 * s, color: 'rgba(255,255,255,0.35)', margin: `0 0 ${2 * s}px`, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>Question</p>
-        <p style={{ fontSize: 8 * s, color: 'rgba(255,255,255,0.7)', margin: `0 0 ${4 * s}px`, fontWeight: 600, lineHeight: 1.3 }}>{goal.question}</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 * s }}>
+        <p style={{ fontSize: 9 * s, color: 'rgba(255,255,255,0.35)', margin: `0 0 ${3 * s}px`, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>Question</p>
+        <p style={{ fontSize: 11 * s, color: 'rgba(255,255,255,0.7)', margin: `0 0 ${5 * s}px`, fontWeight: 600, lineHeight: 1.3 }}>{goal.question}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 * s }}>
           {goal.options.map((opt, i) => (
             <div key={opt} style={{
-              fontSize: 7 * s, padding: `${3 * s}px ${5 * s}px`, borderRadius: 5 * s,
+              fontSize: 9 * s, padding: `${4 * s}px ${7 * s}px`, borderRadius: 6 * s,
               background: i === 0 ? goal.color + '20' : 'rgba(255,255,255,0.03)',
               color: i === 0 ? goal.color : 'rgba(255,255,255,0.3)',
               border: `1px solid ${i === 0 ? goal.color + '30' : 'rgba(255,255,255,0.05)'}`,
@@ -99,21 +99,21 @@ function GoalColumn({ goal, reveal, s }: {
 
       {/* Specialty */}
       <StepCard reveal={r(0.45, 0.62)} s={s}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 * s }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 * s }}>
           <div style={{
-            width: 14 * s, height: 14 * s, borderRadius: 4 * s, flexShrink: 0,
+            width: 18 * s, height: 18 * s, borderRadius: 5 * s, flexShrink: 0,
             background: goal.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 7 * s, color: goal.color,
+            fontSize: 9 * s, color: goal.color,
           }}>✓</div>
-          <span style={{ fontSize: 8 * s, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{goal.specialty}</span>
+          <span style={{ fontSize: 10 * s, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{goal.specialty}</span>
         </div>
       </StepCard>
 
       {/* Package */}
       <StepCard reveal={r(0.6, 0.78)} s={s} bg={goal.color + '10'} border={goal.color + '25'}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 8 * s, color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>{goal.pkgName}</span>
-          <span style={{ fontSize: 9 * s, color: goal.color, fontWeight: 800 }}>{goal.pkgPrice}</span>
+          <span style={{ fontSize: 10 * s, color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>{goal.pkgName}</span>
+          <span style={{ fontSize: 11 * s, color: goal.color, fontWeight: 800 }}>{goal.pkgPrice}</span>
         </div>
       </StepCard>
     </div>
