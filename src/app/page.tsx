@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import AuthRedirectCatcher from '@/components/AuthRedirectCatcher';
+import BeforeAfterSlider from '@/components/BeforeAfterSlider';
+import TimelineDemo from '@/components/TimelineDemo';
 
 export default function Home() {
   return (
@@ -40,6 +42,12 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      {/* Before/After comparison slider */}
+      <BeforeAfterSlider />
+
+      {/* Interactive timeline demo */}
+      <TimelineDemo />
 
       {/* How it works */}
       <section className="max-w-3xl mx-auto px-5 py-16">
