@@ -103,8 +103,8 @@ export const BeforeAfterReveal: React.FC = () => {
   const handleX = (slideProgress / 100) * width;
 
   // Label opacity: "BEFORE" fades as slider moves, "AFTER" fades in
-  const beforeOpacity = interpolate(slideProgress, [100, 50], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const afterOpacity = interpolate(slideProgress, [60, 20], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const beforeOpacity = interpolate(slideProgress, [50, 100], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const afterOpacity = interpolate(slideProgress, [20, 60], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
 
   // Bottom CTA text
   const ctaOpacity = interpolate(frame, [fps * 8, fps * 8.5], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
