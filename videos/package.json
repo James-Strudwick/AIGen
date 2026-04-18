@@ -1,0 +1,26 @@
+{
+  "name": "fomoforms-videos",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "preview": "npx remotion studio src/index.ts",
+    "render:before-after": "npx remotion render src/index.ts BeforeAfterReveal out/before-after-reel.mp4",
+    "render:timeline": "npx remotion render src/index.ts TimelineSlider out/timeline-reel.mp4",
+    "render:walkthrough": "npx remotion render src/index.ts FullWalkthrough out/full-walkthrough.mp4",
+    "render:before-after-square": "npx remotion render src/index.ts BeforeAfterReveal-Square out/before-after-square.mp4",
+    "render:timeline-square": "npx remotion render src/index.ts TimelineSlider-Square out/timeline-square.mp4",
+    "render:all": "npm run render:before-after && npm run render:timeline && npm run render:walkthrough && npm run render:before-after-square && npm run render:timeline-square"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.448",
+    "@remotion/cli": "^4.0.448",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "remotion": "^4.0.448"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.3"
+  }
+}
