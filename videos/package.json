@@ -9,7 +9,9 @@
     "render:walkthrough": "npx remotion render src/index.ts FullWalkthrough out/full-walkthrough.mp4",
     "render:before-after-square": "npx remotion render src/index.ts BeforeAfterReveal-Square out/before-after-square.mp4",
     "render:timeline-square": "npx remotion render src/index.ts TimelineSlider-Square out/timeline-square.mp4",
-    "render:all": "npm run render:before-after && npm run render:timeline && npm run render:walkthrough && npm run render:before-after-square && npm run render:timeline-square"
+    "render:pro-goals": "npx remotion render src/index.ts ProGoalFlows out/pro-goals-reel.mp4",
+    "render:pro-goals-square": "npx remotion render src/index.ts ProGoalFlows-Square out/pro-goals-square.mp4",
+    "render:all": "npm run render:before-after && npm run render:timeline && npm run render:walkthrough && npm run render:pro-goals && npm run render:before-after-square && npm run render:timeline-square && npm run render:pro-goals-square"
   },
   "dependencies": {
     "@remotion/bundler": "^4.0.448",

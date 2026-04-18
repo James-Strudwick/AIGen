@@ -2,6 +2,7 @@ import { Composition } from 'remotion';
 import { BeforeAfterReveal } from './BeforeAfterReveal';
 import { TimelineSlider } from './TimelineSlider';
 import { FullWalkthrough } from './FullWalkthrough';
+import { ProGoalFlows } from './ProGoalFlows';
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -31,6 +32,14 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
       />
+      <Composition
+        id="ProGoalFlows"
+        component={ProGoalFlows}
+        durationInFrames={450}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
 
       {/* 1080x1080 = Instagram square post */}
       <Composition
@@ -44,6 +53,14 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="TimelineSlider-Square"
         component={TimelineSlider}
+        durationInFrames={450}
+        fps={30}
+        width={1080}
+        height={1080}
+      />
+      <Composition
+        id="ProGoalFlows-Square"
+        component={ProGoalFlows}
         durationInFrames={450}
         fps={30}
         width={1080}
