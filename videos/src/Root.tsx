@@ -35,7 +35,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="ProGoalFlows"
         component={ProGoalFlows}
-        durationInFrames={450}
+        durationInFrames={600}
         fps={30}
         width={1080}
         height={1920}
@@ -61,7 +61,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="ProGoalFlows-Square"
         component={ProGoalFlows}
-        durationInFrames={450}
+        durationInFrames={600}
         fps={30}
         width={1080}
         height={1080}
