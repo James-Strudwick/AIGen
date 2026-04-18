@@ -18,6 +18,10 @@ export const TimelineSlider: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
 
+  const isSquare = width / height > 0.9;
+  const s = isSquare ? 1.2 : 1;
+  const contentWidth = isSquare ? '85%' : 360;
+
   // Animation timeline:
   // 0-2s:   fade in with 3 sessions, show ~15 weeks
   // 2-5s:   slide sessions from 3 → 5 slowly
@@ -59,20 +63,20 @@ export const TimelineSlider: React.FC = () => {
       width, height, background: '#0a0a0a', position: 'relative', overflow: 'hidden',
       fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif",
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: 48, opacity: fadeIn,
+      padding: 32 * s, opacity: fadeIn,
     }}>
       {/* Header */}
-      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700, marginBottom: 8 }}>
+      <p style={{ fontSize: 13 * s, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700, marginBottom: 8 }}>
         Your personalised timeline
       </p>
-      <p style={{ fontSize: 20, color: 'rgba(255,255,255,0.6)', fontWeight: 600, marginBottom: 32 }}>
+      <p style={{ fontSize: 20 * s, color: 'rgba(255,255,255,0.6)', fontWeight: 600, marginBottom: 28 * s }}>
         Drag to see how sessions affect your results
       </p>
 
       {/* Weeks display */}
-      <div style={{ borderRadius: 24, padding: '32px 48px', background: 'rgba(255,255,255,0.08)', textAlign: 'center', marginBottom: 32 }}>
-        <p style={{ fontSize: 72, fontWeight: 800, color: '#ffffff', margin: 0, lineHeight: 1, fontFeatureSettings: '"tnum"' }}>~{weeks}</p>
-        <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.4)', margin: '8px 0 0' }}>weeks to goal</p>
+      <div style={{ borderRadius: 24 * s, padding: `${28 * s}px ${40 * s}px`, background: 'rgba(255,255,255,0.08)', textAlign: 'center', marginBottom: 24 * s }}>
+        <p style={{ fontSize: 72 * s, fontWeight: 800, color: '#ffffff', margin: 0, lineHeight: 1, fontFeatureSettings: '"tnum"' }}>~{weeks}</p>
+        <p style={{ fontSize: 16 * s, color: 'rgba(255,255,255,0.4)', margin: '8px 0 0' }}>weeks to goal</p>
       </div>
 
       {hasNutrition && (
@@ -88,7 +92,7 @@ export const TimelineSlider: React.FC = () => {
       )}
 
       {/* Slider */}
-      <div style={{ width: 360, borderRadius: 20, padding: 24, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', marginBottom: 16 }}>
+      <div style={{ width: contentWidth, borderRadius: 20, padding: 24, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
             <p style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', margin: 0 }}>Sessions per week</p>
@@ -139,7 +143,7 @@ export const TimelineSlider: React.FC = () => {
       </div>
 
       {/* Package cards */}
-      <div style={{ width: 360, display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ width: contentWidth, display: 'flex', flexDirection: 'column', gap: 6 }}>
         {PACKAGES.map((pkg) => {
           const pkgWeeks = calcWeeks(pkg.days, hasNutrition);
           const isActive = pkg.days === currentDays;
