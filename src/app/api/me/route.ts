@@ -38,7 +38,45 @@ export async function GET(request: NextRequest) {
     }
 
     if (!trainer) {
-      return NextResponse.json({ error: 'No trainer profile found' }, { status: 404 });
+      // Auto-create a trainer record so new users land straight on the
+      // dashboard with the setup checklist — no separate onboarding page.
+      const name = user.user_metadata?.name || user.email?.split('@')[0] || 'Coach';
+      const baseSlug = name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim() || 'coach';
+
+      // Ensure slug is unique
+      let slug = baseSlug;
+      let attempt = 0;
+      while (true) {
+        const { data: existing } = await supabase.from('trainers').select('id').eq('slug', slug).single();
+        if (!existing) break;
+        attempt++;
+        slug = `${baseSlug}-${attempt}`;
+      }
+
+      // Generate referral code
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let referralCode = '';
+      for (let i = 0; i < 6; i++) referralCode += chars[Math.floor(Math.random() * chars.length)];
+
+      const { data: newTrainer, error: insertError } = await supabase.from('trainers').insert({
+        user_id: user.id,
+        slug,
+        name,
+        brand_color_primary: '#1a1a1a',
+        brand_color_secondary: '#f5f5f7',
+        booking_link: '',
+        contact_method: 'whatsapp',
+        contact_value: '',
+        active: false,
+        referral_code: referralCode,
+      }).select('*').single();
+
+      if (insertError || !newTrainer) {
+        console.error('Auto-create trainer error:', insertError);
+        return NextResponse.json({ error: 'Failed to create profile' }, { status: 500 });
+      }
+
+      trainer = newTrainer;
     }
 
     // Revert expired Pro trials (tier 4 reward)

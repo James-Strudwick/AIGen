@@ -51,7 +51,7 @@ export default function DashboardPage() {
 
     if (!res.ok) {
       if (res.status === 401) window.location.href = '/login';
-      if (res.status === 404) window.location.href = '/onboarding';
+      if (res.status === 404) { window.location.href = '/login'; }
       return;
     }
 
