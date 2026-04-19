@@ -5,6 +5,8 @@ import { createBrowserClient } from '@/lib/auth';
 import { AVAILABLE_FONTS } from '@/lib/branding';
 import { ServiceAddOn } from '@/types';
 import PhoneInput from '@/components/PhoneInput';
+import { DEFAULT_PACKAGES } from '@/lib/package-defaults';
+import { CURRENCIES, currencySymbol } from '@/lib/currency';
 
 type Step = 'basics' | 'branding' | 'services' | 'packages' | 'preview';
 const steps: { id: Step; label: string }[] = [
@@ -21,6 +23,11 @@ interface PackageInput {
   price_per_session: string;
   monthly_price: string;
   is_online: boolean;
+  is_challenge: boolean;
+  challenge_duration_weeks: string;
+  challenge_start_date: string;
+  challenge_outcome: string;
+  challenge_spots_total: string;
 }
 
 export default function OnboardingPage() {
@@ -46,14 +53,15 @@ export default function OnboardingPage() {
     theme: 'light' as 'light' | 'dark',
     hero_headline: '',
     tone: '',
+    currency: 'GBP',
   });
+
+  const sym = currencySymbol(form.currency);
 
   const [addOns, setAddOns] = useState<ServiceAddOn[]>([]);
   const [showPrices, setShowPrices] = useState(true);
 
-  const [pkgs, setPkgs] = useState<PackageInput[]>([
-    { name: '', sessions_per_week: '2', price_per_session: '', monthly_price: '', is_online: false },
-  ]);
+  const [pkgs, setPkgs] = useState<PackageInput[]>(() => DEFAULT_PACKAGES.map(p => ({ ...p })));
 
   // Load trainer data on mount
   useEffect(() => {
@@ -95,6 +103,7 @@ export default function OnboardingPage() {
           booking_link: trainer.booking_link || '',
           contact_method: trainer.contact_method || 'whatsapp',
           contact_value: trainer.contact_value || '',
+          currency: trainer.currency || 'GBP',
           brand_color_primary: trainer.brand_color_primary || '#1a1a1a',
           ...(trainer.branding ? {
             font_heading: trainer.branding.font_heading || 'system-ui',
@@ -120,6 +129,11 @@ export default function OnboardingPage() {
             price_per_session: p.price_per_session ? String(p.price_per_session) : '',
             monthly_price: p.monthly_price ? String(p.monthly_price) : '',
             is_online: p.is_online as boolean,
+            is_challenge: !!p.is_challenge,
+            challenge_duration_weeks: p.challenge_duration_weeks ? String(p.challenge_duration_weeks) : '',
+            challenge_start_date: p.challenge_start_date ? String(p.challenge_start_date) : '',
+            challenge_outcome: (p.challenge_outcome as string) || '',
+            challenge_spots_total: p.challenge_spots_total ? String(p.challenge_spots_total) : '',
           })));
         }
       }
@@ -160,6 +174,7 @@ export default function OnboardingPage() {
       booking_link: form.booking_link,
       contact_method: form.contact_method,
       contact_value: form.contact_value,
+      currency: form.currency,
       brand_color_primary: form.brand_color_primary,
       brand_color_secondary: form.theme === 'dark' ? '#0a0a0a' : '#f5f5f7',
       branding: brandingData,
@@ -194,6 +209,11 @@ export default function OnboardingPage() {
       price_per_session: p.price_per_session ? parseFloat(p.price_per_session) : null,
       monthly_price: p.monthly_price ? parseFloat(p.monthly_price) : null,
       is_online: p.is_online,
+      is_challenge: p.is_challenge,
+      challenge_duration_weeks: p.is_challenge && p.challenge_duration_weeks ? parseInt(p.challenge_duration_weeks) : null,
+      challenge_start_date: p.is_challenge && p.challenge_start_date ? p.challenge_start_date : null,
+      challenge_outcome: p.is_challenge && p.challenge_outcome.trim() ? p.challenge_outcome.trim() : null,
+      challenge_spots_total: p.is_challenge && p.challenge_spots_total ? parseInt(p.challenge_spots_total) : null,
     }));
 
     const res = await fetch('/api/onboarding', {
@@ -266,13 +286,54 @@ export default function OnboardingPage() {
                 placeholder="Certified PT with 8 years experience..." rows={2} className={inputClass} />
             </div>
             <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">WhatsApp number</label>
-              <PhoneInput value={form.contact_value} onChange={(v) => setForm({ ...form, contact_value: v })} />
+              <label className="text-[#8e8e93] text-xs block mb-1">Primary contact method</label>
+              <div className="grid grid-cols-4 gap-1.5 mb-2">
+                {([
+                  { id: 'whatsapp', label: 'WhatsApp' },
+                  { id: 'email', label: 'Email' },
+                  { id: 'calendly', label: 'Calendar' },
+                  { id: 'link', label: 'Link' },
+                ] as const).map((m) => (
+                  <button key={m.id} type="button"
+                    onClick={() => setForm({ ...form, contact_method: m.id })}
+                    className="py-2 rounded-lg text-[11px] font-medium border transition-all"
+                    style={{
+                      backgroundColor: form.contact_method === m.id ? '#1a1a1a' : 'white',
+                      color: form.contact_method === m.id ? '#ffffff' : '#8e8e93',
+                      borderColor: form.contact_method === m.id ? '#1a1a1a' : '#e5e5ea',
+                    }}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              {form.contact_method === 'whatsapp' && (
+                <PhoneInput value={form.contact_value} onChange={(v) => setForm({ ...form, contact_value: v })} />
+              )}
+              {form.contact_method === 'email' && (
+                <input type="email" value={form.contact_value}
+                  onChange={(e) => setForm({ ...form, contact_value: e.target.value })}
+                  placeholder="you@yourdomain.com" className={inputClass} />
+              )}
+              {(form.contact_method === 'calendly' || form.contact_method === 'link') && (
+                <input type="url" value={form.contact_value}
+                  onChange={(e) => setForm({ ...form, contact_value: e.target.value })}
+                  placeholder={form.contact_method === 'calendly' ? 'https://calendly.com/you' : 'https://your-landing-page.com'}
+                  className={inputClass} />
+              )}
             </div>
             <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">Booking link (Calendly, etc.)</label>
+              <label className="text-[#8e8e93] text-xs block mb-1">Secondary booking link (optional)</label>
               <input value={form.booking_link} onChange={(e) => setForm({ ...form, booking_link: e.target.value })}
                 placeholder="https://calendly.com/you" className={inputClass} />
+            </div>
+            <div>
+              <label className="text-[#8e8e93] text-xs block mb-1">Currency</label>
+              <select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} className={inputClass}>
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>{c.label}</option>
+                ))}
+              </select>
+              <p className="text-[#8e8e93] text-[10px] mt-1">Used for your package and service prices shown to prospects.</p>
             </div>
           </div>
         )}
@@ -384,7 +445,7 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
+                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
                     <input type="number" value={addOn.price_per_month || ''}
                       onChange={(e) => { const u = [...addOns]; u[i] = { ...u[i], price_per_month: e.target.value ? parseFloat(e.target.value) : null }; setAddOns(u); }}
                       placeholder="Optional" className={inputClass} />
@@ -431,13 +492,13 @@ export default function OnboardingPage() {
                       className={inputClass} />
                   </div>
                   <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/session</label>
+                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/session</label>
                     <input type="number" value={pkg.price_per_session}
                       onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], price_per_session: e.target.value }; setPkgs(u); }}
                       className={inputClass} />
                   </div>
                   <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
+                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
                     <input type="number" value={pkg.monthly_price}
                       onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], monthly_price: e.target.value }; setPkgs(u); }}
                       className={inputClass} />
@@ -451,7 +512,7 @@ export default function OnboardingPage() {
               </div>
             ))}
 
-            <button onClick={() => setPkgs([...pkgs, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false }])}
+            <button onClick={() => setPkgs([...pkgs, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false, is_challenge: false, challenge_duration_weeks: '', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '' }])}
               className="w-full py-3 rounded-xl border border-dashed border-[#e5e5ea] text-[#8e8e93] text-sm hover:border-[#8e8e93] transition-colors">
               + Add package
             </button>
@@ -480,7 +541,7 @@ export default function OnboardingPage() {
             </button>
 
             {!form.contact_value && (
-              <p className="text-[#FF3B30] text-xs">Add a WhatsApp number in step 1 to go live</p>
+              <p className="text-[#FF3B30] text-xs">Add a contact method in step 1 to go live</p>
             )}
           </div>
         )}

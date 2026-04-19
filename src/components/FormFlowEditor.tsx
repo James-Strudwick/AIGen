@@ -2,11 +2,33 @@
 
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@/lib/auth';
-import { CustomGoal, TrainerForm, Trainer, CustomQuestion } from '@/types';
+import {
+  CustomGoal,
+  TrainerForm,
+  Trainer,
+  CustomQuestion,
+  TrainerSpecialty,
+  TrainerCopy,
+  NutritionService,
+  OnlineService,
+  HybridService,
+  ServiceAddOn,
+  FormAboutConfig,
+  CustomAboutField,
+} from '@/types';
+import {
+  CopyPreview,
+  SpecialtiesPreview,
+  CustomQuestionsPreview,
+  PackagesPreview,
+  AboutPreview,
+} from '@/components/SettingsPreview';
+import { currencySymbol } from '@/lib/currency';
 
 interface FormFlowEditorProps {
   trainer: Trainer;
   goals: CustomGoal[];
+  onEditGoals?: () => void;
 }
 
 const defaultGoals: CustomGoal[] = [
@@ -16,64 +38,152 @@ const defaultGoals: CustomGoal[] = [
   { id: 'performance', emoji: '🏃', label: 'Performance', subtitle: '', needs_target: true, target_prompt: '', target_placeholder: '', goal_type: 'performance' },
 ];
 
-type FormStep = 'about' | 'availability' | 'questions' | 'capture' | 'results';
-const STEPS: { id: FormStep; label: string; icon: string }[] = [
-  { id: 'about', label: 'About You', icon: '👤' },
-  { id: 'availability', label: 'Availability', icon: '📅' },
-  { id: 'questions', label: 'Questions', icon: '❓' },
-  { id: 'capture', label: 'Contact', icon: '📱' },
-  { id: 'results', label: 'Results', icon: '📊' },
+type SubTab = 'copy' | 'about' | 'questions' | 'specialties' | 'services' | 'packages';
+
+const SUB_TABS: { id: SubTab; label: string; description: string }[] = [
+  { id: 'copy', label: 'Copy', description: 'Hero headline, subtext & CTA' },
+  { id: 'about', label: 'About You', description: 'Default fields + custom about-you questions' },
+  { id: 'questions', label: 'Questions', description: 'Custom questions for this goal' },
+  { id: 'specialties', label: 'Specialties', description: 'What you specialise in for this goal' },
+  { id: 'services', label: 'Services', description: 'Nutrition, online, hybrid & add-ons' },
+  { id: 'packages', label: 'Packages', description: 'Pricing tiers shown for this goal' },
 ];
 
 interface PackageInput {
   name: string;
-  sessions_per_week: number;
-  price_per_session: number | null;
-  monthly_price: number | null;
+  sessions_per_week: string;
+  price_per_session: string;
+  monthly_price: string;
   is_online: boolean;
 }
 
-interface AboutField {
-  id: string;
-  label: string;
-  type: 'toggle' | 'custom';
-  enabled: boolean;
-  placeholder?: string;
+interface ServicesState {
+  show_prices: boolean;
+  nutrition: NutritionService;
+  online: OnlineService;
+  hybrid: HybridService;
+  add_ons: ServiceAddOn[];
 }
 
 interface FormConfig {
-  about: {
-    show_age: boolean;
-    show_weight: boolean;
-    show_experience: boolean;
-    custom_fields: { id: string; label: string; placeholder: string }[];
-  };
-  availability: { max_days: number; default_days: number };
+  copy: TrainerCopy;
+  about: FormAboutConfig;
   questions: CustomQuestion[];
-  capture: { show_phone: boolean; show_email: boolean; heading: string };
-  results: { heading: string; show_specialties: boolean };
+  specialties: TrainerSpecialty[];
+  services: ServicesState;
   packages: PackageInput[];
 }
 
-const DEFAULT_CONFIG: FormConfig = {
-  about: { show_age: true, show_weight: true, show_experience: true, custom_fields: [] },
-  availability: { max_days: 6, default_days: 3 },
-  questions: [],
-  capture: { show_phone: true, show_email: false, heading: '' },
-  results: { heading: '', show_specialties: true },
-  packages: [],
+const DEFAULT_ABOUT: FormAboutConfig = {
+  show_age: true,
+  show_weight: true,
+  show_experience: true,
+  custom_fields: [],
 };
 
-export default function FormFlowEditor({ trainer, goals }: FormFlowEditorProps) {
+const DEFAULT_NUTRITION: NutritionService = {
+  enabled: false,
+  name: 'Nutrition Plan',
+  description: 'Personalised meal plans, macro targets, and weekly check-ins',
+  timeline_reduction_percent: 20,
+  price_per_month: null,
+};
+
+const DEFAULT_ONLINE: OnlineService = {
+  enabled: false,
+  name: 'Online Programming',
+  description: 'Structured workout plans delivered remotely with form check videos',
+  effectiveness_vs_inperson: 0.75,
+  price_per_month: null,
+};
+
+const DEFAULT_HYBRID: HybridService = {
+  enabled: false,
+  name: 'Hybrid Coaching',
+  description: 'Mix of in-person sessions and online programming',
+  price_per_month: null,
+};
+
+function makeDefaultConfig(): FormConfig {
+  return {
+    copy: { hero_headline: '', hero_subtext: '', cta_button_text: '', tone: '' },
+    about: { ...DEFAULT_ABOUT, custom_fields: [] },
+    questions: [],
+    specialties: [],
+    services: {
+      show_prices: true,
+      nutrition: { ...DEFAULT_NUTRITION },
+      online: { ...DEFAULT_ONLINE },
+      hybrid: { ...DEFAULT_HYBRID },
+      add_ons: [],
+    },
+    packages: [],
+  };
+}
+
+function pkgToInput(p: { name: string; sessions_per_week: number; price_per_session: number | null; monthly_price: number | null; is_online: boolean }): PackageInput {
+  return {
+    name: p.name,
+    sessions_per_week: String(p.sessions_per_week),
+    price_per_session: p.price_per_session != null ? String(p.price_per_session) : '',
+    monthly_price: p.monthly_price != null ? String(p.monthly_price) : '',
+    is_online: p.is_online,
+  };
+}
+
+function inputToPkg(p: PackageInput) {
+  return {
+    name: p.name,
+    sessions_per_week: parseInt(p.sessions_per_week) || 0,
+    price_per_session: p.price_per_session ? parseFloat(p.price_per_session) : null,
+    monthly_price: p.monthly_price ? parseFloat(p.monthly_price) : null,
+    is_online: p.is_online,
+  };
+}
+
+function configFromForm(form: TrainerForm | undefined): FormConfig {
+  if (!form) return makeDefaultConfig();
+  return {
+    copy: {
+      hero_headline: form.copy?.hero_headline || '',
+      hero_subtext: form.copy?.hero_subtext || '',
+      cta_button_text: form.copy?.cta_button_text || '',
+      tone: form.copy?.tone || '',
+    },
+    about: {
+      show_age: form.about_config?.show_age ?? true,
+      show_weight: form.about_config?.show_weight ?? true,
+      show_experience: form.about_config?.show_experience ?? true,
+      custom_fields: form.about_config?.custom_fields
+        ? form.about_config.custom_fields.map(f => ({ ...f }))
+        : [],
+    },
+    questions: form.questions ? form.questions.map(q => ({ ...q, options: [...q.options] })) : [],
+    specialties: form.specialties ? form.specialties.map(s => ({ ...s })) : [],
+    services: {
+      show_prices: form.services?.show_prices ?? true,
+      nutrition: form.services?.nutrition ? { ...form.services.nutrition } : { ...DEFAULT_NUTRITION },
+      online: form.services?.online ? { ...form.services.online } : { ...DEFAULT_ONLINE },
+      hybrid: form.services?.hybrid ? { ...form.services.hybrid } : { ...DEFAULT_HYBRID },
+      add_ons: form.services?.add_ons ? form.services.add_ons.map(a => ({ ...a })) : [],
+    },
+    packages: form.packages ? form.packages.map(pkgToInput) : [],
+  };
+}
+
+export default function FormFlowEditor({ trainer, goals, onEditGoals }: FormFlowEditorProps) {
+  const sym = currencySymbol(trainer.currency);
   const [forms, setForms] = useState<TrainerForm[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
-  const [editingStep, setEditingStep] = useState<FormStep | null>(null);
+  const [activeSubTab, setActiveSubTab] = useState<SubTab>('copy');
   const [editFormId, setEditFormId] = useState<string | null>(null);
-  const [config, setConfig] = useState<FormConfig>(DEFAULT_CONFIG);
+  const [config, setConfig] = useState<FormConfig>(() => makeDefaultConfig());
 
   const activeGoals = goals.length > 0 ? goals : defaultGoals;
+  const brandTheme = trainer.branding?.theme === 'dark' ? 'dark' : 'light';
+  const brandColor = trainer.branding?.color_primary || trainer.brand_color_primary || '#1a1a1a';
 
   useEffect(() => {
     const load = async () => {
@@ -93,23 +203,13 @@ export default function FormFlowEditor({ trainer, goals }: FormFlowEditorProps) 
     const existing = getFormForGoal(goalId);
     setEditingGoalId(goalId);
     setEditFormId(existing?.id || null);
-    setEditingStep('about');
+    setActiveSubTab('copy');
+    setConfig(configFromForm(existing));
+  };
 
-    // Load existing config or defaults
-    if (existing) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ext = existing as any;
-      setConfig({
-        about: ext.about_config || DEFAULT_CONFIG.about,
-        availability: ext.availability_config || DEFAULT_CONFIG.availability,
-        questions: existing.questions || [],
-        capture: ext.capture_config || DEFAULT_CONFIG.capture,
-        results: ext.results_config || DEFAULT_CONFIG.results,
-        packages: (existing.packages as PackageInput[]) || [],
-      });
-    } else {
-      setConfig(DEFAULT_CONFIG);
-    }
+  const closeEditor = () => {
+    setEditingGoalId(null);
+    setEditFormId(null);
   };
 
   const saveForm = async () => {
@@ -117,9 +217,53 @@ export default function FormFlowEditor({ trainer, goals }: FormFlowEditorProps) 
     setSaving(true);
     const supabase = createBrowserClient();
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!session) { setSaving(false); return; }
 
     const goal = activeGoals.find(g => g.id === editingGoalId);
+
+    // Only include copy if at least one field is non-empty
+    const anyCopy = config.copy.hero_headline || config.copy.hero_subtext || config.copy.cta_button_text || config.copy.tone;
+    const copyPayload = anyCopy ? {
+      hero_headline: config.copy.hero_headline || null,
+      hero_subtext: config.copy.hero_subtext || null,
+      cta_button_text: config.copy.cta_button_text || null,
+      tone: config.copy.tone || null,
+    } : null;
+
+    const cleanQuestions = config.questions.filter(q => q.question.trim());
+    const cleanSpecialties = config.specialties.filter(s => s.name.trim());
+    const cleanPackages = config.packages.filter(p => p.name.trim()).map(inputToPkg);
+    const cleanAddOns = config.services.add_ons.filter(a => a.name.trim());
+    const cleanAboutFields = config.about.custom_fields.filter(f => f.label.trim());
+
+    // Only persist about config if it actually diverges from defaults
+    const aboutDiffers =
+      !config.about.show_age ||
+      !config.about.show_weight ||
+      !config.about.show_experience ||
+      cleanAboutFields.length > 0;
+    const aboutPayload: FormAboutConfig | null = aboutDiffers ? {
+      show_age: config.about.show_age,
+      show_weight: config.about.show_weight,
+      show_experience: config.about.show_experience,
+      custom_fields: cleanAboutFields,
+    } : null;
+
+    const anyService =
+      config.services.nutrition.enabled ||
+      config.services.online.enabled ||
+      config.services.hybrid.enabled ||
+      cleanAddOns.length > 0 ||
+      config.services.show_prices === false;
+
+    const servicesPayload = anyService ? {
+      show_prices: config.services.show_prices,
+      nutrition: config.services.nutrition.enabled ? config.services.nutrition : null,
+      online: config.services.online.enabled ? config.services.online : null,
+      hybrid: config.services.hybrid.enabled ? config.services.hybrid : null,
+      add_ons: cleanAddOns,
+    } : null;
+
     await fetch('/api/forms', {
       method: 'POST',
       headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
@@ -127,17 +271,19 @@ export default function FormFlowEditor({ trainer, goals }: FormFlowEditorProps) 
         formId: editFormId,
         goalId: editingGoalId,
         name: goal?.label || editingGoalId,
-        questions: config.questions.filter(q => q.question.trim()).length > 0 ? config.questions.filter(q => q.question.trim()) : null,
-        packages: config.packages.filter(p => p.name.trim()).length > 0 ? config.packages.filter(p => p.name.trim()) : null,
-        copy: config.results.heading ? { hero_subtext: config.results.heading } : null,
+        copy: copyPayload,
+        aboutConfig: aboutPayload,
+        questions: cleanQuestions.length > 0 ? cleanQuestions : null,
+        specialties: cleanSpecialties.length > 0 ? cleanSpecialties : null,
+        services: servicesPayload,
+        packages: cleanPackages.length > 0 ? cleanPackages : null,
       }),
     });
 
     const res = await fetch('/api/forms', { headers: { Authorization: `Bearer ${session.access_token}` } });
     if (res.ok) { const data = await res.json(); setForms(data.forms || []); }
     setSaving(false);
-    setEditingGoalId(null);
-    setEditingStep(null);
+    closeEditor();
   };
 
   const deleteForm = async (formId: string) => {
@@ -194,7 +340,7 @@ export default function FormFlowEditor({ trainer, goals }: FormFlowEditorProps) 
   return (
     <div className="space-y-4">
       <p className="text-[#8e8e93] text-xs">
-        Each goal can have its own form with custom steps. Goals without a custom form use your default settings.
+        Each goal can have its own form — with its own copy, questions, specialties, services and packages. Goals without a custom form use your default settings.
       </p>
 
       {activeGoals.map((goal) => {
@@ -206,17 +352,31 @@ export default function FormFlowEditor({ trainer, goals }: FormFlowEditorProps) 
           <div key={goal.id} className="rounded-xl border border-[#e5e5ea] overflow-hidden">
             {/* Goal header */}
             <div className="flex items-center justify-between p-4 bg-[#f5f5f7]">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <span className="text-lg">{goal.emoji}</span>
-                <div>
-                  <p className="text-sm font-semibold">{goal.label}</p>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm font-semibold truncate">{goal.label}</p>
+                    {onEditGoals && (
+                      <button
+                        type="button"
+                        onClick={onEditGoals}
+                        title="Change this goal"
+                        aria-label="Change this goal"
+                        className="p-1 -m-1 text-[#8e8e93] hover:text-[#007AFF] transition-colors flex-shrink-0">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                   <p className="text-[9px]" style={{ color: hasCustomForm ? '#007AFF' : '#8e8e93' }}>
                     {hasCustomForm ? 'Custom form' : 'Using default settings'}
                   </p>
                 </div>
               </div>
               <div className="flex gap-1.5">
-                <button onClick={() => isEditing ? (setEditingGoalId(null), setEditingStep(null)) : startEditing(goal.id)}
+                <button onClick={() => isEditing ? closeEditor() : startEditing(goal.id)}
                   className="text-[10px] font-medium px-2.5 py-1 rounded-lg bg-white text-[#007AFF]">
                   {isEditing ? 'Close' : hasCustomForm ? 'Edit' : 'Customise'}
                 </button>
@@ -229,88 +389,125 @@ export default function FormFlowEditor({ trainer, goals }: FormFlowEditorProps) 
               </div>
             </div>
 
-            {/* Horizontal step flow (always visible) */}
-            <div className="flex overflow-x-auto px-4 py-3 gap-2 bg-white">
-              {STEPS.map((step, i) => {
-                const isActive = isEditing && editingStep === step.id;
-                const hasContent = step.id === 'questions' ? config.questions.length > 0
-                  : step.id === 'results' ? config.packages.length > 0
-                  : false;
-
-                return (
-                  <div key={step.id} className="flex items-center gap-1.5 flex-shrink-0">
-                    <button
-                      onClick={() => isEditing ? setEditingStep(step.id) : undefined}
-                      className={`flex flex-col items-center px-3 py-2 rounded-xl text-center transition-all min-w-[70px] ${isEditing ? 'cursor-pointer' : 'cursor-default'}`}
+            {/* Per-goal sub-tab editor */}
+            {isEditing && (
+              <div className="border-t border-[#e5e5ea] bg-white">
+                {/* Sub-tab pills (mirror the main Form builder sub-tabs) */}
+                <div className="flex gap-1.5 overflow-x-auto px-4 pt-4 pb-2">
+                  {SUB_TABS.map((tab) => (
+                    <button key={tab.id}
+                      onClick={() => setActiveSubTab(tab.id)}
+                      className="text-[11px] px-3 py-1.5 rounded-full whitespace-nowrap transition-all flex-shrink-0 font-medium"
                       style={{
-                        backgroundColor: isActive ? '#007AFF12' : hasContent && hasCustomForm ? '#34C75910' : '#f5f5f7',
-                        borderWidth: '1.5px',
-                        borderColor: isActive ? '#007AFF' : hasContent && hasCustomForm ? '#34C759' : '#e5e5ea',
-                      }}
-                    >
-                      <span className="text-sm">{step.icon}</span>
-                      <span className="text-[9px] font-medium mt-0.5" style={{ color: isActive ? '#007AFF' : '#1a1a1a' }}>
-                        {step.label}
-                      </span>
-                      {hasContent && hasCustomForm && (
-                        <span className="text-[7px] text-[#34C759] font-semibold">custom</span>
-                      )}
+                        backgroundColor: activeSubTab === tab.id ? '#1a1a1a' : '#f5f5f7',
+                        color: activeSubTab === tab.id ? '#ffffff' : '#8e8e93',
+                      }}>
+                      {tab.label}
                     </button>
-                    {i < STEPS.length - 1 && (
-                      <svg className="w-3 h-3 text-[#e5e5ea] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                  ))}
+                </div>
 
-            {/* Step editor panel */}
-            {isEditing && editingStep && (
-              <div className="border-t border-[#e5e5ea] p-4 bg-white space-y-3">
-                {/* About You */}
-                {editingStep === 'about' && (
-                  <div className="space-y-3">
-                    <p className="text-xs font-semibold">About You fields</p>
-                    <p className="text-[10px] text-[#8e8e93]">Toggle default fields or add your own</p>
+                <div className="px-4 pb-4 pt-2">
+                  <p className="text-[10px] text-[#8e8e93] mb-3">
+                    {SUB_TABS.find(t => t.id === activeSubTab)?.description}
+                  </p>
 
-                    {/* Default toggleable fields */}
-                    {[
-                      { key: 'show_age' as const, label: 'Age' },
-                      { key: 'show_weight' as const, label: 'Weight (current & goal)' },
-                      { key: 'show_experience' as const, label: 'Experience level' },
-                    ].map((field) => (
-                      <label key={field.key} className="flex items-center justify-between">
-                        <span className="text-xs">{field.label}</span>
-                        <button onClick={() => setConfig({ ...config, about: { ...config.about, [field.key]: !config.about[field.key] } })}
-                          className="w-10 h-6 rounded-full p-0.5 transition-all duration-300"
-                          style={{ backgroundColor: config.about[field.key] ? '#34C759' : '#e5e5ea' }}>
-                          <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300"
-                            style={{ transform: config.about[field.key] ? 'translateX(16px)' : 'translateX(0)' }} />
-                        </button>
-                      </label>
-                    ))}
+                  {/* Copy */}
+                  {activeSubTab === 'copy' && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[#8e8e93] text-[10px] block mb-1">Hero headline</label>
+                        <input value={config.copy.hero_headline}
+                          onChange={(e) => setConfig({ ...config, copy: { ...config.copy, hero_headline: e.target.value } })}
+                          placeholder={trainer.copy?.hero_headline || "Find out how long it'll take to reach your goal"}
+                          className={inputClass} />
+                      </div>
+                      <div>
+                        <label className="text-[#8e8e93] text-[10px] block mb-1">Hero subtext</label>
+                        <input value={config.copy.hero_subtext}
+                          onChange={(e) => setConfig({ ...config, copy: { ...config.copy, hero_subtext: e.target.value } })}
+                          placeholder={trainer.copy?.hero_subtext || 'Free personalised timeline in 60 seconds'}
+                          className={inputClass} />
+                      </div>
+                      <div>
+                        <label className="text-[#8e8e93] text-[10px] block mb-1">CTA button text</label>
+                        <input value={config.copy.cta_button_text}
+                          onChange={(e) => setConfig({ ...config, copy: { ...config.copy, cta_button_text: e.target.value } })}
+                          placeholder={trainer.copy?.cta_button_text || 'Get My Timeline'}
+                          className={inputClass} />
+                      </div>
+                      <div>
+                        <label className="text-[#8e8e93] text-[10px] block mb-1">Tone of voice</label>
+                        <textarea value={config.copy.tone}
+                          onChange={(e) => setConfig({ ...config, copy: { ...config.copy, tone: e.target.value } })}
+                          placeholder={trainer.copy?.tone || 'e.g. Straight-talking but supportive.'}
+                          rows={3}
+                          className={inputClass} />
+                        <p className="text-[#8e8e93] text-[9px] mt-1">The AI uses this tone when writing timelines for leads who pick this goal.</p>
+                      </div>
 
-                    {/* Custom fields */}
-                    <div className="pt-2 border-t border-[#e5e5ea]">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-[10px] text-[#8e8e93] font-semibold">Custom fields</p>
+                      <CopyPreview
+                        theme={brandTheme}
+                        primaryColor={brandColor}
+                        headline={config.copy.hero_headline || trainer.copy?.hero_headline || ''}
+                        subtext={config.copy.hero_subtext || trainer.copy?.hero_subtext || ''}
+                        ctaText={config.copy.cta_button_text || trainer.copy?.cta_button_text || ''}
+                        trainerName={trainer.name}
+                        fontHeading={trainer.branding?.font_heading}
+                        fontBody={trainer.branding?.font_body}
+                      />
+                    </div>
+                  )}
+
+                  {/* About You */}
+                  {activeSubTab === 'about' && (
+                    <div className="space-y-3">
+                      <p className="text-[10px] text-[#8e8e93] font-semibold uppercase tracking-wider mt-1">Default fields</p>
+                      {([
+                        { key: 'show_age' as const, label: 'Age', subtitle: 'Used to personalise the timeline' },
+                        { key: 'show_weight' as const, label: 'Weight (current & goal)', subtitle: 'Required for weight-based goal types' },
+                        { key: 'show_experience' as const, label: 'Experience level', subtitle: 'Beginner / intermediate / advanced' },
+                      ]).map((field) => (
+                        <div key={field.key} className="flex items-center justify-between rounded-xl border border-[#e5e5ea] p-3">
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium">{field.label}</p>
+                            <p className="text-[10px] text-[#8e8e93]">{field.subtitle}</p>
+                          </div>
+                          <button onClick={() => setConfig({ ...config, about: { ...config.about, [field.key]: !config.about[field.key] } })}
+                            className="w-10 h-6 rounded-full p-0.5 transition-all duration-300 flex-shrink-0"
+                            style={{ backgroundColor: config.about[field.key] ? '#34C759' : '#e5e5ea' }}>
+                            <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300"
+                              style={{ transform: config.about[field.key] ? 'translateX(16px)' : 'translateX(0)' }} />
+                          </button>
+                        </div>
+                      ))}
+
+                      <div className="flex items-center justify-between pt-2">
+                        <p className="text-[10px] text-[#8e8e93] font-semibold uppercase tracking-wider">Custom fields</p>
                         <button onClick={() => setConfig({
                           ...config,
-                          about: { ...config.about, custom_fields: [...config.about.custom_fields, { id: `cf-${Date.now()}`, label: '', placeholder: '' }] }
+                          about: { ...config.about, custom_fields: [...config.about.custom_fields, { id: `cf-${Date.now()}`, label: '', placeholder: '' }] },
                         })}
                           className="text-[10px] text-[#007AFF] font-medium">+ Add field</button>
                       </div>
-                      {config.about.custom_fields.map((cf, i) => (
-                        <div key={cf.id} className="flex gap-2 mb-2">
-                          <input value={cf.label}
-                            onChange={(e) => {
-                              const u = [...config.about.custom_fields];
-                              u[i] = { ...u[i], label: e.target.value };
-                              setConfig({ ...config, about: { ...config.about, custom_fields: u } });
-                            }}
-                            placeholder="Field label, e.g. Injuries" className={inputClass} />
+                      <p className="text-[10px] text-[#8e8e93] -mt-1">Ask things like injuries, dietary preferences, training background.</p>
+
+                      {config.about.custom_fields.map((cf: CustomAboutField, i) => (
+                        <div key={cf.id} className="bg-[#f5f5f7] rounded-xl p-3 space-y-2">
+                          <div className="flex gap-2">
+                            <input value={cf.label}
+                              onChange={(e) => {
+                                const u = [...config.about.custom_fields];
+                                u[i] = { ...u[i], label: e.target.value };
+                                setConfig({ ...config, about: { ...config.about, custom_fields: u } });
+                              }}
+                              placeholder="Field label, e.g. Any injuries?" className={inputClass} />
+                            <button onClick={() => setConfig({
+                              ...config,
+                              about: { ...config.about, custom_fields: config.about.custom_fields.filter((_, idx) => idx !== i) },
+                            })}
+                              className="text-[#FF3B30] text-[10px] px-2">Remove</button>
+                          </div>
                           <input value={cf.placeholder}
                             onChange={(e) => {
                               const u = [...config.about.custom_fields];
@@ -318,209 +515,323 @@ export default function FormFlowEditor({ trainer, goals }: FormFlowEditorProps) 
                               setConfig({ ...config, about: { ...config.about, custom_fields: u } });
                             }}
                             placeholder="Placeholder text" className={inputClass} />
-                          <button onClick={() => setConfig({
-                            ...config,
-                            about: { ...config.about, custom_fields: config.about.custom_fields.filter((_, idx) => idx !== i) }
-                          })}
-                            className="text-[#FF3B30] text-[10px] px-1.5 flex-shrink-0">x</button>
                         </div>
                       ))}
-                      {config.about.custom_fields.length === 0 && (
-                        <p className="text-[9px] text-[#8e8e93]">Add fields like injuries, medical conditions, dietary preferences, etc.</p>
-                      )}
-                    </div>
-                  </div>
-                )}
 
-                {/* Availability */}
-                {editingStep === 'availability' && (
-                  <div className="space-y-3">
-                    <p className="text-xs font-semibold">Availability settings</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[10px] text-[#8e8e93] block mb-1">Max days shown</label>
-                        <select value={config.availability.max_days}
-                          onChange={(e) => setConfig({ ...config, availability: { ...config.availability, max_days: parseInt(e.target.value) } })}
-                          className={inputClass}>
-                          {[3, 4, 5, 6, 7].map(n => <option key={n} value={n}>{n} days</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-[#8e8e93] block mb-1">Default selection</label>
-                        <select value={config.availability.default_days}
-                          onChange={(e) => setConfig({ ...config, availability: { ...config.availability, default_days: parseInt(e.target.value) } })}
-                          className={inputClass}>
-                          {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n} days</option>)}
-                        </select>
-                      </div>
+                      <AboutPreview
+                        theme={brandTheme}
+                        primaryColor={brandColor}
+                        config={config.about}
+                      />
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Questions */}
-                {editingStep === 'questions' && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-semibold">Custom questions</p>
-                        <p className="text-[10px] text-[#8e8e93]">Specific to this goal. Empty = use your default questions.</p>
+                  {/* Questions */}
+                  {activeSubTab === 'questions' && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] text-[#8e8e93]">Empty = use your default questions.</p>
+                        <button onClick={() => setConfig({
+                          ...config,
+                          questions: [...config.questions, { id: `q-${Date.now()}`, question: '', type: 'select', options: ['', ''], placeholder: '' }],
+                        })}
+                          className="text-[10px] text-[#007AFF] font-medium">+ Add</button>
                       </div>
-                      <button onClick={() => setConfig({ ...config, questions: [...config.questions, { id: `q-${Date.now()}`, question: '', type: 'select', options: ['', ''], placeholder: '' }] })}
-                        className="text-[10px] text-[#007AFF] font-medium">+ Add</button>
-                    </div>
-                    {config.questions.map((q, i) => (
-                      <div key={q.id} className="bg-[#f5f5f7] rounded-lg p-3 space-y-2">
-                        <div className="flex gap-2">
-                          <input value={q.question}
-                            onChange={(e) => { const u = [...config.questions]; u[i] = { ...u[i], question: e.target.value }; setConfig({ ...config, questions: u }); }}
-                            placeholder="e.g. Have you tried this before?" className={inputClass} />
-                          <button onClick={() => setConfig({ ...config, questions: config.questions.filter((_, idx) => idx !== i) })}
-                            className="text-[#FF3B30] text-[10px] px-2">x</button>
-                        </div>
-                        <div className="flex gap-1.5">
-                          {(['text', 'select', 'multiselect'] as const).map(t => (
-                            <button key={t} onClick={() => { const u = [...config.questions]; u[i] = { ...u[i], type: t }; setConfig({ ...config, questions: u }); }}
-                              className="text-[9px] px-2 py-1 rounded-md"
-                              style={{ backgroundColor: q.type === t ? '#1a1a1a' : '#e5e5ea', color: q.type === t ? '#fff' : '#8e8e93' }}>
-                              {t === 'text' ? 'Text' : t === 'select' ? 'Single' : 'Multi'}
-                            </button>
-                          ))}
-                        </div>
-                        {(q.type === 'select' || q.type === 'multiselect') && (
-                          <div className="space-y-1">
-                            {q.options.map((opt, oi) => (
-                              <div key={oi} className="flex gap-1.5">
-                                <input value={opt}
-                                  onChange={(e) => { const u = [...config.questions]; const opts = [...u[i].options]; opts[oi] = e.target.value; u[i] = { ...u[i], options: opts }; setConfig({ ...config, questions: u }); }}
-                                  placeholder={`Option ${oi + 1}`} className={inputClass} />
-                                {q.options.length > 2 && (
-                                  <button onClick={() => { const u = [...config.questions]; u[i] = { ...u[i], options: u[i].options.filter((_, idx) => idx !== oi) }; setConfig({ ...config, questions: u }); }}
-                                    className="text-[#FF3B30] text-[9px] px-1">x</button>
-                                )}
-                              </div>
-                            ))}
-                            <button onClick={() => { const u = [...config.questions]; u[i] = { ...u[i], options: [...u[i].options, ''] }; setConfig({ ...config, questions: u }); }}
-                              className="text-[9px] text-[#007AFF]">+ Option</button>
+                      {config.questions.map((q, i) => (
+                        <div key={q.id} className="bg-[#f5f5f7] rounded-xl p-3 space-y-2">
+                          <div className="flex gap-2">
+                            <input value={q.question}
+                              onChange={(e) => { const u = [...config.questions]; u[i] = { ...u[i], question: e.target.value }; setConfig({ ...config, questions: u }); }}
+                              placeholder="e.g. Have you tried this before?" className={inputClass} />
+                            <button onClick={() => setConfig({ ...config, questions: config.questions.filter((_, idx) => idx !== i) })}
+                              className="text-[#FF3B30] text-[10px] px-2">Remove</button>
                           </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Contact/Capture */}
-                {editingStep === 'capture' && (
-                  <div className="space-y-3">
-                    <p className="text-xs font-semibold">Contact step</p>
-                    <p className="text-[10px] text-[#8e8e93]">Choose what info to collect. Name is always required.</p>
-
-                    <div>
-                      <label className="text-[10px] text-[#8e8e93] block mb-1">Custom heading (optional)</label>
-                      <input value={config.capture.heading}
-                        onChange={(e) => setConfig({ ...config, capture: { ...config.capture, heading: e.target.value } })}
-                        placeholder="Almost there!" className={inputClass} />
-                    </div>
-
-                    <label className="flex items-center justify-between">
-                      <div>
-                        <span className="text-xs">Phone number</span>
-                        <p className="text-[9px] text-[#8e8e93]">Required for WhatsApp CTA</p>
-                      </div>
-                      <button onClick={() => setConfig({ ...config, capture: { ...config.capture, show_phone: !config.capture.show_phone } })}
-                        className="w-10 h-6 rounded-full p-0.5 transition-all duration-300"
-                        style={{ backgroundColor: config.capture.show_phone ? '#34C759' : '#e5e5ea' }}>
-                        <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300"
-                          style={{ transform: config.capture.show_phone ? 'translateX(16px)' : 'translateX(0)' }} />
-                      </button>
-                    </label>
-
-                    <label className="flex items-center justify-between">
-                      <div>
-                        <span className="text-xs">Email address</span>
-                        <p className="text-[9px] text-[#8e8e93]">Useful for follow-ups and newsletters</p>
-                      </div>
-                      <button onClick={() => setConfig({ ...config, capture: { ...config.capture, show_email: !config.capture.show_email } })}
-                        className="w-10 h-6 rounded-full p-0.5 transition-all duration-300"
-                        style={{ backgroundColor: config.capture.show_email ? '#34C759' : '#e5e5ea' }}>
-                        <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300"
-                          style={{ transform: config.capture.show_email ? 'translateX(16px)' : 'translateX(0)' }} />
-                      </button>
-                    </label>
-
-                    {!config.capture.show_phone && !config.capture.show_email && (
-                      <p className="text-[10px] text-[#FF9500] bg-[#FF950010] rounded-lg px-3 py-2">
-                        At least name will be collected. Consider enabling phone or email so you can contact the lead.
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Results */}
-                {editingStep === 'results' && (
-                  <div className="space-y-3">
-                    <p className="text-xs font-semibold">Results page</p>
-                    <div>
-                      <label className="text-[10px] text-[#8e8e93] block mb-1">Custom results heading (optional)</label>
-                      <input value={config.results.heading}
-                        onChange={(e) => setConfig({ ...config, results: { ...config.results, heading: e.target.value } })}
-                        placeholder="Your personalised timeline" className={inputClass} />
-                    </div>
-
-                    {/* Custom packages for this form */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <label className="text-[10px] text-[#8e8e93] font-semibold">Packages</label>
-                          <p className="text-[9px] text-[#8e8e93]">Empty = use your default packages</p>
+                          <div className="grid grid-cols-3 gap-1.5">
+                            {(['text', 'select', 'multiselect'] as const).map((t) => (
+                              <button key={t}
+                                onClick={() => { const u = [...config.questions]; u[i] = { ...u[i], type: t }; setConfig({ ...config, questions: u }); }}
+                                className="py-1.5 rounded-lg text-[10px] font-medium border"
+                                style={{
+                                  backgroundColor: q.type === t ? '#1a1a1a' : 'white',
+                                  color: q.type === t ? '#ffffff' : '#8e8e93',
+                                  borderColor: q.type === t ? '#1a1a1a' : '#e5e5ea',
+                                }}>
+                                {t === 'text' ? 'Text' : t === 'select' ? 'Single' : 'Multi'}
+                              </button>
+                            ))}
+                          </div>
+                          {q.type === 'text' && (
+                            <input value={q.placeholder}
+                              onChange={(e) => { const u = [...config.questions]; u[i] = { ...u[i], placeholder: e.target.value }; setConfig({ ...config, questions: u }); }}
+                              placeholder="Placeholder text" className={inputClass} />
+                          )}
+                          {(q.type === 'select' || q.type === 'multiselect') && (
+                            <div className="space-y-1">
+                              {q.options.map((opt, oi) => (
+                                <div key={oi} className="flex gap-1.5">
+                                  <input value={opt}
+                                    onChange={(e) => { const u = [...config.questions]; const opts = [...u[i].options]; opts[oi] = e.target.value; u[i] = { ...u[i], options: opts }; setConfig({ ...config, questions: u }); }}
+                                    placeholder={`Option ${oi + 1}`} className={inputClass} />
+                                  {q.options.length > 2 && (
+                                    <button onClick={() => { const u = [...config.questions]; u[i] = { ...u[i], options: u[i].options.filter((_, idx) => idx !== oi) }; setConfig({ ...config, questions: u }); }}
+                                      className="text-[#FF3B30] text-[9px] px-1.5">x</button>
+                                  )}
+                                </div>
+                              ))}
+                              <button onClick={() => { const u = [...config.questions]; u[i] = { ...u[i], options: [...u[i].options, ''] }; setConfig({ ...config, questions: u }); }}
+                                className="text-[10px] text-[#007AFF] font-medium">+ Option</button>
+                            </div>
+                          )}
                         </div>
-                        <button onClick={() => setConfig({ ...config, packages: [...config.packages, { name: '', sessions_per_week: 2, price_per_session: null, monthly_price: null, is_online: false }] })}
+                      ))}
+
+                      <CustomQuestionsPreview
+                        theme={brandTheme}
+                        primaryColor={brandColor}
+                        questions={config.questions}
+                      />
+                    </div>
+                  )}
+
+                  {/* Specialties */}
+                  {activeSubTab === 'specialties' && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] text-[#8e8e93]">Shown on the results page. Empty = use your defaults.</p>
+                        <button onClick={() => setConfig({ ...config, specialties: [...config.specialties, { name: '', description: '' }] })}
+                          className="text-[10px] text-[#007AFF] font-medium">+ Add</button>
+                      </div>
+                      {config.specialties.map((s, i) => (
+                        <div key={i} className="bg-[#f5f5f7] rounded-xl p-3 space-y-2">
+                          <div className="flex gap-2">
+                            <input value={s.name}
+                              onChange={(e) => { const u = [...config.specialties]; u[i] = { ...u[i], name: e.target.value }; setConfig({ ...config, specialties: u }); }}
+                              placeholder="e.g. Fat-loss transformation" className={inputClass} />
+                            <button onClick={() => setConfig({ ...config, specialties: config.specialties.filter((_, idx) => idx !== i) })}
+                              className="text-[#FF3B30] text-[10px] px-2">Remove</button>
+                          </div>
+                          <textarea value={s.description}
+                            onChange={(e) => { const u = [...config.specialties]; u[i] = { ...u[i], description: e.target.value }; setConfig({ ...config, specialties: u }); }}
+                            placeholder="Description..." rows={2} className={inputClass} />
+                        </div>
+                      ))}
+
+                      <SpecialtiesPreview
+                        theme={brandTheme}
+                        primaryColor={brandColor}
+                        specialties={config.specialties}
+                      />
+                    </div>
+                  )}
+
+                  {/* Services */}
+                  {activeSubTab === 'services' && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between rounded-xl border border-[#e5e5ea] p-3">
+                        <div>
+                          <p className="font-medium text-xs">Show pricing</p>
+                          <p className="text-[#8e8e93] text-[10px]">Display prices to prospects who pick this goal</p>
+                        </div>
+                        <button onClick={() => setConfig({ ...config, services: { ...config.services, show_prices: !config.services.show_prices } })}
+                          className="w-10 h-6 rounded-full p-0.5 transition-all duration-300"
+                          style={{ backgroundColor: config.services.show_prices ? '#34C759' : '#e5e5ea' }}>
+                          <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300"
+                            style={{ transform: config.services.show_prices ? 'translateX(16px)' : 'translateX(0)' }} />
+                        </button>
+                      </div>
+
+                      {/* Nutrition */}
+                      <ServiceToggle
+                        title="Nutrition support"
+                        subtitle="Stacks on top of any training type"
+                        enabled={config.services.nutrition.enabled}
+                        onToggle={() => setConfig({ ...config, services: { ...config.services, nutrition: { ...config.services.nutrition, enabled: !config.services.nutrition.enabled } } })}
+                      >
+                        <input value={config.services.nutrition.name}
+                          onChange={(e) => setConfig({ ...config, services: { ...config.services, nutrition: { ...config.services.nutrition, name: e.target.value } } })}
+                          placeholder="e.g. Nutrition Plan" className={inputClass} />
+                        <textarea value={config.services.nutrition.description}
+                          onChange={(e) => setConfig({ ...config, services: { ...config.services, nutrition: { ...config.services.nutrition, description: e.target.value } } })}
+                          rows={2} placeholder="What's included..." className={inputClass} />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[#8e8e93] text-[10px] block mb-0.5">Timeline boost</label>
+                            <div className="flex items-center gap-2">
+                              <input type="range" min={5} max={30} step={5} value={config.services.nutrition.timeline_reduction_percent}
+                                onChange={(e) => setConfig({ ...config, services: { ...config.services, nutrition: { ...config.services.nutrition, timeline_reduction_percent: parseInt(e.target.value) } } })}
+                                className="flex-1" />
+                              <span className="text-xs font-semibold min-w-[3ch] text-right">{config.services.nutrition.timeline_reduction_percent}%</span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
+                            <input type="number" value={config.services.nutrition.price_per_month ?? ''}
+                              onChange={(e) => setConfig({ ...config, services: { ...config.services, nutrition: { ...config.services.nutrition, price_per_month: e.target.value ? parseFloat(e.target.value) : null } } })}
+                              placeholder="Optional" className={inputClass} />
+                          </div>
+                        </div>
+                      </ServiceToggle>
+
+                      {/* Online */}
+                      <ServiceToggle
+                        title="Online programming"
+                        subtitle="Alternative to in-person"
+                        enabled={config.services.online.enabled}
+                        onToggle={() => setConfig({ ...config, services: { ...config.services, online: { ...config.services.online, enabled: !config.services.online.enabled } } })}
+                      >
+                        <input value={config.services.online.name}
+                          onChange={(e) => setConfig({ ...config, services: { ...config.services, online: { ...config.services.online, name: e.target.value } } })}
+                          placeholder="e.g. Online Programming" className={inputClass} />
+                        <textarea value={config.services.online.description}
+                          onChange={(e) => setConfig({ ...config, services: { ...config.services, online: { ...config.services.online, description: e.target.value } } })}
+                          rows={2} placeholder="What's included..." className={inputClass} />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[#8e8e93] text-[10px] block mb-0.5">Effectiveness vs in-person</label>
+                            <div className="flex items-center gap-2">
+                              <input type="range" min={50} max={95} step={5} value={Math.round(config.services.online.effectiveness_vs_inperson * 100)}
+                                onChange={(e) => setConfig({ ...config, services: { ...config.services, online: { ...config.services.online, effectiveness_vs_inperson: parseInt(e.target.value) / 100 } } })}
+                                className="flex-1" />
+                              <span className="text-xs font-semibold min-w-[3ch] text-right">{Math.round(config.services.online.effectiveness_vs_inperson * 100)}%</span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
+                            <input type="number" value={config.services.online.price_per_month ?? ''}
+                              onChange={(e) => setConfig({ ...config, services: { ...config.services, online: { ...config.services.online, price_per_month: e.target.value ? parseFloat(e.target.value) : null } } })}
+                              placeholder="Optional" className={inputClass} />
+                          </div>
+                        </div>
+                      </ServiceToggle>
+
+                      {/* Hybrid */}
+                      <ServiceToggle
+                        title="Hybrid coaching"
+                        subtitle="Mix of in-person + online"
+                        enabled={config.services.hybrid.enabled}
+                        onToggle={() => setConfig({ ...config, services: { ...config.services, hybrid: { ...config.services.hybrid, enabled: !config.services.hybrid.enabled } } })}
+                      >
+                        <input value={config.services.hybrid.name}
+                          onChange={(e) => setConfig({ ...config, services: { ...config.services, hybrid: { ...config.services.hybrid, name: e.target.value } } })}
+                          placeholder="e.g. Hybrid Coaching" className={inputClass} />
+                        <textarea value={config.services.hybrid.description}
+                          onChange={(e) => setConfig({ ...config, services: { ...config.services, hybrid: { ...config.services.hybrid, description: e.target.value } } })}
+                          rows={2} placeholder="What's included..." className={inputClass} />
+                        <div>
+                          <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
+                          <input type="number" value={config.services.hybrid.price_per_month ?? ''}
+                            onChange={(e) => setConfig({ ...config, services: { ...config.services, hybrid: { ...config.services.hybrid, price_per_month: e.target.value ? parseFloat(e.target.value) : null } } })}
+                            placeholder="Optional" className={inputClass} />
+                        </div>
+                      </ServiceToggle>
+                    </div>
+                  )}
+
+                  {/* Packages */}
+                  {activeSubTab === 'packages' && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] text-[#8e8e93]">Empty = use your default packages.</p>
+                        <button onClick={() => setConfig({
+                          ...config,
+                          packages: [...config.packages, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false }],
+                        })}
                           className="text-[10px] text-[#007AFF] font-medium">+ Add</button>
                       </div>
                       {config.packages.map((pkg, i) => (
-                        <div key={i} className="flex gap-2 mb-2">
-                          <input value={pkg.name}
-                            onChange={(e) => { const u = [...config.packages]; u[i] = { ...u[i], name: e.target.value }; setConfig({ ...config, packages: u }); }}
-                            placeholder="e.g. 3x Per Week" className={inputClass} />
-                          <input type="number" value={pkg.sessions_per_week}
-                            onChange={(e) => { const u = [...config.packages]; u[i] = { ...u[i], sessions_per_week: parseInt(e.target.value) || 0 }; setConfig({ ...config, packages: u }); }}
-                            className="w-14 bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl px-2 py-2.5 text-sm text-center focus:outline-none" placeholder="x/wk" />
-                          <input type="number" value={pkg.monthly_price || ''}
-                            onChange={(e) => { const u = [...config.packages]; u[i] = { ...u[i], monthly_price: e.target.value ? parseFloat(e.target.value) : null }; setConfig({ ...config, packages: u }); }}
-                            className="w-20 bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl px-2 py-2.5 text-sm text-center focus:outline-none" placeholder="£/mo" />
-                          <button onClick={() => setConfig({ ...config, packages: config.packages.filter((_, idx) => idx !== i) })}
-                            className="text-[#FF3B30] text-[10px] px-1.5">x</button>
+                        <div key={i} className="bg-[#f5f5f7] rounded-xl p-3 space-y-2">
+                          <div className="flex gap-2">
+                            <input value={pkg.name}
+                              onChange={(e) => { const u = [...config.packages]; u[i] = { ...u[i], name: e.target.value }; setConfig({ ...config, packages: u }); }}
+                              placeholder="e.g. 2x Per Week" className={inputClass} />
+                            <button onClick={() => setConfig({ ...config, packages: config.packages.filter((_, idx) => idx !== i) })}
+                              className="text-[#FF3B30] text-[10px] px-2">Remove</button>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <label className="text-[#8e8e93] text-[9px] block mb-0.5">Sessions/wk</label>
+                              <input type="number" value={pkg.sessions_per_week}
+                                onChange={(e) => { const u = [...config.packages]; u[i] = { ...u[i], sessions_per_week: e.target.value }; setConfig({ ...config, packages: u }); }}
+                                className={inputClass} />
+                            </div>
+                            <div>
+                              <label className="text-[#8e8e93] text-[9px] block mb-0.5">{sym}/session</label>
+                              <input type="number" value={pkg.price_per_session}
+                                onChange={(e) => { const u = [...config.packages]; u[i] = { ...u[i], price_per_session: e.target.value }; setConfig({ ...config, packages: u }); }}
+                                className={inputClass} />
+                            </div>
+                            <div>
+                              <label className="text-[#8e8e93] text-[9px] block mb-0.5">{sym}/month</label>
+                              <input type="number" value={pkg.monthly_price}
+                                onChange={(e) => { const u = [...config.packages]; u[i] = { ...u[i], monthly_price: e.target.value }; setConfig({ ...config, packages: u }); }}
+                                className={inputClass} />
+                            </div>
+                          </div>
+                          <label className="flex items-center gap-2 text-[10px] text-[#8e8e93]">
+                            <input type="checkbox" checked={pkg.is_online}
+                              onChange={(e) => { const u = [...config.packages]; u[i] = { ...u[i], is_online: e.target.checked }; setConfig({ ...config, packages: u }); }} />
+                            Online package
+                          </label>
                         </div>
                       ))}
+
+                      <PackagesPreview
+                        theme={brandTheme}
+                        primaryColor={brandColor}
+                        packages={config.packages}
+                        showPrices={config.services.show_prices}
+                        currency={trainer.currency}
+                      />
                     </div>
+                  )}
 
-                    <label className="flex items-center justify-between">
-                      <span className="text-xs">Show specialties</span>
-                      <button onClick={() => setConfig({ ...config, results: { ...config.results, show_specialties: !config.results.show_specialties } })}
-                        className="w-10 h-6 rounded-full p-0.5 transition-all duration-300"
-                        style={{ backgroundColor: config.results.show_specialties ? '#34C759' : '#e5e5ea' }}>
-                        <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300"
-                          style={{ transform: config.results.show_specialties ? 'translateX(16px)' : 'translateX(0)' }} />
-                      </button>
-                    </label>
+                  {/* Save */}
+                  <div className="flex gap-2 pt-4 mt-4 border-t border-[#e5e5ea]">
+                    <button onClick={saveForm} disabled={saving}
+                      className="flex-1 py-2.5 rounded-xl bg-[#1a1a1a] text-white text-xs font-semibold disabled:opacity-40">
+                      {saving ? 'Saving...' : editFormId ? 'Save changes' : 'Create custom form'}
+                    </button>
+                    <button onClick={closeEditor}
+                      className="px-4 py-2.5 rounded-xl bg-[#f5f5f7] text-[#8e8e93] text-xs">
+                      Cancel
+                    </button>
                   </div>
-                )}
-
-                {/* Save */}
-                <div className="flex gap-2 pt-2">
-                  <button onClick={saveForm} disabled={saving}
-                    className="flex-1 py-2.5 rounded-xl bg-[#1a1a1a] text-white text-xs font-semibold disabled:opacity-40">
-                    {saving ? 'Saving...' : editFormId ? 'Save changes' : 'Create custom form'}
-                  </button>
-                  <button onClick={() => { setEditingGoalId(null); setEditingStep(null); }}
-                    className="px-4 py-2.5 rounded-xl bg-[#f5f5f7] text-[#8e8e93] text-xs">
-                    Cancel
-                  </button>
                 </div>
               </div>
             )}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function ServiceToggle({ title, subtitle, enabled, onToggle, children }: {
+  title: string;
+  subtitle: string;
+  enabled: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-[#e5e5ea] p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-medium text-xs">{title}</p>
+          <p className="text-[#8e8e93] text-[10px] mt-0.5">{subtitle}</p>
+        </div>
+        <button onClick={onToggle}
+          className="w-10 h-6 rounded-full p-0.5 transition-all duration-300 flex-shrink-0"
+          style={{ backgroundColor: enabled ? '#34C759' : '#e5e5ea' }}>
+          <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300"
+            style={{ transform: enabled ? 'translateX(16px)' : 'translateX(0)' }} />
+        </button>
+      </div>
+      {enabled && (
+        <div className="space-y-2 pt-2 border-t border-[#e5e5ea]">
+          {children}
+        </div>
+      )}
     </div>
   );
 }

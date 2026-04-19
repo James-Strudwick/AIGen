@@ -1,15 +1,18 @@
 'use client';
 
 import { PackageTimeline } from '@/types';
+import { currencySymbol } from '@/lib/currency';
 
 interface PackageComparisonProps {
   packages: PackageTimeline[];
   trainerName: string;
   primaryColor: string;
+  currency?: string;
   onSelect?: (packageId: string) => void;
 }
 
-export default function PackageComparison({ packages, trainerName, primaryColor, onSelect }: PackageComparisonProps) {
+export default function PackageComparison({ packages, trainerName, primaryColor, currency, onSelect }: PackageComparisonProps) {
+  const sym = currencySymbol(currency);
   return (
     <div>
       <h3 className="text-xl font-bold text-white mb-2 text-center">
@@ -54,12 +57,12 @@ export default function PackageComparison({ packages, trainerName, primaryColor,
               <div className="text-right">
                 {pkg.monthlyPrice && (
                   <p className="text-white font-bold text-lg">
-                    £{pkg.monthlyPrice}<span className="text-gray-500 text-xs font-normal">/mo</span>
+                    {sym}{pkg.monthlyPrice}<span className="text-gray-500 text-xs font-normal">/mo</span>
                   </p>
                 )}
                 {pkg.pricePerSession && (
                   <p className="text-gray-500 text-xs">
-                    £{pkg.pricePerSession}/session
+                    {sym}{pkg.pricePerSession}/session
                   </p>
                 )}
               </div>
@@ -77,7 +80,7 @@ export default function PackageComparison({ packages, trainerName, primaryColor,
 
               {pkg.totalCost && (
                 <span className="text-gray-400 text-sm">
-                  Est. total: £{pkg.totalCost.toLocaleString()}
+                  Est. total: {sym}{pkg.totalCost.toLocaleString()}
                 </span>
               )}
             </div>

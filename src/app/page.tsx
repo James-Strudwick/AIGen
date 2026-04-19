@@ -1,11 +1,18 @@
 import Link from 'next/link';
+import AuthRedirectCatcher from '@/components/AuthRedirectCatcher';
+import BeforeAfterSlider from '@/components/BeforeAfterSlider';
+import TimelineDemo from '@/components/TimelineDemo';
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-white text-[#1a1a1a]">
+      <AuthRedirectCatcher />
       {/* Nav */}
       <nav className="flex items-center justify-between max-w-3xl mx-auto px-5 py-5">
-        <p className="font-bold tracking-tight">FomoForms</p>
+        <div className="flex items-center gap-2">
+          <img src="/favicon.svg" alt="" className="w-6 h-6" />
+          <p className="font-bold tracking-tight">FomoForms</p>
+        </div>
         <div className="flex gap-2">
           <Link href="/login" className="text-[#8e8e93] text-sm px-4 py-2 rounded-xl hover:bg-[#f5f5f7] transition-colors">
             Log in
@@ -35,6 +42,12 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      {/* Before/After comparison slider */}
+      <BeforeAfterSlider />
+
+      {/* Interactive timeline demo */}
+      <TimelineDemo />
 
       {/* How it works */}
       <section className="max-w-3xl mx-auto px-5 py-16">

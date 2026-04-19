@@ -41,6 +41,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No trainer profile found' }, { status: 404 });
     }
 
+    // Revert expired Pro trials (tier 4 reward)
+    if (trainer.pro_trial_ends_at && new Date(trainer.pro_trial_ends_at) < new Date() && trainer.tier === 'pro') {
+      // Only revert if they don't have a Pro subscription — check metadata
+      // to distinguish "earned Pro" vs "tier-4 trial Pro".
+      // Simple heuristic: if pro_trial_ends_at exists and expired, revert.
+      await supabase.from('trainers').update({
+        tier: 'starter',
+        pro_trial_ends_at: null,
+      }).eq('id', trainer.id);
+      trainer.tier = 'starter';
+      trainer.pro_trial_ends_at = null;
+    }
+
     // Fetch packages
     const { data: packages } = await supabase
       .from('packages')

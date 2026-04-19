@@ -4,11 +4,13 @@ import { Trainer, Package, TimelineResult, FormData, TrainerBranding, TrainerSer
 import MilestoneTimeline from './MilestoneTimeline';
 import TimelineToggles from './TimelineToggles';
 import CTASection from './CTASection';
+import ChallengeSection from './ChallengeSection';
 
 interface TimelineResultsProps {
   trainer: Trainer;
   branding: TrainerBranding;
   services: TrainerServices;
+  specialties?: TrainerSpecialty[] | null;
   packages: Package[];
   result: TimelineResult;
   goalLabel: string;
@@ -17,8 +19,28 @@ interface TimelineResultsProps {
   isPreview?: boolean;
 }
 
-export default function TimelineResults({ trainer, branding, services, packages, result, goalLabel, formData, leadId, isPreview }: TimelineResultsProps) {
-  const specialties = trainer.specialties || [];
+/** Build the coach's primary contact URL for the challenge CTA button. */
+function buildPrimaryCtaHref(trainer: Trainer, leadName: string): string | null {
+  const message = `Hi ${trainer.name}! ${leadName ? `It's ${leadName}. ` : ''}I've just filled out your form and I'd like to join your challenge.`;
+  const contact = (trainer.contact_value || '').trim();
+  if (!contact) return null;
+  switch (trainer.contact_method) {
+    case 'email':
+      return `mailto:${encodeURIComponent(contact)}?subject=${encodeURIComponent('Joining your challenge')}&body=${encodeURIComponent(message)}`;
+    case 'calendly':
+    case 'link':
+      return /^https?:\/\//i.test(contact) ? contact : null;
+    case 'whatsapp':
+    default: {
+      const phone = contact.replace(/[^0-9]/g, '');
+      return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}` : null;
+    }
+  }
+}
+
+export default function TimelineResults({ trainer, branding, services, specialties: specialtiesProp, packages, result, goalLabel, formData, leadId, isPreview }: TimelineResultsProps) {
+  const specialties = specialtiesProp ?? trainer.specialties ?? [];
+  const primaryCtaHref = buildPrimaryCtaHref(trainer, formData.name);
 
   return (
     <div className="w-full max-w-lg mx-auto space-y-10 pb-8">
@@ -42,6 +64,16 @@ export default function TimelineResults({ trainer, branding, services, packages,
         </p>
       </div>
 
+      {/* Challenges — if the coach has any, show them prominently above the timeline toggles */}
+      <ChallengeSection
+        packages={packages}
+        branding={branding}
+        currency={trainer.currency}
+        leadId={leadId}
+        primaryCtaHref={primaryCtaHref}
+        isPreview={isPreview}
+      />
+
       {/* Interactive Timeline Toggles */}
       <TimelineToggles
         baseInput={{
@@ -55,8 +87,9 @@ export default function TimelineResults({ trainer, branding, services, packages,
         baseWeeks={result.estimatedWeeks}
         branding={branding}
         services={services}
-        packages={packages}
+        packages={packages.filter(p => !p.is_challenge)}
         trainerName={trainer.name}
+        currency={trainer.currency}
       />
 
       {/* Coach Specialties */}

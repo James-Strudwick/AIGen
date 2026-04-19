@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
+import { getTierForCount } from '@/lib/referral-tiers';
 import Stripe from 'stripe';
 
 function getStripe() {
@@ -47,35 +48,58 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (newTrainer?.referred_by) {
-          // Increment referral count
           const { data: referrer } = await supabase
             .from('trainers')
-            .select('id, referral_count, has_referral_discount, stripe_subscription_id')
+            .select('id, referral_count, referral_tier_reached, has_referral_discount, stripe_subscription_id, tier')
             .eq('referral_code', newTrainer.referred_by)
             .single();
 
           if (referrer) {
             const newCount = (referrer.referral_count || 0) + 1;
+            const prevTier = referrer.referral_tier_reached || 0;
             const updates: Record<string, unknown> = { referral_count: newCount };
 
-            // Hit 5 referrals — apply 50% discount
-            if (newCount >= 5 && !referrer.has_referral_discount) {
-              updates.has_referral_discount = true;
+            // Check if they just crossed a new tier
+            const rewardTier = getTierForCount(newCount);
+            if (rewardTier && newCount > prevTier) {
+              updates.referral_tier_reached = newCount;
 
-              // Apply 50% coupon if they already have a subscription
-              // If not, the coupon will be applied at checkout time
+              // Tier 5: lifetime 50% off — cap at 50 users globally
+              if (rewardTier.globalCap) {
+                const { count } = await supabase
+                  .from('trainers')
+                  .select('id', { count: 'exact', head: true })
+                  .gte('referral_tier_reached', rewardTier.tier);
+                const taken = count ?? 0;
+                if (taken >= rewardTier.globalCap) {
+                  // Cap reached — still record the tier but skip the discount
+                  await supabase.from('trainers').update(updates).eq('id', referrer.id);
+                  break;
+                }
+                updates.has_referral_discount = true;
+              }
+
+              // Tier 4: upgrade to Pro if on Starter
+              if (rewardTier.upgradesPro && referrer.tier === 'starter') {
+                updates.tier = 'pro';
+                updates.pro_trial_ends_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+              }
+
+              // Apply the Stripe coupon if they have an active subscription
               if (referrer.stripe_subscription_id) {
                 try {
                   const stripe = getStripe();
-                  let coupon;
+                  const { couponId, coupon: couponDef } = rewardTier;
+                  let coupon: Stripe.Coupon;
                   try {
-                    coupon = await stripe.coupons.retrieve('REFERRAL50');
+                    coupon = await stripe.coupons.retrieve(couponId);
                   } catch {
                     coupon = await stripe.coupons.create({
-                      id: 'REFERRAL50',
-                      percent_off: 50,
-                      duration: 'forever',
-                      name: 'Referral reward — 50% off for life',
+                      id: couponId,
+                      percent_off: couponDef.percent_off,
+                      duration: couponDef.duration,
+                      ...(couponDef.duration_in_months ? { duration_in_months: couponDef.duration_in_months } : {}),
+                      name: couponDef.name,
                     });
                   }
                   await stripe.subscriptions.update(referrer.stripe_subscription_id, {

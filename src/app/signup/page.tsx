@@ -8,10 +8,15 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  // Honeypot: hidden field invisible to humans. Bots blindly fill every
+  // input, so any non-empty value here means it's almost certainly a bot.
+  const [website, setWebsite] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
   const [referralCode] = useState(() => {
     if (typeof window !== 'undefined') {
       return new URLSearchParams(window.location.search).get('ref') || '';
@@ -25,6 +30,16 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
+      // Honeypot: if this is filled, silently fail. Don't tell the bot
+      // why so they can't adapt.
+      if (website.trim()) {
+        // Mimic a slow network so bots can't easily detect the honeypot
+        // by response time.
+        await new Promise((r) => setTimeout(r, 1200));
+        setAwaitingConfirmation(true);
+        return;
+      }
+
       const supabase = createBrowserClient();
 
       // Create auth user — email confirmation link points back to /auth/callback
@@ -72,6 +87,26 @@ export default function SignupPage() {
     }
   };
 
+  const handleResend = async () => {
+    if (!email) return;
+    setResending(true);
+    setResent(false);
+    try {
+      const supabase = createBrowserClient();
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (resendError) throw resendError;
+      setResent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not resend — try again in a minute.');
+    } finally {
+      setResending(false);
+    }
+  };
+
   const inputClass = "w-full bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl px-4 py-3 text-[#1a1a1a] text-base placeholder-[#8e8e93] focus:outline-none focus:border-[#8e8e93]";
 
   if (awaitingConfirmation) {
@@ -89,7 +124,14 @@ export default function SignupPage() {
           <p className="text-[#8e8e93] text-xs leading-relaxed mb-6">
             Click the link in the email to finish setting up your account. It may take a minute to arrive — check your spam folder if you don&apos;t see it.
           </p>
-          <Link href="/login" className="block w-full py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm transition-all active:scale-[0.97]">
+          {resent && (
+            <p className="text-[#34C759] text-sm font-medium mb-4">✓ New link sent.</p>
+          )}
+          <button onClick={handleResend} disabled={resending || resent}
+            className="block w-full py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm disabled:opacity-40 transition-all active:scale-[0.97] mb-3">
+            {resending ? 'Sending...' : resent ? 'Sent ✓' : 'Resend confirmation email'}
+          </button>
+          <Link href="/login" className="block text-[#8e8e93] text-xs font-medium hover:underline">
             Back to log in
           </Link>
         </div>
@@ -120,6 +162,14 @@ export default function SignupPage() {
             <label className="text-[#8e8e93] text-xs block mb-1">Password</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
               placeholder="Min 6 characters" required minLength={6} autoComplete="new-password" className={inputClass} />
+          </div>
+
+          {/* Honeypot — hidden from humans via CSS, bots fill it indiscriminately.
+              Keep the field tab-skipped and screen-reader-invisible. */}
+          <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '1px', height: '1px', overflow: 'hidden' }}>
+            <label htmlFor="website">Website (leave blank)</label>
+            <input type="text" id="website" name="website" tabIndex={-1} autoComplete="off"
+              value={website} onChange={(e) => setWebsite(e.target.value)} />
           </div>
 
           <label className="flex items-start gap-3 py-1">

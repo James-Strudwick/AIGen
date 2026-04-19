@@ -14,7 +14,7 @@ export default function HeroSection({ trainer, branding, copy, onStart }: HeroSe
 
   return (
     <div
-      className="min-h-[100dvh] flex flex-col items-center justify-center px-5 text-center relative overflow-hidden"
+      className="flex-1 flex flex-col items-center justify-center px-5 text-center relative overflow-hidden"
       style={{ backgroundColor: branding.color_background }}
     >
       {/* Hero background image */}

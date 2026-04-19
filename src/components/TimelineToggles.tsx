@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { GoalType, ExperienceLevel, TimelineConfig, TrainerBranding, TrainerServices, Package, TrainingMode } from '@/types';
 import { calculateWithToggles, CalcInput } from '@/lib/calculateTimeline';
+import { currencySymbol } from '@/lib/currency';
 
 interface TimelineTogglesProps {
   baseInput: {
@@ -18,9 +19,11 @@ interface TimelineTogglesProps {
   services: TrainerServices;
   packages: Package[];
   trainerName: string;
+  currency?: string;
 }
 
-export default function TimelineToggles({ baseInput, baseWeeks, branding, services, packages, trainerName }: TimelineTogglesProps) {
+export default function TimelineToggles({ baseInput, baseWeeks, branding, services, packages, trainerName, currency }: TimelineTogglesProps) {
+  const sym = currencySymbol(currency);
   const hasOnline = !!services.online?.enabled;
   const hasHybrid = !!services.hybrid?.enabled;
   const hasNutrition = !!services.nutrition?.enabled;
@@ -144,13 +147,13 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
           <div className="flex items-center justify-center gap-6">
             {monthlyTotal > 0 && (
               <div>
-                <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>£{monthlyTotal}</p>
+                <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>{sym}{monthlyTotal}</p>
                 <p className="text-[11px]" style={{ color: branding.color_text_muted }}>per month</p>
               </div>
             )}
             {grandTotal && (
               <div>
-                <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>£{grandTotal.toLocaleString()}</p>
+                <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>{sym}{grandTotal.toLocaleString()}</p>
                 <p className="text-[11px]" style={{ color: branding.color_text_muted }}>est. total</p>
               </div>
             )}
@@ -235,7 +238,7 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
                   </span>
                   {services.show_prices && services.nutrition?.price_per_month && (
                     <span className="text-[11px]" style={{ color: branding.color_text_muted }}>
-                      +£{services.nutrition.price_per_month}/mo
+                      +{sym}{services.nutrition.price_per_month}/mo
                     </span>
                   )}
                 </div>
@@ -274,7 +277,7 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
                 </div>
                 {services.show_prices && pkg.monthly_price && (
                   <p className="text-sm font-bold" style={{ color: isActive ? branding.color_primary : branding.color_text }}>
-                    £{pkg.monthly_price}<span className="text-[10px] font-normal" style={{ color: branding.color_text_muted }}>/mo</span>
+                    {sym}{pkg.monthly_price}<span className="text-[10px] font-normal" style={{ color: branding.color_text_muted }}>/mo</span>
                   </p>
                 )}
               </button>

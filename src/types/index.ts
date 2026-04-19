@@ -120,12 +120,30 @@ export interface Trainer {
   referral_code: string | null;
   referred_by: string | null;
   referral_count: number;
+  referral_tier_reached: number;
   has_referral_discount: boolean;
+  pro_trial_ends_at: string | null;
+  currency: string;
+  webhook_url: string | null;
   active: boolean;
   created_at: string;
 }
 
-export interface Package {
+export interface Flow {
+  id: string;
+  trainer_id: string;
+  slug: string;
+  name: string;
+  goals: CustomGoal[] | null;
+  questions: CustomQuestion[] | null;
+  specialties: TrainerSpecialty[] | null;
+  services: TrainerServices | null;
+  packages: Package[] | null;
+  copy: Partial<TrainerCopy> | null;
+  about_config: FormAboutConfig | null;
+  active: boolean;
+  created_at: string;
+}export interface Package {
   id: string;
   trainer_id: string;
   name: string;
@@ -135,6 +153,12 @@ export interface Package {
   description: string | null;
   is_online: boolean;
   sort_order: number;
+  is_challenge: boolean;
+  challenge_duration_weeks: number | null;
+  challenge_start_date: string | null;
+  challenge_outcome: string | null;
+  challenge_spots_total: number | null;
+  challenge_spots_remaining: number | null;
 }
 
 export type LeadStatus = 'form_completed' | 'whatsapp_sent' | 'call_booked' | 'converted';
@@ -211,6 +235,19 @@ export interface TimelineResult {
   narrative: string;
 }
 
+export interface CustomAboutField {
+  id: string;
+  label: string;
+  placeholder: string;
+}
+
+export interface FormAboutConfig {
+  show_age: boolean;
+  show_weight: boolean;
+  show_experience: boolean;
+  custom_fields: CustomAboutField[];
+}
+
 export interface TrainerForm {
   id: string;
   trainer_id: string;
@@ -219,7 +256,9 @@ export interface TrainerForm {
   questions: CustomQuestion[] | null;
   services: TrainerServices | null;
   packages: { name: string; sessions_per_week: number; price_per_session: number | null; monthly_price: number | null; is_online: boolean }[] | null;
-  copy: { hero_subtext: string | null } | null;
+  copy: Partial<TrainerCopy> | null;
+  specialties: TrainerSpecialty[] | null;
+  about_config: FormAboutConfig | null;
   active: boolean;
   created_at: string;
 }

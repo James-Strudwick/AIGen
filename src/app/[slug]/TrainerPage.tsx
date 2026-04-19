@@ -18,6 +18,9 @@ interface TrainerPageProps {
   packages: Package[];
   forms?: TrainerForm[];
   isPreview?: boolean;
+  /** Rendered inside a parent page's iframe — skip the standalone hero and
+   *  postMessage height changes up so the iframe can auto-resize. */
+  isEmbed?: boolean;
 }
 
 function getGoalLabel(formData: FormData): string {
@@ -36,7 +39,7 @@ function getGoalLabel(formData: FormData): string {
 
 type Step = 'hero' | 'goal' | 'about' | 'availability' | 'questions' | 'capture' | 'results';
 
-export default function TrainerPage({ trainer, packages, forms = [], isPreview = false }: TrainerPageProps) {
+export default function TrainerPage({ trainer, packages, forms = [], isPreview = false, isEmbed = false }: TrainerPageProps) {
   // formSteps is computed later after activeForm is resolved
 
   const branding = useMemo(() => resolveBranding(trainer), [trainer]);
@@ -44,8 +47,9 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
   const copy = useMemo(() => resolveCopy(trainer), [trainer]);
   const cssVars = useMemo(() => brandingToCssVars(branding), [branding]);
   const fontsUrl = useMemo(() => getGoogleFontsUrl(branding), [branding]);
+  const trainerSpecialties = trainer.specialties ?? [];
 
-  const [step, setStep] = useState<Step>('hero');
+  const [step, setStep] = useState<Step>(isEmbed ? 'goal' : 'hero');
   const [isLoading, setIsLoading] = useState(false);
   const [activeForm, setActiveForm] = useState<TrainerForm | null>(null);
   const [result, setResult] = useState<TimelineResult | null>(null);
@@ -67,17 +71,44 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
   // Resolve form-specific overrides (custom form > default trainer settings)
   const activeQuestions = activeForm?.questions ?? trainer.custom_questions ?? [];
   const activePackages = activeForm?.packages
-    ? activeForm.packages.map((p, i) => ({ ...p, id: `form-pkg-${i}`, trainer_id: trainer.id, description: null, sort_order: i + 1 } as Package))
+    ? activeForm.packages.map((p, i) => ({
+        ...p,
+        id: `form-pkg-${i}`,
+        trainer_id: trainer.id,
+        description: null,
+        sort_order: i + 1,
+        is_challenge: false,
+        challenge_duration_weeks: null,
+        challenge_start_date: null,
+        challenge_outcome: null,
+        challenge_spots_total: null,
+        challenge_spots_remaining: null,
+      } as Package))
     : packages;
   const activeServices = activeForm?.services ?? services;
+  const activeSpecialties = activeForm?.specialties ?? trainerSpecialties;
+  const activeCopy = {
+    hero_headline: activeForm?.copy?.hero_headline || copy.hero_headline,
+    hero_subtext: activeForm?.copy?.hero_subtext || copy.hero_subtext,
+    cta_button_text: activeForm?.copy?.cta_button_text || copy.cta_button_text,
+    tone: activeForm?.copy?.tone || copy.tone,
+  };
+  const aboutConfig = activeForm?.about_config;
+  const showAge = aboutConfig?.show_age ?? true;
+  const showWeight = aboutConfig?.show_weight ?? true;
+  const showExperience = aboutConfig?.show_experience ?? true;
+  const aboutCustomFields = aboutConfig?.custom_fields ?? [];
+  const hasAboutFields = showAge || showWeight || showExperience || aboutCustomFields.length > 0;
   const hasCustomQuestions = activeQuestions.length > 0;
 
   const formSteps: Step[] = useMemo(() => {
-    const steps: Step[] = ['goal', 'about', 'availability'];
+    const steps: Step[] = ['goal'];
+    if (hasAboutFields) steps.push('about');
+    steps.push('availability');
     if (hasCustomQuestions) steps.push('questions');
     steps.push('capture');
     return steps;
-  }, [hasCustomQuestions]);
+  }, [hasAboutFields, hasCustomQuestions]);
 
   const currentFormStep = formSteps.indexOf(step) + 1;
 
@@ -111,6 +142,23 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
     trackStep(step, 'entered');
   }, [step, trackStep]);
 
+  // Iframe auto-resize: when embedded, report our scroll height to the parent
+  // on step changes + window resize. The parent's embed.js listens for this.
+  useEffect(() => {
+    if (!isEmbed || typeof window === 'undefined') return;
+    const send = () => {
+      const height = Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight,
+      );
+      window.parent.postMessage({ type: 'fomoforms:height', slug: trainer.slug, height }, '*');
+    };
+    send();
+    const t = setTimeout(send, 150); // after animations settle
+    window.addEventListener('resize', send);
+    return () => { clearTimeout(t); window.removeEventListener('resize', send); };
+  }, [isEmbed, step, trainer.slug, result]);
+
   const handleGoalSelect = useCallback((goal: GoalType, performanceTarget?: string) => {
     trackStep('goal', 'completed');
     setFormData((prev) => ({ ...prev, goalType: goal, performanceTarget }));
@@ -120,7 +168,14 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
     const matchedForm = forms.find(f => f.goal_id === goalId) || null;
     setActiveForm(matchedForm);
 
-    setStep('about');
+    // Skip the About You step entirely when the matched form has no fields.
+    const matchedAbout = matchedForm?.about_config;
+    const matchedHasFields =
+      (matchedAbout?.show_age ?? true) ||
+      (matchedAbout?.show_weight ?? true) ||
+      (matchedAbout?.show_experience ?? true) ||
+      (matchedAbout?.custom_fields?.length ?? 0) > 0;
+    setStep(matchedHasFields ? 'about' : 'availability');
   }, [trackStep, forms, trainer.custom_goals]);
 
   const handleAboutSubmit = useCallback((data: {
@@ -155,6 +210,16 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
     setFormData((prev) => ({ ...prev, customAnswers: answers }));
     setStep('capture');
   }, [trackStep]);
+
+  const handleBack = useCallback(() => {
+    const idx = formSteps.indexOf(step);
+    if (idx <= 0) {
+      // First form step — go back to the hero screen
+      setStep('hero');
+      return;
+    }
+    setStep(formSteps[idx - 1]);
+  }, [step, formSteps]);
 
   const handleLeadSubmit = useCallback(async (data: { name: string; phone: string }) => {
     trackStep('capture', 'completed');
@@ -198,9 +263,9 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
           trainerId: trainer.id,
           trainerName: trainer.name,
           trainerBio: trainer.bio,
-          trainerSpecialties: trainer.specialties,
-          trainerTone: copy.tone,
-          serviceAddOns: services.add_ons,
+          trainerSpecialties: activeSpecialties,
+          trainerTone: activeCopy.tone,
+          serviceAddOns: activeServices.add_ons,
           customQuestions: activeQuestions,
           formId: activeForm?.id || null,
           formData: updatedForm,
@@ -221,7 +286,7 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
     } finally {
       setIsLoading(false);
     }
-  }, [formData, trainer, packages, isPreview, copy.tone, services.add_ons]);
+  }, [formData, trainer, packages, isPreview, activeForm, activeSpecialties, activeCopy.tone, activeServices.add_ons, activeQuestions, activePackages]);
 
   // Wrap everything in a div that sets CSS custom properties for the branding
   const pageWrapper = (children: React.ReactNode, extraClass?: string) => (
@@ -246,7 +311,8 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
       <>
         <HeroSection trainer={trainer} branding={branding} copy={copy} onStart={() => { trackStep('hero', 'completed'); setStep('goal'); }} />
         <PoweredByBadge branding={branding} tier={trainer.tier} />
-      </>
+      </>,
+      'flex flex-col',
     );
   }
 
@@ -257,6 +323,7 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
           trainer={trainer}
           branding={branding}
           services={activeServices}
+          specialties={activeSpecialties}
           packages={activePackages}
           result={result}
           goalLabel={getGoalLabel(formData)}
@@ -270,7 +337,20 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
   }
 
   return pageWrapper(
-    <div className="flex flex-col items-center justify-center min-h-[100dvh] px-4 py-10">
+    <div className="flex flex-col items-center justify-center min-h-[100dvh] px-4 py-10 relative">
+      {/* Back button — visible on every form step (results has no back) */}
+      <button
+        onClick={handleBack}
+        aria-label="Go back a step"
+        className="absolute top-4 left-4 flex items-center gap-1 text-xs font-medium px-3 py-2 rounded-full transition-all active:scale-95"
+        style={{ color: branding.color_text_muted, backgroundColor: branding.color_card, borderWidth: '1px', borderColor: branding.color_border }}
+      >
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back
+      </button>
+
       <ProgressIndicator
         currentStep={currentFormStep}
         totalSteps={formSteps.length}
@@ -286,11 +366,10 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
           <AboutYouForm
             goalType={formData.goalType}
             branding={branding}
-            customFields={(() => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const aboutConfig = (activeForm as any)?.about_config;
-              return aboutConfig?.custom_fields || [];
-            })()}
+            showAge={showAge}
+            showWeight={showWeight}
+            showExperience={showExperience}
+            customFields={aboutCustomFields}
             onSubmit={handleAboutSubmit}
           />
         )}

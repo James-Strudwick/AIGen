@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { createClient } from '@supabase/supabase-js';
+import { getHighestUnlockedTier } from '@/lib/referral-tiers';
 import Stripe from 'stripe';
 
 function getStripe() {
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     const supabase = getServiceClient();
     const { data: trainer } = await supabase
       .from('trainers')
-      .select('id, stripe_customer_id, name, has_referral_discount')
+      .select('id, stripe_customer_id, name, has_referral_discount, referral_tier_reached')
       .eq('user_id', user.id)
       .single();
 
@@ -52,21 +53,28 @@ export async function POST(request: NextRequest) {
       await supabase.from('trainers').update({ stripe_customer_id: customerId }).eq('id', trainer.id);
     }
 
-    // Ensure referral coupon exists if needed
+    // Apply the best referral coupon the trainer has earned (if any).
+    // has_referral_discount is the legacy flag for tier 5 (50% off for life).
+    // referral_tier_reached covers the newer tiered system.
     const stripe = getStripe();
     let discounts: { coupon: string }[] | undefined;
-    if (trainer.has_referral_discount) {
+    const tierReached = trainer.referral_tier_reached || 0;
+    const activeTier = tierReached > 0 ? getHighestUnlockedTier(tierReached) : null;
+
+    if (activeTier || trainer.has_referral_discount) {
+      const tierDef = activeTier ?? { couponId: 'REFERRAL50', coupon: { percent_off: 50, duration: 'forever' as const, name: 'Referral reward — 50% off for life' } };
       try {
-        await stripe.coupons.retrieve('REFERRAL50');
+        await stripe.coupons.retrieve(tierDef.couponId);
       } catch {
         await stripe.coupons.create({
-          id: 'REFERRAL50',
-          percent_off: 50,
-          duration: 'forever',
-          name: 'Referral reward — 50% off for life',
+          id: tierDef.couponId,
+          percent_off: tierDef.coupon.percent_off,
+          duration: tierDef.coupon.duration,
+          ...('duration_in_months' in tierDef.coupon && tierDef.coupon.duration_in_months ? { duration_in_months: tierDef.coupon.duration_in_months } : {}),
+          name: tierDef.coupon.name,
         });
       }
-      discounts = [{ coupon: 'REFERRAL50' }];
+      discounts = [{ coupon: tierDef.couponId }];
     }
 
     // Create checkout session

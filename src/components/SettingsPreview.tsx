@@ -1,7 +1,8 @@
 'use client';
 
-import { TrainerSpecialty, ServiceAddOn, CustomQuestion, CustomGoal } from '@/types';
+import { TrainerSpecialty, ServiceAddOn, CustomQuestion, CustomGoal, FormAboutConfig } from '@/types';
 import { getGoogleFontsUrl } from '@/lib/branding';
+import { currencySymbol } from '@/lib/currency';
 
 interface PreviewWrapperProps {
   theme: 'light' | 'dark';
@@ -125,13 +126,15 @@ export function SpecialtiesPreview({ theme, primaryColor, specialties }: {
 
 // --- Services Preview ---
 
-export function ServicesPreview({ theme, primaryColor, addOns, showPrices }: {
+export function ServicesPreview({ theme, primaryColor, addOns, showPrices, currency }: {
   theme: 'light' | 'dark';
   primaryColor: string;
   addOns: ServiceAddOn[];
   showPrices: boolean;
+  currency?: string;
 }) {
   const c = getColors(theme, primaryColor);
+  const sym = currencySymbol(currency);
   const validAddOns = addOns.filter(a => a.name.trim());
 
   if (validAddOns.length === 0) return null;
@@ -166,7 +169,7 @@ export function ServicesPreview({ theme, primaryColor, addOns, showPrices }: {
                       Up to {addOn.timeline_reduction_percent}% faster
                     </span>
                     {showPrices && addOn.price_per_month && (
-                      <span className="text-[9px]" style={{ color: c.muted }}>+£{addOn.price_per_month}/mo</span>
+                      <span className="text-[9px]" style={{ color: c.muted }}>+{sym}{addOn.price_per_month}/mo</span>
                     )}
                   </div>
                 </div>
@@ -192,18 +195,34 @@ interface PackageInput {
   monthly_price: string;
   price_per_session: string;
   is_online: boolean;
+  is_challenge?: boolean;
+  challenge_duration_weeks?: string;
+  challenge_start_date?: string;
+  challenge_outcome?: string;
+  challenge_spots_total?: string;
 }
 
-export function PackagesPreview({ theme, primaryColor, packages, showPrices }: {
+export function PackagesPreview({ theme, primaryColor, packages, showPrices, currency }: {
   theme: 'light' | 'dark';
   primaryColor: string;
   packages: PackageInput[];
   showPrices: boolean;
+  currency?: string;
 }) {
   const c = getColors(theme, primaryColor);
+  const sym = currencySymbol(currency);
   const valid = packages.filter(p => p.name.trim());
 
   if (valid.length === 0) return null;
+
+  const formatStartDate = (iso?: string) => {
+    if (!iso) return null;
+    try {
+      return new Date(iso + 'T00:00:00').toLocaleDateString(undefined, {
+        day: 'numeric', month: 'short',
+      });
+    } catch { return iso; }
+  };
 
   return (
     <PreviewWrapper theme={theme} primaryColor={primaryColor}>
@@ -218,24 +237,41 @@ export function PackagesPreview({ theme, primaryColor, packages, showPrices }: {
       <div className="space-y-1.5">
         {valid.map((pkg, i) => {
           const isFirst = i === 0;
+          const isChallenge = !!pkg.is_challenge;
+          const startDate = formatStartDate(pkg.challenge_start_date);
+          const subtitleBits: string[] = [];
+          if (isChallenge) {
+            if (pkg.challenge_duration_weeks) subtitleBits.push(`${pkg.challenge_duration_weeks} weeks`);
+            if (startDate) subtitleBits.push(`starts ${startDate}`);
+            else subtitleBits.push('rolling start');
+          } else if (parseInt(pkg.sessions_per_week) > 0) {
+            subtitleBits.push(`${pkg.sessions_per_week}x per week${pkg.is_online ? ' (online)' : ''}`);
+          } else {
+            subtitleBits.push('Contact for details');
+          }
           return (
             <div key={i} className="flex items-center justify-between rounded-lg p-2.5"
               style={{
                 backgroundColor: isFirst ? c.primary + '12' : c.card,
                 borderWidth: '1px',
-                borderColor: isFirst ? c.primary : c.border,
+                borderColor: isChallenge ? c.primary : (isFirst ? c.primary : c.border),
               }}>
-              <div>
-                <p className="text-xs font-semibold" style={{ color: c.text }}>{pkg.name}</p>
-                <p className="text-[10px]" style={{ color: c.muted }}>
-                  {parseInt(pkg.sessions_per_week) > 0
-                    ? `${pkg.sessions_per_week}x per week${pkg.is_online ? ' (online)' : ''}`
-                    : 'Contact for details'}
-                </p>
+              <div className="min-w-0 pr-2">
+                <div className="flex items-center gap-1.5">
+                  {isChallenge && (
+                    <span className="text-[8px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded"
+                      style={{ backgroundColor: c.primary, color: '#ffffff' }}>
+                      Challenge
+                    </span>
+                  )}
+                  <p className="text-xs font-semibold truncate" style={{ color: c.text }}>{pkg.name}</p>
+                </div>
+                <p className="text-[10px]" style={{ color: c.muted }}>{subtitleBits.join(' · ')}</p>
               </div>
               {showPrices && pkg.monthly_price && (
-                <p className="text-xs font-bold" style={{ color: isFirst ? c.primary : c.text }}>
-                  £{pkg.monthly_price}<span className="text-[9px] font-normal" style={{ color: c.muted }}>/mo</span>
+                <p className="text-xs font-bold whitespace-nowrap" style={{ color: isFirst ? c.primary : c.text }}>
+                  {sym}{pkg.monthly_price}
+                  {!isChallenge && <span className="text-[9px] font-normal" style={{ color: c.muted }}>/mo</span>}
                 </p>
               )}
             </div>
@@ -315,6 +351,62 @@ export function CustomQuestionsPreview({ theme, primaryColor, questions }: {
                 <p className="text-[8px]" style={{ color: c.muted }}>Select all that apply</p>
               </div>
             )}
+          </div>
+        ))}
+      </div>
+    </PreviewWrapper>
+  );
+}
+
+// --- About You Preview ---
+
+export function AboutPreview({ theme, primaryColor, config }: {
+  theme: 'light' | 'dark';
+  primaryColor: string;
+  config: FormAboutConfig;
+}) {
+  const c = getColors(theme, primaryColor);
+
+  const defaultRows: { key: keyof FormAboutConfig; label: string; placeholder: string }[] = [
+    { key: 'show_age', label: 'Age', placeholder: '25' },
+    { key: 'show_weight', label: 'Current weight (kg)', placeholder: '80' },
+    { key: 'show_experience', label: 'Experience level', placeholder: 'Beginner · Some Exp. · Experienced' },
+  ];
+
+  const enabledDefaults = defaultRows.filter(r => !!config[r.key]);
+  const customFields = config.custom_fields.filter(f => f.label.trim());
+
+  if (enabledDefaults.length === 0 && customFields.length === 0) {
+    return (
+      <PreviewWrapper theme={theme} primaryColor={primaryColor}>
+        <p className="text-[11px] text-center" style={{ color: c.muted }}>
+          No fields enabled — prospects will skip straight past the About You step.
+        </p>
+      </PreviewWrapper>
+    );
+  }
+
+  return (
+    <PreviewWrapper theme={theme} primaryColor={primaryColor}>
+      <h4 className="text-sm font-bold mb-1 text-center" style={{ color: c.text }}>A bit about you</h4>
+      <p className="text-[11px] text-center mb-3" style={{ color: c.muted }}>So we can personalise your timeline</p>
+      <div className="space-y-2">
+        {enabledDefaults.map((row) => (
+          <div key={row.key}>
+            <p className="text-[10px] font-medium mb-1" style={{ color: c.text }}>{row.label}</p>
+            <div className="rounded-lg px-3 py-2 border text-[10px]"
+              style={{ backgroundColor: c.card, borderColor: c.border, color: c.muted }}>
+              {row.placeholder}
+            </div>
+          </div>
+        ))}
+        {customFields.map((f) => (
+          <div key={f.id}>
+            <p className="text-[10px] font-medium mb-1" style={{ color: c.text }}>{f.label}</p>
+            <div className="rounded-lg px-3 py-2 border text-[10px]"
+              style={{ backgroundColor: c.card, borderColor: c.border, color: c.muted }}>
+              {f.placeholder || 'Type your answer...'}
+            </div>
           </div>
         ))}
       </div>

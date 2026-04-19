@@ -8,6 +8,9 @@ import PhoneInput from '@/components/PhoneInput';
 import { CopyPreview, SpecialtiesPreview, ServicesPreview, PackagesPreview, CustomQuestionsPreview, GoalsPreview } from '@/components/SettingsPreview';
 import SetupChecklist from '@/components/SetupChecklist';
 import FormFlowEditor from '@/components/FormFlowEditor';
+import FlowsTab from '@/components/FlowsTab';
+import { DEFAULT_PACKAGES } from '@/lib/package-defaults';
+import { CURRENCIES, currencySymbol } from '@/lib/currency';
 import Link from 'next/link';
 
 interface PackageInput {
@@ -16,9 +19,14 @@ interface PackageInput {
   price_per_session: string;
   monthly_price: string;
   is_online: boolean;
+  is_challenge: boolean;
+  challenge_duration_weeks: string;
+  challenge_start_date: string;
+  challenge_outcome: string;
+  challenge_spots_total: string;
 }
 
-type Tab = 'account' | 'details' | 'copy' | 'branding' | 'goals' | 'forms' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing';
+type Tab = 'account' | 'details' | 'copy' | 'branding' | 'goals' | 'flows' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing' | 'embed';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -59,8 +67,10 @@ export default function SettingsPage() {
     brand_color_primary: '#1a1a1a', color_text: '', color_text_muted: '',
     font_heading: 'system-ui', font_body: 'system-ui',
     theme: 'light' as 'light' | 'dark', hero_headline: '', hero_subtext: '',
-    cta_button_text: '', tone: '',
+    cta_button_text: '', tone: '', currency: 'GBP', webhook_url: '',
   });
+
+  const sym = currencySymbol(form.currency);
 
   const [addOns, setAddOns] = useState<ServiceAddOn[]>([]);
   const [nutritionService, setNutritionService] = useState<{ enabled: boolean; name: string; description: string; timeline_reduction_percent: number; price_per_month: number | null }>({
@@ -76,9 +86,26 @@ export default function SettingsPage() {
   const [customGoals, setCustomGoals] = useState<CustomGoal[]>([]);
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
   const [specialties, setSpecialties] = useState<{ name: string; description: string }[]>([]);
-  const [pkgs, setPkgs] = useState<PackageInput[]>([
-    { name: '', sessions_per_week: '2', price_per_session: '', monthly_price: '', is_online: false },
-  ]);
+  const [pkgs, setPkgs] = useState<PackageInput[]>(() => DEFAULT_PACKAGES.map(p => ({ ...p })));
+  const [lastAddedPkgIdx, setLastAddedPkgIdx] = useState<number | null>(null);
+
+  // Scroll + focus + flash-highlight the most recently added package card
+  // so users get a clear "yes that worked" signal after clicking Add /
+  // Add challenge — especially useful when the list scrolls below the fold.
+  useEffect(() => {
+    if (lastAddedPkgIdx === null) return;
+    const el = document.querySelector(`[data-pkg-idx="${lastAddedPkgIdx}"]`);
+    if (el instanceof HTMLElement) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Focus the name input shortly after scroll settles.
+      window.setTimeout(() => {
+        const input = el.querySelector('input[type="text"]') as HTMLInputElement | null;
+        input?.focus();
+      }, 350);
+    }
+    const t = window.setTimeout(() => setLastAddedPkgIdx(null), 1600);
+    return () => window.clearTimeout(t);
+  }, [lastAddedPkgIdx]);
 
   useEffect(() => {
     const load = async () => {
@@ -117,6 +144,8 @@ export default function SettingsPage() {
         theme: trainer.branding?.theme || 'light',
         hero_headline: trainer.copy?.hero_headline || '', hero_subtext: trainer.copy?.hero_subtext || '',
         cta_button_text: trainer.copy?.cta_button_text || '', tone: trainer.copy?.tone || '',
+        currency: trainer.currency || 'GBP',
+        webhook_url: trainer.webhook_url || '',
       });
 
       if (trainer.services?.add_ons?.length) setAddOns(trainer.services.add_ons);
@@ -135,6 +164,11 @@ export default function SettingsPage() {
           price_per_session: p.price_per_session ? String(p.price_per_session) : '',
           monthly_price: p.monthly_price ? String(p.monthly_price) : '',
           is_online: p.is_online as boolean,
+          is_challenge: !!p.is_challenge,
+          challenge_duration_weeks: p.challenge_duration_weeks ? String(p.challenge_duration_weeks) : '',
+          challenge_start_date: p.challenge_start_date ? String(p.challenge_start_date) : '',
+          challenge_outcome: (p.challenge_outcome as string) || '',
+          challenge_spots_total: p.challenge_spots_total ? String(p.challenge_spots_total) : '',
         })));
       }
 
@@ -144,7 +178,7 @@ export default function SettingsPage() {
       if (!initialTabSet) {
         const params = new URLSearchParams(window.location.search);
         const tab = params.get('tab') as Tab | null;
-        if (tab && ['account', 'details', 'copy', 'branding', 'goals', 'forms', 'questions', 'specialties', 'services', 'packages', 'billing'].includes(tab)) {
+        if (tab && ['account', 'details', 'copy', 'branding', 'goals', 'flows', 'questions', 'specialties', 'services', 'packages', 'billing', 'embed'].includes(tab)) {
           setActiveTab(tab);
         }
         setInitialTabSet(true);
@@ -181,6 +215,8 @@ export default function SettingsPage() {
       booking_link: form.booking_link, contact_method: form.contact_method,
       contact_value: form.contact_value, brand_color_primary: form.brand_color_primary,
       brand_color_secondary: form.theme === 'dark' ? '#0a0a0a' : '#f5f5f7',
+      currency: form.currency,
+      webhook_url: form.webhook_url.trim() || null,
       branding: brandingData, copy: copyData,
       specialties: specialties.filter(s => s.name.trim()).length > 0
         ? specialties.filter(s => s.name.trim()).map(s => ({ name: s.name.trim(), description: s.description.trim() }))
@@ -200,12 +236,22 @@ export default function SettingsPage() {
         : null,
     };
 
-    const packageRows = pkgs.filter(p => p.name.trim()).map(p => ({
-      name: p.name, sessions_per_week: parseInt(p.sessions_per_week) || 0,
-      price_per_session: p.price_per_session ? parseFloat(p.price_per_session) : null,
-      monthly_price: p.monthly_price ? parseFloat(p.monthly_price) : null,
-      is_online: p.is_online,
-    }));
+    const packageRows = pkgs.filter(p => p.name.trim()).map(p => {
+      const spotsTotal = p.challenge_spots_total ? parseInt(p.challenge_spots_total) : null;
+      return {
+        name: p.name,
+        sessions_per_week: parseInt(p.sessions_per_week) || 0,
+        price_per_session: p.price_per_session ? parseFloat(p.price_per_session) : null,
+        monthly_price: p.monthly_price ? parseFloat(p.monthly_price) : null,
+        is_online: p.is_online,
+        is_challenge: p.is_challenge,
+        challenge_duration_weeks: p.is_challenge && p.challenge_duration_weeks ? parseInt(p.challenge_duration_weeks) : null,
+        challenge_start_date: p.is_challenge && p.challenge_start_date ? p.challenge_start_date : null,
+        challenge_outcome: p.is_challenge && p.challenge_outcome.trim() ? p.challenge_outcome.trim() : null,
+        challenge_spots_total: p.is_challenge ? spotsTotal : null,
+        // Server preserves remaining across saves; don't overwrite it here.
+      };
+    });
 
     const res = await fetch('/api/onboarding', {
       method: 'POST',
@@ -289,7 +335,8 @@ export default function SettingsPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'details', label: 'Details' },
     { id: 'branding', label: 'Branding' },
-    { id: 'forms', label: 'Forms' },
+    { id: 'flows', label: 'Flows' },
+    { id: 'embed', label: 'Integrations' },
     { id: 'account', label: 'Account' },
     { id: 'billing', label: 'Billing' },
   ];
@@ -570,12 +617,61 @@ export default function SettingsPage() {
               <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} className={inputClass} />
             </div>
             <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">WhatsApp number</label>
-              <PhoneInput value={form.contact_value} onChange={(v) => setForm({ ...form, contact_value: v })} />
+              <label className="text-[#8e8e93] text-xs block mb-1">Primary contact method</label>
+              <div className="grid grid-cols-4 gap-1.5 mb-2">
+                {([
+                  { id: 'whatsapp', label: 'WhatsApp' },
+                  { id: 'email', label: 'Email' },
+                  { id: 'calendly', label: 'Calendar' },
+                  { id: 'link', label: 'Link' },
+                ] as const).map((m) => (
+                  <button key={m.id} type="button"
+                    onClick={() => setForm({ ...form, contact_method: m.id })}
+                    className="py-2 rounded-lg text-[11px] font-medium border transition-all"
+                    style={{
+                      backgroundColor: form.contact_method === m.id ? '#1a1a1a' : 'white',
+                      color: form.contact_method === m.id ? '#ffffff' : '#8e8e93',
+                      borderColor: form.contact_method === m.id ? '#1a1a1a' : '#e5e5ea',
+                    }}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              {form.contact_method === 'whatsapp' && (
+                <PhoneInput value={form.contact_value} onChange={(v) => setForm({ ...form, contact_value: v })} />
+              )}
+              {form.contact_method === 'email' && (
+                <input type="email" value={form.contact_value}
+                  onChange={(e) => setForm({ ...form, contact_value: e.target.value })}
+                  placeholder="you@yourdomain.com" className={inputClass} />
+              )}
+              {(form.contact_method === 'calendly' || form.contact_method === 'link') && (
+                <input type="url" value={form.contact_value}
+                  onChange={(e) => setForm({ ...form, contact_value: e.target.value })}
+                  placeholder={form.contact_method === 'calendly' ? 'https://calendly.com/you' : 'https://your-landing-page.com'}
+                  className={inputClass} />
+              )}
+              <p className="text-[#8e8e93] text-[10px] mt-1">
+                {form.contact_method === 'whatsapp' && 'Leads get a pre-filled WhatsApp message with their details.'}
+                {form.contact_method === 'email' && 'Leads open their email client with a pre-filled message.'}
+                {form.contact_method === 'calendly' && 'Perfect for Calendly, Cal.com, or a HighLevel calendar URL.'}
+                {form.contact_method === 'link' && 'Redirect leads to any URL — your CRM, a funnel, or a custom thank-you page.'}
+              </p>
             </div>
             <div>
-              <label className="text-[#8e8e93] text-xs block mb-1">Booking link</label>
-              <input value={form.booking_link} onChange={(e) => setForm({ ...form, booking_link: e.target.value })} className={inputClass} />
+              <label className="text-[#8e8e93] text-xs block mb-1">Secondary booking link (optional)</label>
+              <input value={form.booking_link} onChange={(e) => setForm({ ...form, booking_link: e.target.value })}
+                placeholder="https://calendly.com/you" className={inputClass} />
+              <p className="text-[#8e8e93] text-[10px] mt-1">Shown as a subtle secondary link on the results page.</p>
+            </div>
+            <div>
+              <label className="text-[#8e8e93] text-xs block mb-1">Currency</label>
+              <select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} className={inputClass}>
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>{c.label}</option>
+                ))}
+              </select>
+              <p className="text-[#8e8e93] text-[10px] mt-1">Used for your package and service prices shown to prospects.</p>
             </div>
           </div>
         )}
@@ -824,9 +920,16 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Forms */}
-        {activeTab === 'forms' && trainerData && (
-          <FormFlowEditor trainer={trainerData} goals={customGoals} />
+        {/* Flows */}
+        {activeTab === 'flows' && trainerData && (
+          <FlowsTab
+            trainer={trainerData}
+            goals={customGoals}
+            onEditGoals={() => {
+              setActiveTab('goals');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
         )}
 
         {/* Questions */}
@@ -1020,7 +1123,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
+                  <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
                   <input type="number" value={nutritionService.price_per_month || ''}
                     onChange={(e) => setNutritionService({ ...nutritionService, price_per_month: e.target.value ? parseFloat(e.target.value) : null })}
                     placeholder="Optional" className={inputClass} />
@@ -1050,7 +1153,7 @@ export default function SettingsPage() {
                   <p className="text-[#8e8e93] text-[9px] mt-0.5">e.g. 75% means online takes ~25% longer than in-person</p>
                 </div>
                 <div>
-                  <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
+                  <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
                   <input type="number" value={onlineService.price_per_month || ''}
                     onChange={(e) => setOnlineService({ ...onlineService, price_per_month: e.target.value ? parseFloat(e.target.value) : null })}
                     placeholder="Optional" className={inputClass} />
@@ -1070,7 +1173,7 @@ export default function SettingsPage() {
               <textarea value={hybridService.description} onChange={(e) => setHybridService({ ...hybridService, description: e.target.value })}
                 placeholder="What's included..." rows={2} className={inputClass} />
               <div>
-                <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
+                <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
                 <input type="number" value={hybridService.price_per_month || ''}
                   onChange={(e) => setHybridService({ ...hybridService, price_per_month: e.target.value ? parseFloat(e.target.value) : null })}
                   placeholder="Optional" className={inputClass} />
@@ -1080,50 +1183,167 @@ export default function SettingsPage() {
         )}
 
         {/* Packages */}
-        {activeTab === 'packages' && (
+        {activeTab === 'packages' && (() => {
+          const challengeCount = pkgs.filter(p => p.is_challenge).length;
+          const maxChallenges = trainerData?.tier === 'pro' ? Infinity : 1;
+          const canAddChallenge = challengeCount < maxChallenges;
+          return (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <p className="font-medium text-sm">Training packages</p>
-              <button onClick={() => setPkgs([...pkgs, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false }])}
-                className="text-xs text-[#007AFF] font-medium">+ Add</button>
-            </div>
-            {pkgs.map((pkg, i) => (
-              <div key={i} className="bg-[#f5f5f7] rounded-xl p-4 space-y-3">
-                <div className="flex gap-2">
-                  <input value={pkg.name} onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], name: e.target.value }; setPkgs(u); }}
-                    placeholder="e.g. 2x Per Week" className={inputClass} />
-                  {pkgs.length > 1 && (
-                    <button onClick={() => setPkgs(pkgs.filter((_, idx) => idx !== i))} className="text-[#FF3B30] text-xs px-2">Remove</button>
-                  )}
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">Sessions/wk</label>
-                    <input type="number" value={pkg.sessions_per_week} onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], sessions_per_week: e.target.value }; setPkgs(u); }} className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/session</label>
-                    <input type="number" value={pkg.price_per_session} onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], price_per_session: e.target.value }; setPkgs(u); }} className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="text-[#8e8e93] text-[10px] block mb-0.5">£/month</label>
-                    <input type="number" value={pkg.monthly_price} onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], monthly_price: e.target.value }; setPkgs(u); }} className={inputClass} />
-                  </div>
-                </div>
-                <label className="flex items-center gap-2 text-xs text-[#8e8e93]">
-                  <input type="checkbox" checked={pkg.is_online} onChange={(e) => { const u = [...pkgs]; u[i] = { ...u[i], is_online: e.target.checked }; setPkgs(u); }} />
-                  Online package
-                </label>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    if (!canAddChallenge) return;
+                    setPkgs(curr => {
+                      setLastAddedPkgIdx(curr.length);
+                      return [...curr, { name: '', sessions_per_week: '0', price_per_session: '', monthly_price: '', is_online: false, is_challenge: true, challenge_duration_weeks: '4', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '10' }];
+                    });
+                  }}
+                  disabled={!canAddChallenge}
+                  title={canAddChallenge ? 'Create a time-bound challenge' : 'Starter tier allows 1 challenge. Upgrade to Pro for unlimited.'}
+                  className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#1a1a1a] text-white flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed transition-transform active:scale-95">
+                  <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
+                  </svg>
+                  Add challenge
+                </button>
+                <button
+                  onClick={() => {
+                    setPkgs(curr => {
+                      setLastAddedPkgIdx(curr.length);
+                      return [...curr, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false, is_challenge: false, challenge_duration_weeks: '', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '' }];
+                    });
+                  }}
+                  className="text-xs text-[#007AFF] font-medium transition-transform active:scale-95">+ Add</button>
               </div>
-            ))}
+            </div>
+            <>
+                  {pkgs.map((pkg, i) => {
+                    const update = (patch: Partial<PackageInput>) => {
+                      const u = [...pkgs]; u[i] = { ...u[i], ...patch }; setPkgs(u);
+                    };
+                    const canToggleChallenge = pkg.is_challenge || challengeCount < maxChallenges;
+                    const isJustAdded = lastAddedPkgIdx === i;
+                    return (
+                      <div key={i}
+                        data-pkg-idx={i}
+                        className={`bg-[#f5f5f7] rounded-xl p-4 space-y-3 transition-all duration-500 ${isJustAdded ? 'ring-2 ring-offset-2 ring-[#007AFF]' : ''}`}
+                        style={pkg.is_challenge ? { borderWidth: '1.5px', borderColor: '#1a1a1a', backgroundColor: '#fff' } : {}}>
+                        <div className="flex gap-2">
+                          <input value={pkg.name} onChange={(e) => update({ name: e.target.value })}
+                            placeholder={pkg.is_challenge ? 'e.g. 28-Day Shred' : 'e.g. 2x Per Week'} className={inputClass} />
+                          {pkgs.length > 1 && (
+                            <button onClick={() => setPkgs(pkgs.filter((_, idx) => idx !== i))} className="text-[#FF3B30] text-xs px-2">Remove</button>
+                          )}
+                        </div>
+
+                        {/* Challenge toggle */}
+                        <label className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium">Make this a challenge</p>
+                            <p className="text-[10px] text-[#8e8e93] leading-snug">
+                              {canToggleChallenge
+                                ? 'Time-bound programme with a fixed duration, start date, and optional cohort cap.'
+                                : 'Starter tier allows 1 challenge. Upgrade to Pro for unlimited.'}
+                            </p>
+                          </div>
+                          <button type="button"
+                            disabled={!canToggleChallenge}
+                            onClick={() => update({ is_challenge: !pkg.is_challenge })}
+                            className="w-10 h-6 rounded-full p-0.5 transition-all duration-300 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={{ backgroundColor: pkg.is_challenge ? '#1a1a1a' : '#e5e5ea' }}>
+                            <div className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300"
+                              style={{ transform: pkg.is_challenge ? 'translateX(16px)' : 'translateX(0)' }} />
+                          </button>
+                        </label>
+
+                        {pkg.is_challenge ? (
+                          <>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">Duration (weeks)</label>
+                                <input type="number" min={1} max={52} value={pkg.challenge_duration_weeks}
+                                  onChange={(e) => update({ challenge_duration_weeks: e.target.value })}
+                                  placeholder="4" className={inputClass} />
+                              </div>
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">Start date</label>
+                                <input type="date" value={pkg.challenge_start_date}
+                                  onChange={(e) => update({ challenge_start_date: e.target.value })}
+                                  className={inputClass} />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-[#8e8e93] text-[10px] block mb-0.5">The promise (optional)</label>
+                              <input value={pkg.challenge_outcome}
+                                onChange={(e) => update({ challenge_outcome: e.target.value })}
+                                placeholder="e.g. Drop 8lb and rebuild your discipline" className={inputClass} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">Total spots (optional)</label>
+                                <input type="number" min={1} max={500} value={pkg.challenge_spots_total}
+                                  onChange={(e) => update({ challenge_spots_total: e.target.value })}
+                                  placeholder="10" className={inputClass} />
+                              </div>
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym} price</label>
+                                <input type="number" value={pkg.monthly_price}
+                                  onChange={(e) => update({ monthly_price: e.target.value })}
+                                  placeholder="297" className={inputClass} />
+                              </div>
+                            </div>
+                            <p className="text-[9px] text-[#8e8e93]">
+                              Spots decrement automatically as leads sign up. We&apos;ll email you when it drops below 5 to double-check the count.
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">Sessions/wk</label>
+                                <input type="number" value={pkg.sessions_per_week} onChange={(e) => update({ sessions_per_week: e.target.value })} className={inputClass} />
+                              </div>
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/session</label>
+                                <input type="number" value={pkg.price_per_session} onChange={(e) => update({ price_per_session: e.target.value })} className={inputClass} />
+                              </div>
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">{sym}/month</label>
+                                <input type="number" value={pkg.monthly_price} onChange={(e) => update({ monthly_price: e.target.value })} className={inputClass} />
+                              </div>
+                            </div>
+                            <label className="flex items-center gap-2 text-xs text-[#8e8e93]">
+                              <input type="checkbox" checked={pkg.is_online} onChange={(e) => update({ is_online: e.target.checked })} />
+                              Online package
+                            </label>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+            </>
 
             <PackagesPreview
               theme={form.theme}
               primaryColor={form.brand_color_primary}
               packages={pkgs}
               showPrices={showPrices}
+              currency={form.currency}
             />
           </div>
+          );
+        })()}
+
+        {/* Embed */}
+        {activeTab === 'embed' && (
+          <EmbedTab
+            slug={form.slug}
+            webhookUrl={form.webhook_url}
+            onWebhookChange={(v) => setForm({ ...form, webhook_url: v })}
+            isPro={trainerData?.tier === 'pro'}
+          />
         )}
 
         {/* Billing */}
@@ -1257,7 +1477,7 @@ export default function SettingsPage() {
         {/* Save — hide on billing and account tabs; show upgrade CTA on forms if non-Pro */}
         {activeTab !== 'billing' && activeTab !== 'account' && (
           <div className="mt-8 flex gap-3">
-            {activeTab === 'forms' && trainerData?.tier !== 'pro' ? (
+            {activeTab === 'flows' && trainerData?.tier !== 'pro' ? (
               <button onClick={() => setActiveTab('billing')}
                 className="flex-1 py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm transition-all active:scale-[0.97]">
                 Upgrade to Pro for multi forms
@@ -1270,6 +1490,233 @@ export default function SettingsPage() {
             )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function EmbedTab({ slug, webhookUrl, onWebhookChange, isPro }: {
+  slug: string;
+  webhookUrl: string;
+  onWebhookChange: (v: string) => void;
+  isPro: boolean;
+}) {
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://fomoforms.com';
+  const [copied, setCopied] = useState<string | null>(null);
+  const [webhookStatus, setWebhookStatus] = useState<'idle' | 'testing' | 'success' | 'failed'>('idle');
+  const [webhookError, setWebhookError] = useState<string>('');
+
+  const testWebhook = async () => {
+    if (!webhookUrl.trim()) return;
+    setWebhookStatus('testing');
+    setWebhookError('');
+    try {
+      const res = await fetch(webhookUrl.trim(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'lead.created',
+          test: true,
+          timestamp: new Date().toISOString(),
+          trainer: { id: 'test-trainer-id', name: 'Test Trainer', slug: slug || 'test-slug' },
+          form: null,
+          lead: {
+            id: 'test-lead-id',
+            name: 'Test Lead',
+            phone: '+441234567890',
+            goal: 'Lose Weight',
+            goalType: 'weight_loss',
+            performanceTarget: '',
+            age: 30,
+            currentWeightKg: 80,
+            goalWeightKg: 70,
+            experienceLevel: 'beginner',
+            availableDaysPerWeek: 3,
+            estimatedWeeks: 14,
+            bestPackage: '3x Per Week',
+            customAnswers: {},
+            customAboutFields: {},
+          },
+        }),
+      });
+      if (res.ok || res.status < 400) {
+        setWebhookStatus('success');
+      } else {
+        setWebhookStatus('failed');
+        setWebhookError(`Receiver returned ${res.status}`);
+      }
+    } catch (err) {
+      setWebhookStatus('failed');
+      setWebhookError(err instanceof Error ? err.message : 'Request failed');
+    }
+    setTimeout(() => setWebhookStatus('idle'), 4000);
+  };
+
+  const iframeSnippet = `<iframe src="${origin}/embed/${slug || 'your-slug'}" width="100%" height="800" frameborder="0" style="border:0;"></iframe>`;
+
+  const loaderSnippet = `<div data-fomoforms="${slug || 'your-slug'}"></div>
+<script src="${origin}/embed.js" async></script>`;
+
+  const copy = (value: string, key: string) => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  };
+
+  if (!slug) {
+    return (
+      <div className="rounded-xl bg-[#f5f5f7] p-4">
+        <p className="text-sm text-[#8e8e93]">Set a URL slug under Details before you can embed your form.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-[#e5e5ea] p-5">
+        <p className="text-sm font-semibold mb-1">Drop your form into any website</p>
+        <p className="text-[11px] text-[#8e8e93] leading-relaxed">
+          Works with GoHighLevel, WordPress, Webflow, Wix, Squarespace, Kajabi — anywhere you can paste HTML.
+          The iframe auto-resizes as prospects move through the steps.
+        </p>
+      </div>
+
+      {/* Recommended: auto-resize loader */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-xs font-semibold">Recommended — auto-resize</p>
+          <button onClick={() => copy(loaderSnippet, 'loader')}
+            className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-[#f5f5f7]"
+            style={{ color: copied === 'loader' ? '#34C759' : '#007AFF' }}>
+            {copied === 'loader' ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+        <pre className="bg-[#1a1a1a] text-[#f5f5f7] rounded-xl p-3 text-[10px] font-mono overflow-x-auto leading-relaxed whitespace-pre-wrap break-all">{loaderSnippet}</pre>
+        <p className="text-[10px] text-[#8e8e93] mt-1.5">Paste this anywhere on the page — the script handles iframe creation and auto-resizing.</p>
+      </div>
+
+      {/* Manual iframe */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-xs font-semibold">Plain iframe (fixed height)</p>
+          <button onClick={() => copy(iframeSnippet, 'iframe')}
+            className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-[#f5f5f7]"
+            style={{ color: copied === 'iframe' ? '#34C759' : '#007AFF' }}>
+            {copied === 'iframe' ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+        <pre className="bg-[#1a1a1a] text-[#f5f5f7] rounded-xl p-3 text-[10px] font-mono overflow-x-auto leading-relaxed whitespace-pre-wrap break-all">{iframeSnippet}</pre>
+        <p className="text-[10px] text-[#8e8e93] mt-1.5">Use this if your CMS blocks external scripts. You may need to manually tweak the height.</p>
+      </div>
+
+      {/* Setup tip */}
+      <div className="rounded-xl bg-[#f5f5f7] p-4">
+        <p className="text-xs font-semibold mb-1">Setup tip</p>
+        <p className="text-[11px] text-[#8e8e93] leading-relaxed">
+          Most website builders (WordPress, Webflow, Wix, Squarespace, Kajabi, GoHighLevel, Bubble, etc.) have a <strong className="text-[#1a1a1a]">Custom HTML / Embed</strong> block — drop the snippet above into it and save. Pair this with your <strong className="text-[#1a1a1a]">Primary contact method</strong> in the Details tab so the final CTA routes prospects straight to your calendar, WhatsApp, or wherever you take bookings.
+        </p>
+      </div>
+
+      {/* Webhook — Pro only */}
+      <div className="pt-3 border-t border-[#e5e5ea]">
+        <div className="flex items-center gap-2 mb-1">
+          <p className="text-sm font-semibold">Lead webhook</p>
+          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#1a1a1a] text-white">Pro</span>
+        </div>
+        <p className="text-[11px] text-[#8e8e93] mb-3 leading-relaxed">
+          Auto-send every new lead as JSON to any URL. Plug into Zapier, Make, n8n, HighLevel inbound webhooks, Slack, HubSpot, Pipedrive, or any custom backend — if it accepts webhooks, it works.
+        </p>
+
+        {!isPro ? (
+          <div className="rounded-xl bg-[#f5f5f7] p-4 text-center">
+            <p className="text-xs text-[#1a1a1a] font-medium mb-1">Upgrade to Pro to unlock lead webhooks</p>
+            <p className="text-[11px] text-[#8e8e93] mb-3 leading-relaxed">
+              Push every lead straight into your CRM, automation tool, or team chat the moment it lands.
+            </p>
+            <a href="/settings?tab=billing" className="inline-block text-[11px] font-semibold px-3 py-2 rounded-lg bg-[#1a1a1a] text-white">
+              Upgrade to Pro
+            </a>
+          </div>
+        ) : (
+        <>
+        <div className="flex gap-2">
+          <input type="url" value={webhookUrl}
+            onChange={(e) => onWebhookChange(e.target.value)}
+            placeholder="https://services.leadconnectorhq.com/hooks/..."
+            className="flex-1 bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl px-4 py-3 text-[#1a1a1a] text-sm placeholder-[#8e8e93] focus:outline-none focus:border-[#8e8e93]" />
+          <button onClick={testWebhook} disabled={!webhookUrl.trim() || webhookStatus === 'testing'}
+            className="px-4 py-3 rounded-xl bg-[#1a1a1a] text-white text-xs font-semibold disabled:opacity-40 flex-shrink-0">
+            {webhookStatus === 'testing' ? 'Testing...' : 'Test'}
+          </button>
+        </div>
+        {webhookStatus === 'success' && (
+          <p className="text-[11px] text-[#34C759] mt-2 font-medium">✓ Receiver accepted the test payload.</p>
+        )}
+        {webhookStatus === 'failed' && (
+          <p className="text-[11px] text-[#FF3B30] mt-2 font-medium">✗ {webhookError || 'Test failed.'}</p>
+        )}
+        <p className="text-[10px] text-[#8e8e93] mt-2">
+          Save settings after pasting. Payload shape documented in the{' '}
+          <a href={`${origin}/embed.js`} target="_blank" rel="noopener noreferrer" className="underline">docs</a>.
+        </p>
+
+        <details className="mt-3 rounded-xl bg-[#f5f5f7] p-3">
+          <summary className="text-[11px] font-semibold cursor-pointer">Setup: Zapier / Make / n8n →</summary>
+          <ol className="text-[11px] text-[#8e8e93] mt-2 space-y-1 list-decimal pl-5 leading-relaxed">
+            <li>Create a new Zap / scenario / workflow</li>
+            <li>Set the trigger to <strong className="text-[#1a1a1a]">Webhooks → Catch Hook</strong> (Zapier) or <strong className="text-[#1a1a1a]">Webhook → Custom Webhook</strong> (Make/n8n)</li>
+            <li>Copy the generated URL and paste it above</li>
+            <li>Hit <strong className="text-[#1a1a1a]">Test</strong> to send a sample lead — the trigger picks up the payload and you can map fields to Gmail, Sheets, HubSpot, Notion, 500+ other apps</li>
+          </ol>
+        </details>
+
+        <details className="mt-2 rounded-xl bg-[#f5f5f7] p-3">
+          <summary className="text-[11px] font-semibold cursor-pointer">Setup: GoHighLevel →</summary>
+          <ol className="text-[11px] text-[#8e8e93] mt-2 space-y-1 list-decimal pl-5 leading-relaxed">
+            <li>In HighLevel: Automation → Workflows → Create a workflow</li>
+            <li>Add trigger: <strong className="text-[#1a1a1a]">Inbound Webhook</strong></li>
+            <li>Copy the webhook URL HighLevel generates and paste it above</li>
+            <li>Add a workflow action (e.g. Create/Update Contact with the fields from the payload)</li>
+            <li>Publish the workflow — every new FomoForms lead lands in your HighLevel contacts</li>
+          </ol>
+        </details>
+
+        <details className="mt-2 rounded-xl bg-[#f5f5f7] p-3">
+          <summary className="text-[11px] font-semibold cursor-pointer">Show payload schema (for developers) →</summary>
+          <pre className="text-[10px] font-mono text-[#1a1a1a] mt-2 overflow-x-auto whitespace-pre-wrap">{`{
+  "event": "lead.created",
+  "timestamp": "2026-04-14T12:34:56Z",
+  "trainer": { "id": "...", "name": "...", "slug": "..." },
+  "form": null,
+  "lead": {
+    "id": "...",
+    "name": "Sarah Mitchell",
+    "phone": "+447...",
+    "goal": "Lose Weight",
+    "goalType": "weight_loss",
+    "age": 32,
+    "currentWeightKg": 78,
+    "goalWeightKg": 68,
+    "experienceLevel": "beginner",
+    "availableDaysPerWeek": 3,
+    "estimatedWeeks": 14,
+    "bestPackage": "3x Per Week",
+    "customAnswers": { "...": "..." },
+    "customAboutFields": { "...": "..." }
+  }
+}`}</pre>
+        </details>
+        </>
+        )}
+      </div>
+
+      {/* Preview */}
+      <div>
+        <p className="text-[10px] text-[#8e8e93] uppercase tracking-wider font-semibold mb-2">Live preview</p>
+        <div className="rounded-2xl overflow-hidden border border-[#e5e5ea]">
+          <iframe src={`${origin}/embed/${slug}`} width="100%" height="600" frameBorder={0} style={{ border: 0, display: 'block' }} title="FomoForms preview" />
+        </div>
       </div>
     </div>
   );

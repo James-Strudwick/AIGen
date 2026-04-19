@@ -11,9 +11,41 @@ export default function AuthCallbackPage() {
       try {
         const supabase = createBrowserClient();
 
-        // @supabase/supabase-js auto-detects the implicit-flow tokens in the
-        // URL hash fragment and persists them on mount. Give it a beat and
-        // then check for a session.
+        // --- Path 1: PKCE flow ---
+        // Supabase defaults new projects to PKCE. Email confirmation links
+        // carry a `token_hash` + `type` query param that we exchange for a
+        // session via verifyOtp.
+        const params = new URLSearchParams(window.location.search);
+        const tokenHash = params.get('token_hash');
+        const type = params.get('type');
+        const errDesc = params.get('error_description') || params.get('error');
+
+        if (errDesc) {
+          throw new Error(decodeURIComponent(errDesc));
+        }
+
+        if (tokenHash && type) {
+          // Map the Supabase `type` to the verifyOtp type union
+          const otpType = (type === 'signup' || type === 'email' || type === 'invite'
+            || type === 'magiclink' || type === 'recovery' || type === 'email_change')
+            ? type
+            : 'signup';
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data, error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: otpType as any,
+          });
+          if (verifyError) throw verifyError;
+          if (data.session) {
+            window.location.href = '/dashboard';
+            return;
+          }
+        }
+
+        // --- Path 2: Implicit flow (legacy) ---
+        // Older Supabase projects send tokens in the URL hash fragment. The
+        // JS SDK auto-detects these on mount and persists the session, so we
+        // just poll for it briefly.
         const { data, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
 
@@ -22,8 +54,8 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        // Fallback: listen for the SIGNED_IN event in case token exchange
-        // hasn't completed yet.
+        // Fallback: listen for SIGNED_IN in case the implicit-flow token
+        // exchange is still finishing.
         const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
           if (event === 'SIGNED_IN' && session) {
             sub.subscription.unsubscribe();
@@ -31,13 +63,12 @@ export default function AuthCallbackPage() {
           }
         });
 
-        // If we're still stuck after a few seconds, assume the link was
-        // invalid or expired.
         setTimeout(() => {
           sub.subscription.unsubscribe();
           setError('Confirmation link is invalid or expired. Try logging in or signing up again.');
-        }, 5000);
+        }, 6000);
       } catch (err) {
+        console.error('[auth/callback]', err);
         setError(err instanceof Error ? err.message : 'Something went wrong confirming your email.');
       }
     };

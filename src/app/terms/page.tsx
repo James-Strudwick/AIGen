@@ -46,9 +46,10 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold mb-2">4. Referral programme</h2>
             <ul className="text-sm text-[#1a1a1a] space-y-1.5 list-disc pl-5">
-              <li>Refer 5 people who subscribe and receive 50% off for life</li>
+              <li>Rewards are unlocked at each milestone: 1 referral (50% off next month), 2 (1 month free), 3 (2 months free), 4 (1 month Pro free), 5 (50% off for life — first 50 users)</li>
               <li>Referrals must be genuine new users with active paid subscriptions</li>
-              <li>Self-referrals or fraudulent referrals will result in removal of the discount</li>
+              <li>Self-referrals or fraudulent referrals will result in removal of all referral rewards</li>
+              <li>The &ldquo;50% off for life&rdquo; tier is limited to the first 50 users who reach 5 referrals</li>
               <li>We reserve the right to modify or end the referral programme at any time</li>
             </ul>
           </section>
