@@ -245,7 +245,7 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
       setResult({
         estimatedWeeks: weeks,
         summary: `${updatedForm.name}, this is a preview of your personalised timeline. In the live version, AI will generate a bespoke narrative based on your details and ${trainer.name}'s expertise.`,
-        narrative: `This is placeholder text for the AI-generated narrative. When a real prospect fills out your form, Claude AI will write a personalised journey description referencing their specific goals, experience level, and how your coaching accelerates their results.`,
+        narrative: `This is placeholder text for the AI-generated narrative. When a real prospect fills out your form, AI will write a personalised journey description referencing their specific goals, experience level, and how your coaching accelerates their results.`,
         milestones,
         packageComparisons: pkgComparisons,
       });
