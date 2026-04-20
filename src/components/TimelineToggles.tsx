@@ -37,10 +37,7 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
     ? packages.filter(p => p.category === selectedCategory)
     : packages;
 
-  // Description for the selected category (use first matching package's description)
-  const categoryDescription = hasCategories && selectedCategory
-    ? packages.find(p => p.category === selectedCategory && p.description)?.description
-    : null;
+  const [expandedPkgId, setExpandedPkgId] = useState<string | null>(null);
   const hasNutrition = !!services.nutrition?.enabled;
 
   // Available modes based on what PT offers
@@ -291,53 +288,54 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
             </div>
           )}
 
-          {/* Category description (collapsible) */}
-          {categoryDescription && (
-            <button onClick={() => setExpandedDesc(!expandedDesc)}
-              className="w-full text-left rounded-xl p-3 transition-all active:scale-[0.99]"
-              style={{ backgroundColor: branding.color_card, borderWidth: '1px', borderColor: branding.color_border }}>
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] font-semibold" style={{ color: branding.color_text }}>
-                  About this programme
-                </p>
-                <svg className={`w-3.5 h-3.5 transition-transform ${expandedDesc ? 'rotate-180' : ''}`}
-                  style={{ color: branding.color_text_muted }} fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </div>
-              {expandedDesc && (
-                <p className="text-xs leading-relaxed mt-2" style={{ color: branding.color_text_muted }}>
-                  {categoryDescription}
-                </p>
-              )}
-            </button>
-          )}
-
-          {/* Package cards */}
+          {/* Package cards — each with its own expandable description */}
           {filteredPackages.sort((a, b) => a.sort_order - b.sort_order).map((pkg) => {
             const isActive = matchedPkg?.id === pkg.id;
+            const isExpanded = expandedPkgId === pkg.id;
+            const hasDesc = !!pkg.description?.trim();
             return (
-              <button key={pkg.id}
-                onClick={() => pkg.sessions_per_week > 0 && setConfig({ ...config, inPersonDays: pkg.sessions_per_week })}
-                className="w-full flex items-center justify-between rounded-xl p-3.5 transition-all duration-300 active:scale-[0.98]"
+              <div key={pkg.id} className="rounded-xl overflow-hidden transition-all duration-300"
                 style={{
-                  backgroundColor: isActive ? branding.color_primary + '12' : branding.color_card,
                   borderWidth: '1.5px',
                   borderColor: isActive ? branding.color_primary : branding.color_border,
-                  opacity: pkg.sessions_per_week === 0 ? 0.5 : 1,
+                  backgroundColor: isActive ? branding.color_primary + '12' : branding.color_card,
                 }}>
-                <div className="text-left">
-                  <p className="text-sm font-semibold" style={{ color: branding.color_text }}>{pkg.name}</p>
-                  <p className="text-[11px]" style={{ color: branding.color_text_muted }}>
-                    {pkg.sessions_per_week > 0 ? `${pkg.sessions_per_week}x per week${pkg.is_online ? ' (online)' : ''}` : 'Contact for details'}
-                  </p>
-                </div>
-                {services.show_prices && pkg.monthly_price && (
-                  <p className="text-sm font-bold" style={{ color: isActive ? branding.color_primary : branding.color_text }}>
-                    {sym}{pkg.monthly_price}<span className="text-[10px] font-normal" style={{ color: branding.color_text_muted }}>/mo</span>
-                  </p>
+                <button
+                  onClick={() => pkg.sessions_per_week > 0 && setConfig({ ...config, inPersonDays: pkg.sessions_per_week })}
+                  className="w-full flex items-center justify-between p-3.5 transition-all duration-300 active:scale-[0.98]"
+                  style={{ opacity: pkg.sessions_per_week === 0 ? 0.5 : 1 }}>
+                  <div className="text-left">
+                    <p className="text-sm font-semibold" style={{ color: branding.color_text }}>{pkg.name}</p>
+                    <p className="text-[11px]" style={{ color: branding.color_text_muted }}>
+                      {pkg.sessions_per_week > 0 ? `${pkg.sessions_per_week}x per week${pkg.is_online ? ' (online)' : ''}` : 'Contact for details'}
+                    </p>
+                  </div>
+                  {services.show_prices && pkg.monthly_price && (
+                    <p className="text-sm font-bold" style={{ color: isActive ? branding.color_primary : branding.color_text }}>
+                      {sym}{pkg.monthly_price}<span className="text-[10px] font-normal" style={{ color: branding.color_text_muted }}>/mo</span>
+                    </p>
+                  )}
+                </button>
+                {hasDesc && (
+                  <button onClick={() => setExpandedPkgId(isExpanded ? null : pkg.id)}
+                    className="w-full text-left px-3.5 pb-3 -mt-1">
+                    <div className="flex items-center gap-1">
+                      <svg className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        style={{ color: branding.color_text_muted }} fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-[10px] font-medium" style={{ color: branding.color_text_muted }}>
+                        {isExpanded ? 'Hide details' : "What's included"}
+                      </span>
+                    </div>
+                    {isExpanded && (
+                      <p className="text-xs leading-relaxed mt-2 whitespace-pre-line" style={{ color: branding.color_text_muted }}>
+                        {pkg.description}
+                      </p>
+                    )}
+                  </button>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
