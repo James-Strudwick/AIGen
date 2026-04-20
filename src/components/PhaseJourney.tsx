@@ -32,7 +32,7 @@ const FITNESS_PHASES: Phase[] = [
   },
   {
     title: 'Goal achieved — what\'s next?',
-    description: 'You\'ve hit the level you set out to reach. Now it\'s about sustaining, refining, and setting the next target.',
+    description: 'You\'ve hit the level you set out to reach. Time for a reassessment to measure your progress, celebrate the wins, and map out your next phase of training.',
     icon: '🎯',
   },
 ];
@@ -54,8 +54,8 @@ const PERFORMANCE_PHASES: Phase[] = [
     icon: '⚡',
   },
   {
-    title: 'Target reached',
-    description: 'You\'ve put in the work and arrived. Whether it\'s a PB, a competition, or a skill you\'ve been chasing — you\'ve earned it.',
+    title: 'Target reached — reassess & evolve',
+    description: 'You\'ve put in the work and arrived. Now we reassess where you are, review what worked, and build your next training block based on where you want to go from here.',
     icon: '🏆',
   },
 ];
