@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, } from 'react';
 import { GoalType, ExperienceLevel, TimelineConfig, TrainerBranding, TrainerServices, Package, TrainingMode } from '@/types';
 import { calculateWithToggles, CalcInput } from '@/lib/calculateTimeline';
 import { currencySymbol } from '@/lib/currency';
@@ -26,6 +26,21 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
   const sym = currencySymbol(currency);
   const hasOnline = !!services.online?.enabled;
   const hasHybrid = !!services.hybrid?.enabled;
+
+  // Category filtering — if packages have categories, show tabs
+  const categories = [...new Set(packages.filter(p => p.category).map(p => p.category!))];
+  const hasCategories = categories.length > 0;
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(hasCategories ? categories[0] : null);
+  const [expandedDesc, setExpandedDesc] = useState(false);
+
+  const filteredPackages = hasCategories && selectedCategory
+    ? packages.filter(p => p.category === selectedCategory)
+    : packages;
+
+  // Description for the selected category (use first matching package's description)
+  const categoryDescription = hasCategories && selectedCategory
+    ? packages.find(p => p.category === selectedCategory && p.description)?.description
+    : null;
   const hasNutrition = !!services.nutrition?.enabled;
 
   // Available modes based on what PT offers
@@ -86,7 +101,7 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
   const percentFaster = baseWeeks > 0 ? Math.round((weeksSaved / baseWeeks) * 100) : 0;
 
   // Pricing
-  const sortedPkgs = [...packages].filter(p => p.sessions_per_week > 0).sort((a, b) => a.sessions_per_week - b.sessions_per_week);
+  const sortedPkgs = [...filteredPackages].filter(p => p.sessions_per_week > 0).sort((a, b) => a.sessions_per_week - b.sessions_per_week);
   const matchedPkg = sortedPkgs.find(p => p.sessions_per_week >= config.inPersonDays) || sortedPkgs[sortedPkgs.length - 1] || null;
 
   const months = displayWeeks / 4.33;
@@ -254,10 +269,52 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
       </div>
 
       {/* Package selection */}
-      {config.mode === 'inperson' && packages.length > 1 && (
+      {filteredPackages.length > 0 && (
         <div className="space-y-2 mt-4">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: branding.color_text_muted }}>Packages</p>
-          {packages.sort((a, b) => a.sort_order - b.sort_order).map((pkg) => {
+
+          {/* Category tabs */}
+          {hasCategories && categories.length > 1 && (
+            <div className="flex gap-1.5 mb-2">
+              {categories.map((cat) => (
+                <button key={cat} onClick={() => { setSelectedCategory(cat); setExpandedDesc(false); }}
+                  className="text-[11px] font-semibold px-3 py-1.5 rounded-full transition-all active:scale-95"
+                  style={{
+                    backgroundColor: selectedCategory === cat ? branding.color_primary + '18' : branding.color_card,
+                    color: selectedCategory === cat ? branding.color_primary : branding.color_text_muted,
+                    borderWidth: '1.5px',
+                    borderColor: selectedCategory === cat ? branding.color_primary : branding.color_border,
+                  }}>
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Category description (collapsible) */}
+          {categoryDescription && (
+            <button onClick={() => setExpandedDesc(!expandedDesc)}
+              className="w-full text-left rounded-xl p-3 transition-all active:scale-[0.99]"
+              style={{ backgroundColor: branding.color_card, borderWidth: '1px', borderColor: branding.color_border }}>
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-semibold" style={{ color: branding.color_text }}>
+                  About this programme
+                </p>
+                <svg className={`w-3.5 h-3.5 transition-transform ${expandedDesc ? 'rotate-180' : ''}`}
+                  style={{ color: branding.color_text_muted }} fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </div>
+              {expandedDesc && (
+                <p className="text-xs leading-relaxed mt-2" style={{ color: branding.color_text_muted }}>
+                  {categoryDescription}
+                </p>
+              )}
+            </button>
+          )}
+
+          {/* Package cards */}
+          {filteredPackages.sort((a, b) => a.sort_order - b.sort_order).map((pkg) => {
             const isActive = matchedPkg?.id === pkg.id;
             return (
               <button key={pkg.id}

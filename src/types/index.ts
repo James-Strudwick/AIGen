@@ -151,6 +151,7 @@ export interface Flow {
   price_per_session: number | null;
   monthly_price: number | null;
   description: string | null;
+  category: string | null;
   is_online: boolean;
   sort_order: number;
   is_challenge: boolean;
