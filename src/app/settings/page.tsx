@@ -10,7 +10,7 @@ import SetupChecklist from '@/components/SetupChecklist';
 import FormFlowEditor from '@/components/FormFlowEditor';
 import FlowsTab from '@/components/FlowsTab';
 import { DEFAULT_PACKAGES } from '@/lib/package-defaults';
-import { CURRENCIES, currencySymbol } from '@/lib/currency';
+import { CURRENCIES, currencySymbol, approxFromGbp } from '@/lib/currency';
 import Link from 'next/link';
 
 interface PackageInput {
@@ -1377,7 +1377,10 @@ export default function SettingsPage() {
         )}
 
         {/* Billing */}
-        {activeTab === 'billing' && (
+        {activeTab === 'billing' && (() => {
+          const starterApprox = approxFromGbp(9.99, form.currency);
+          const proApprox = approxFromGbp(19.99, form.currency);
+          return (
           <div className="space-y-5">
             {/* Plan comparison */}
             <div className="grid grid-cols-2 gap-3">
@@ -1390,6 +1393,9 @@ export default function SettingsPage() {
                   )}
                 </div>
                 <p className="text-xl font-bold">£9.99<span className="text-xs text-[#8e8e93] font-normal">/mo</span></p>
+                {starterApprox && (
+                  <p className="text-[10px] text-[#8e8e93] mt-0.5">≈ {starterApprox}/mo</p>
+                )}
                 <ul className="mt-3 space-y-1.5">
                   {['Unlimited leads', 'AI timelines', 'All branding', 'Dashboard & analytics', '2 custom questions', '"Powered by" badge'].map(f => (
                     <li key={f} className="text-[10px] text-[#8e8e93] flex items-center gap-1.5">
@@ -1410,6 +1416,9 @@ export default function SettingsPage() {
                   )}
                 </div>
                 <p className="text-xl font-bold">£19.99<span className="text-xs text-[#8e8e93] font-normal">/mo</span></p>
+                {proApprox && (
+                  <p className="text-[10px] text-[#8e8e93] mt-0.5">≈ {proApprox}/mo</p>
+                )}
                 <ul className="mt-3 space-y-1.5">
                   {['Everything in Starter', 'No "Powered by" badge', 'Export leads to CSV', 'Unlimited questions', 'Multiple forms'].map(f => (
                     <li key={f} className="text-[10px] text-[#1a1a1a] flex items-center gap-1.5">
@@ -1439,7 +1448,7 @@ export default function SettingsPage() {
                     setBillingLoading(false);
                   }} disabled={billingLoading}
                     className="w-full py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40">
-                    {billingLoading ? 'Loading...' : 'Upgrade to Pro — £19.99/month'}
+                    {billingLoading ? 'Loading...' : `Upgrade to Pro — £19.99/month${proApprox ? ` (≈ ${proApprox})` : ''}`}
                   </button>
                 )}
                 <button onClick={async () => {
@@ -1476,7 +1485,7 @@ export default function SettingsPage() {
                   setBillingLoading(false);
                 }} disabled={billingLoading}
                   className="w-full py-3.5 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40">
-                  {billingLoading ? 'Loading...' : 'Subscribe Starter — £9.99/month'}
+                  {billingLoading ? 'Loading...' : `Subscribe Starter — £9.99/month${starterApprox ? ` (≈ ${starterApprox})` : ''}`}
                 </button>
                 <button onClick={async () => {
                   setBillingLoading(true);
@@ -1493,16 +1502,20 @@ export default function SettingsPage() {
                   setBillingLoading(false);
                 }} disabled={billingLoading}
                   className="w-full py-3.5 rounded-xl bg-[#f5f5f7] text-[#1a1a1a] font-semibold text-sm hover:bg-[#e5e5ea] transition-all active:scale-[0.97] disabled:opacity-40">
-                  {billingLoading ? 'Loading...' : 'Subscribe Pro — £19.99/month'}
+                  {billingLoading ? 'Loading...' : `Subscribe Pro — £19.99/month${proApprox ? ` (≈ ${proApprox})` : ''}`}
                 </button>
               </div>
             )}
 
             <p className="text-[#8e8e93] text-[11px] text-center">
               Payments handled securely by Stripe. Cancel anytime.
+              {(starterApprox || proApprox) && (
+                <> Charged in GBP; {currencySymbol(form.currency)} amounts are approximate and vary with the exchange rate at checkout.</>
+              )}
             </p>
           </div>
-        )}
+          );
+        })()}
 
         {/* Save — hide on billing and account tabs; show upgrade CTA on forms if non-Pro */}
         {activeTab !== 'billing' && activeTab !== 'account' && (
