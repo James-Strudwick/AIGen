@@ -20,9 +20,10 @@ interface TimelineTogglesProps {
   packages: Package[];
   trainerName: string;
   currency?: string;
+  hideWeeksDisplay?: boolean;
 }
 
-export default function TimelineToggles({ baseInput, baseWeeks, branding, services, packages, trainerName, currency }: TimelineTogglesProps) {
+export default function TimelineToggles({ baseInput, baseWeeks, branding, services, packages, trainerName, currency, hideWeeksDisplay = false }: TimelineTogglesProps) {
   const sym = currencySymbol(currency);
   const hasOnline = !!services.online?.enabled;
   const hasHybrid = !!services.hybrid?.enabled;
@@ -122,84 +123,89 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
 
   return (
     <div className="w-full">
-      <h3 className="text-xl font-bold mb-2 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
-        Build your plan
-      </h3>
-      <p className="text-sm text-center mb-8" style={{ color: branding.color_text_muted }}>
-        Adjust your training to see how it affects your timeline
-      </p>
-
-      {/* Animated weeks */}
-      <div className="text-center mb-8">
-        <div className="inline-block rounded-2xl px-8 py-5 transition-all duration-500"
-          style={{ backgroundColor: branding.color_primary + '15' }}>
-          <p className="text-5xl font-bold transition-all duration-300" style={{ color: branding.color_primary, fontFamily: 'var(--font-heading)' }}>
-            ~{animatingWeeks}
+      {!hideWeeksDisplay && (
+        <>
+          <h3 className="text-xl font-bold mb-2 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
+            Build your plan
+          </h3>
+          <p className="text-sm text-center mb-8" style={{ color: branding.color_text_muted }}>
+            Adjust your training to see how it affects your timeline
           </p>
-          <p className="text-sm mt-1" style={{ color: branding.color_text_muted }}>weeks to goal</p>
-        </div>
-        {weeksSaved > 0 && (
-          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
-            style={{ backgroundColor: branding.color_primary + '20', color: branding.color_primary }}>
-            {weeksSaved} weeks faster ({percentFaster}% quicker)
-          </div>
-        )}
-        {weeksSaved < 0 && (
-          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
-            style={{ backgroundColor: '#FF3B3015', color: '#FF3B30' }}>
-            {Math.abs(weeksSaved)} weeks longer (online is more flexible but slower)
-          </div>
-        )}
-      </div>
 
-      {/* Pricing summary */}
-      {matchedPkg && services.show_prices && (
-        <div className="rounded-2xl p-5 text-center mb-4 transition-all duration-500"
-          style={{ backgroundColor: branding.color_card, borderWidth: '1px', borderColor: branding.color_border }}>
-          <div className="flex items-center justify-center gap-6">
-            {monthlyTotal > 0 && (
-              <div>
-                <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>{sym}{monthlyTotal}</p>
-                <p className="text-[11px]" style={{ color: branding.color_text_muted }}>per month</p>
+          {/* Animated weeks */}
+          <div className="text-center mb-8">
+            <div className="inline-block rounded-2xl px-8 py-5 transition-all duration-500"
+              style={{ backgroundColor: branding.color_primary + '15' }}>
+              <p className="text-5xl font-bold transition-all duration-300" style={{ color: branding.color_primary, fontFamily: 'var(--font-heading)' }}>
+                ~{animatingWeeks}
+              </p>
+              <p className="text-sm mt-1" style={{ color: branding.color_text_muted }}>weeks to goal</p>
+            </div>
+            {weeksSaved > 0 && (
+              <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                style={{ backgroundColor: branding.color_primary + '20', color: branding.color_primary }}>
+                {weeksSaved} weeks faster ({percentFaster}% quicker)
               </div>
             )}
-            {grandTotal && (
-              <div>
-                <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>{sym}{grandTotal.toLocaleString()}</p>
-                <p className="text-[11px]" style={{ color: branding.color_text_muted }}>est. total</p>
+            {weeksSaved < 0 && (
+              <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                style={{ backgroundColor: '#FF3B3015', color: '#FF3B30' }}>
+                {Math.abs(weeksSaved)} weeks longer (online is more flexible but slower)
               </div>
             )}
           </div>
-          <p className="text-[11px] mt-2" style={{ color: branding.color_text_muted }}>
-            {totalDays}x per week for ~{displayWeeks} weeks
-          </p>
-        </div>
+
+          {/* Pricing summary */}
+          {matchedPkg && services.show_prices && (
+            <div className="rounded-2xl p-5 text-center mb-4 transition-all duration-500"
+              style={{ backgroundColor: branding.color_card, borderWidth: '1px', borderColor: branding.color_border }}>
+              <div className="flex items-center justify-center gap-6">
+                {monthlyTotal > 0 && (
+                  <div>
+                    <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>{sym}{monthlyTotal}</p>
+                    <p className="text-[11px]" style={{ color: branding.color_text_muted }}>per month</p>
+                  </div>
+                )}
+                {grandTotal && (
+                  <div>
+                    <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>{sym}{grandTotal.toLocaleString()}</p>
+                    <p className="text-[11px]" style={{ color: branding.color_text_muted }}>est. total</p>
+                  </div>
+                )}
+              </div>
+              <p className="text-[11px] mt-2" style={{ color: branding.color_text_muted }}>
+                {totalDays}x per week for ~{displayWeeks} weeks
+              </p>
+            </div>
+          )}
+
+          {/* Training mode selector — only show if PT offers alternatives */}
+          {availableModes.length > 1 && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: branding.color_text_muted }}>
+                Training type
+              </p>
+              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${availableModes.length}, 1fr)` }}>
+                {availableModes.map((m) => (
+                  <button key={m.id} onClick={() => setMode(m.id)}
+                    className="py-3 px-2 rounded-xl text-center transition-all duration-200 active:scale-[0.97]"
+                    style={{
+                      backgroundColor: config.mode === m.id ? branding.color_primary + '12' : branding.color_card,
+                      borderWidth: '1.5px',
+                      borderColor: config.mode === m.id ? branding.color_primary : branding.color_border,
+                    }}>
+                    <p className="text-xs font-semibold" style={{ color: config.mode === m.id ? branding.color_primary : branding.color_text }}>{m.label}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: branding.color_text_muted }}>{m.sub}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Training mode selector — only show if PT offers alternatives */}
-      {availableModes.length > 1 && (
-        <div className="mb-4">
-          <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: branding.color_text_muted }}>
-            Training type
-          </p>
-          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${availableModes.length}, 1fr)` }}>
-            {availableModes.map((m) => (
-              <button key={m.id} onClick={() => setMode(m.id)}
-                className="py-3 px-2 rounded-xl text-center transition-all duration-200 active:scale-[0.97]"
-                style={{
-                  backgroundColor: config.mode === m.id ? branding.color_primary + '12' : branding.color_card,
-                  borderWidth: '1.5px',
-                  borderColor: config.mode === m.id ? branding.color_primary : branding.color_border,
-                }}>
-                <p className="text-xs font-semibold" style={{ color: config.mode === m.id ? branding.color_primary : branding.color_text }}>{m.label}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: branding.color_text_muted }}>{m.sub}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Day controls — varies by mode */}
+      {/* Day controls — varies by mode (hidden when weeks display is hidden) */}
+      {!hideWeeksDisplay && (
       <div className="space-y-4">
         {/* In-person days (shown for inperson and hybrid) */}
         {(config.mode === 'inperson' || config.mode === 'hybrid') && (
@@ -264,8 +270,19 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
           </button>
         )}
       </div>
+      )}
 
       {/* Package selection */}
+      {hideWeeksDisplay && (
+        <div className="mb-4">
+          <h3 className="text-xl font-bold mb-2 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
+            Choose your plan
+          </h3>
+          <p className="text-sm text-center mb-4" style={{ color: branding.color_text_muted }}>
+            Pick the programme that fits your goals
+          </p>
+        </div>
+      )}
       {filteredPackages.length > 0 && (
         <div className="space-y-2 mt-4">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: branding.color_text_muted }}>Packages</p>
