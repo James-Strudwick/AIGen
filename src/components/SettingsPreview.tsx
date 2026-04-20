@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { TrainerSpecialty, ServiceAddOn, CustomQuestion, CustomGoal, FormAboutConfig } from '@/types';
 import { getGoogleFontsUrl } from '@/lib/branding';
 import { currencySymbol } from '@/lib/currency';
@@ -194,6 +195,8 @@ interface PackageInput {
   sessions_per_week: string;
   monthly_price: string;
   price_per_session: string;
+  description?: string;
+  category?: string;
   is_online: boolean;
   is_challenge?: boolean;
   challenge_duration_weeks?: string;
@@ -224,6 +227,19 @@ export function PackagesPreview({ theme, primaryColor, packages, showPrices, cur
     } catch { return iso; }
   };
 
+  const categories = [...new Set(valid.filter(p => p.category).map(p => p.category!))];
+  const hasCategories = categories.length > 0;
+  const [selectedCat, setSelectedCat] = useState(hasCategories ? categories[0] : '');
+  const [descOpen, setDescOpen] = useState(false);
+
+  const displayed = hasCategories && selectedCat
+    ? valid.filter(p => p.category === selectedCat)
+    : valid;
+
+  const catDescription = hasCategories && selectedCat
+    ? valid.find(p => p.category === selectedCat && p.description?.trim())?.description
+    : null;
+
   return (
     <PreviewWrapper theme={theme} primaryColor={primaryColor}>
       {/* Mini weeks display */}
@@ -234,8 +250,44 @@ export function PackagesPreview({ theme, primaryColor, packages, showPrices, cur
         </div>
       </div>
 
+      {/* Category tabs */}
+      {hasCategories && categories.length > 1 && (
+        <div className="flex gap-1 mb-2">
+          {categories.map((cat) => (
+            <button key={cat} onClick={() => { setSelectedCat(cat); setDescOpen(false); }}
+              className="text-[9px] font-semibold px-2.5 py-1 rounded-full transition-all"
+              style={{
+                backgroundColor: selectedCat === cat ? c.primary + '18' : c.card,
+                color: selectedCat === cat ? c.primary : c.muted,
+                borderWidth: '1px',
+                borderColor: selectedCat === cat ? c.primary : c.border,
+              }}>
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Category description */}
+      {catDescription && (
+        <button onClick={() => setDescOpen(!descOpen)}
+          className="w-full text-left rounded-lg p-2 mb-2 transition-all"
+          style={{ backgroundColor: c.card, borderWidth: '1px', borderColor: c.border }}>
+          <div className="flex items-center justify-between">
+            <p className="text-[9px] font-semibold" style={{ color: c.text }}>About this programme</p>
+            <svg className={`w-3 h-3 transition-transform ${descOpen ? 'rotate-180' : ''}`}
+              style={{ color: c.muted }} fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </div>
+          {descOpen && (
+            <p className="text-[9px] leading-relaxed mt-1.5" style={{ color: c.muted }}>{catDescription}</p>
+          )}
+        </button>
+      )}
+
       <div className="space-y-1.5">
-        {valid.map((pkg, i) => {
+        {displayed.map((pkg, i) => {
           const isFirst = i === 0;
           const isChallenge = !!pkg.is_challenge;
           const startDate = formatStartDate(pkg.challenge_start_date);
