@@ -168,14 +168,6 @@ export default function TimelineResults({ trainer, branding, services, specialti
         </div>
       )}
 
-      {/* Milestones */}
-      <div>
-        <h3 className="text-xl font-bold mb-6 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
-          Your Journey
-        </h3>
-        <MilestoneTimeline milestones={result.milestones} branding={branding} />
-      </div>
-
       {/* WhatsApp CTA */}
       <CTASection trainer={trainer} branding={branding} formData={formData} result={result} goalLabel={goalLabel} leadId={leadId} isPreview={isPreview} />
     </div>
