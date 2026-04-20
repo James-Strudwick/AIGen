@@ -115,7 +115,18 @@ export default function CustomQuestions({ questions, branding, onSubmit }: Custo
           </div>
         ))}
 
-        <button onClick={() => onSubmit(answers)} disabled={!allAnswered}
+        <button onClick={() => {
+          // Map answer keys from question IDs to the actual question text
+          // so emails and the dashboard show readable labels instead of
+          // raw IDs like "q-barriers" or "q1".
+          const readableAnswers: Record<string, string | string[]> = {};
+          for (const q of questions) {
+            if (answers[q.id] !== undefined) {
+              readableAnswers[q.question] = answers[q.id];
+            }
+          }
+          onSubmit(readableAnswers);
+        }} disabled={!allAnswered}
           className="w-full py-3.5 rounded-xl font-semibold transition-all duration-200 disabled:opacity-40 active:scale-[0.97] text-sm text-white"
           style={{ backgroundColor: branding.color_primary }}>
           Continue

@@ -5,6 +5,7 @@ import MilestoneTimeline from './MilestoneTimeline';
 import TimelineToggles from './TimelineToggles';
 import CTASection from './CTASection';
 import ChallengeSection from './ChallengeSection';
+import PhaseJourney from './PhaseJourney';
 
 interface TimelineResultsProps {
   trainer: Trainer;
@@ -42,12 +43,17 @@ export default function TimelineResults({ trainer, branding, services, specialti
   const specialties = specialtiesProp ?? trainer.specialties ?? [];
   const primaryCtaHref = buildPrimaryCtaHref(trainer, formData.name);
 
+  // Weight loss + muscle gain get the interactive timeline with exact weeks.
+  // Everything else (fitness, performance, custom goals mapping to those types)
+  // gets a phase-based journey — no specific week count, just a walkthrough.
+  const showExactTimeline = formData.goalType === 'weight_loss' || formData.goalType === 'muscle_gain';
+
   return (
     <div className="w-full max-w-lg mx-auto space-y-10 pb-8">
       {/* Summary */}
       <div className="text-center animate-in fade-in duration-700">
         <p className="text-sm mb-2" style={{ color: branding.color_text_muted }}>
-          Your personalised timeline to
+          {showExactTimeline ? 'Your personalised timeline to' : 'Your personalised journey to'}
         </p>
         <p className="text-lg font-medium mb-6" style={{ color: branding.color_primary, fontFamily: 'var(--font-heading)' }}>
           {goalLabel}
@@ -64,7 +70,7 @@ export default function TimelineResults({ trainer, branding, services, specialti
         </p>
       </div>
 
-      {/* Challenges — if the coach has any, show them prominently above the timeline toggles */}
+      {/* Challenges */}
       <ChallengeSection
         packages={packages}
         branding={branding}
@@ -74,23 +80,63 @@ export default function TimelineResults({ trainer, branding, services, specialti
         isPreview={isPreview}
       />
 
-      {/* Interactive Timeline Toggles */}
-      <TimelineToggles
-        baseInput={{
-          goalType: formData.goalType!,
-          currentWeightKg: formData.currentWeight,
-          goalWeightKg: formData.goalWeight,
-          age: formData.age,
-          experienceLevel: formData.experienceLevel!,
-          availableDays: formData.availableDays,
-        }}
-        baseWeeks={result.estimatedWeeks}
-        branding={branding}
-        services={services}
-        packages={packages.filter(p => !p.is_challenge)}
-        trainerName={trainer.name}
-        currency={trainer.currency}
-      />
+      {showExactTimeline ? (
+        <>
+          {/* Interactive Timeline Toggles — weight loss + muscle gain only */}
+          <TimelineToggles
+            baseInput={{
+              goalType: formData.goalType!,
+              currentWeightKg: formData.currentWeight,
+              goalWeightKg: formData.goalWeight,
+              age: formData.age,
+              experienceLevel: formData.experienceLevel!,
+              availableDays: formData.availableDays,
+            }}
+            baseWeeks={result.estimatedWeeks}
+            branding={branding}
+            services={services}
+            packages={packages.filter(p => !p.is_challenge)}
+            trainerName={trainer.name}
+            currency={trainer.currency}
+          />
+
+          {/* Milestones — only make sense with an exact timeline */}
+          <div>
+            <h3 className="text-xl font-bold mb-6 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
+              Your Journey
+            </h3>
+            <MilestoneTimeline milestones={result.milestones} branding={branding} />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Phase-based journey — fitness + performance goals */}
+          <PhaseJourney
+            goalType={formData.goalType!}
+            goalLabel={goalLabel}
+            branding={branding}
+          />
+
+          {/* Still show packages so prospects can see pricing + pick a plan */}
+          <TimelineToggles
+            baseInput={{
+              goalType: formData.goalType!,
+              currentWeightKg: formData.currentWeight,
+              goalWeightKg: formData.goalWeight,
+              age: formData.age,
+              experienceLevel: formData.experienceLevel!,
+              availableDays: formData.availableDays,
+            }}
+            baseWeeks={result.estimatedWeeks}
+            branding={branding}
+            services={services}
+            packages={packages.filter(p => !p.is_challenge)}
+            trainerName={trainer.name}
+            currency={trainer.currency}
+            hideWeeksDisplay
+          />
+        </>
+      )}
 
       {/* Coach Specialties */}
       {specialties.length > 0 && (
@@ -121,14 +167,6 @@ export default function TimelineResults({ trainer, branding, services, specialti
           </div>
         </div>
       )}
-
-      {/* Milestones */}
-      <div>
-        <h3 className="text-xl font-bold mb-6 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
-          Your Journey
-        </h3>
-        <MilestoneTimeline milestones={result.milestones} branding={branding} />
-      </div>
 
       {/* WhatsApp CTA */}
       <CTASection trainer={trainer} branding={branding} formData={formData} result={result} goalLabel={goalLabel} leadId={leadId} isPreview={isPreview} />

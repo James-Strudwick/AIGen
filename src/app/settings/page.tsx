@@ -18,6 +18,8 @@ interface PackageInput {
   sessions_per_week: string;
   price_per_session: string;
   monthly_price: string;
+  description: string;
+  category: string;
   is_online: boolean;
   is_challenge: boolean;
   challenge_duration_weeks: string;
@@ -25,6 +27,13 @@ interface PackageInput {
   challenge_outcome: string;
   challenge_spots_total: string;
 }
+
+const PACKAGE_CATEGORIES = [
+  { value: '', label: 'No category' },
+  { value: 'Beginner', label: 'Beginner' },
+  { value: 'Intermediate', label: 'Intermediate' },
+  { value: 'Elite', label: 'Elite' },
+];
 
 type Tab = 'account' | 'details' | 'copy' | 'branding' | 'goals' | 'flows' | 'questions' | 'specialties' | 'services' | 'packages' | 'billing' | 'embed';
 
@@ -163,6 +172,8 @@ export default function SettingsPage() {
           sessions_per_week: String(p.sessions_per_week),
           price_per_session: p.price_per_session ? String(p.price_per_session) : '',
           monthly_price: p.monthly_price ? String(p.monthly_price) : '',
+          description: (p.description as string) || '',
+          category: (p.category as string) || '',
           is_online: p.is_online as boolean,
           is_challenge: !!p.is_challenge,
           challenge_duration_weeks: p.challenge_duration_weeks ? String(p.challenge_duration_weeks) : '',
@@ -243,6 +254,8 @@ export default function SettingsPage() {
         sessions_per_week: parseInt(p.sessions_per_week) || 0,
         price_per_session: p.price_per_session ? parseFloat(p.price_per_session) : null,
         monthly_price: p.monthly_price ? parseFloat(p.monthly_price) : null,
+        description: p.description.trim() || null,
+        category: p.category.trim() || null,
         is_online: p.is_online,
         is_challenge: p.is_challenge,
         challenge_duration_weeks: p.is_challenge && p.challenge_duration_weeks ? parseInt(p.challenge_duration_weeks) : null,
@@ -1197,7 +1210,7 @@ export default function SettingsPage() {
                     if (!canAddChallenge) return;
                     setPkgs(curr => {
                       setLastAddedPkgIdx(curr.length);
-                      return [...curr, { name: '', sessions_per_week: '0', price_per_session: '', monthly_price: '', is_online: false, is_challenge: true, challenge_duration_weeks: '4', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '10' }];
+                      return [...curr, { name: '', sessions_per_week: '0', price_per_session: '', monthly_price: '', description: '', category: '', is_online: false, is_challenge: true, challenge_duration_weeks: '4', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '10' }];
                     });
                   }}
                   disabled={!canAddChallenge}
@@ -1212,7 +1225,7 @@ export default function SettingsPage() {
                   onClick={() => {
                     setPkgs(curr => {
                       setLastAddedPkgIdx(curr.length);
-                      return [...curr, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false, is_challenge: false, challenge_duration_weeks: '', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '' }];
+                      return [...curr, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', description: '', category: '', is_online: false, is_challenge: false, challenge_duration_weeks: '', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '' }];
                     });
                   }}
                   className="text-xs text-[#007AFF] font-medium transition-transform active:scale-95">+ Add</button>
@@ -1318,6 +1331,23 @@ export default function SettingsPage() {
                               <input type="checkbox" checked={pkg.is_online} onChange={(e) => update({ is_online: e.target.checked })} />
                               Online package
                             </label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[#8e8e93] text-[10px] block mb-0.5">Programme level</label>
+                                <select value={pkg.category} onChange={(e) => update({ category: e.target.value })} className={inputClass}>
+                                  {PACKAGE_CATEGORIES.map(c => (
+                                    <option key={c.value} value={c.value}>{c.label}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div />
+                            </div>
+                            <div>
+                              <label className="text-[#8e8e93] text-[10px] block mb-0.5">Description (optional)</label>
+                              <textarea value={pkg.description} onChange={(e) => update({ description: e.target.value })}
+                                placeholder="e.g. Structured programme building foundational strength and movement quality"
+                                rows={2} className={inputClass} />
+                            </div>
                           </>
                         )}
                       </div>

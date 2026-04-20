@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, } from 'react';
 import { GoalType, ExperienceLevel, TimelineConfig, TrainerBranding, TrainerServices, Package, TrainingMode } from '@/types';
 import { calculateWithToggles, CalcInput } from '@/lib/calculateTimeline';
 import { currencySymbol } from '@/lib/currency';
@@ -20,12 +20,25 @@ interface TimelineTogglesProps {
   packages: Package[];
   trainerName: string;
   currency?: string;
+  hideWeeksDisplay?: boolean;
 }
 
-export default function TimelineToggles({ baseInput, baseWeeks, branding, services, packages, trainerName, currency }: TimelineTogglesProps) {
+export default function TimelineToggles({ baseInput, baseWeeks, branding, services, packages, trainerName, currency, hideWeeksDisplay = false }: TimelineTogglesProps) {
   const sym = currencySymbol(currency);
   const hasOnline = !!services.online?.enabled;
   const hasHybrid = !!services.hybrid?.enabled;
+
+  // Category filtering — if packages have categories, show tabs
+  const categories = [...new Set(packages.filter(p => p.category).map(p => p.category!))];
+  const hasCategories = categories.length > 0;
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(hasCategories ? categories[0] : null);
+  const [expandedDesc, setExpandedDesc] = useState(false);
+
+  const filteredPackages = hasCategories && selectedCategory
+    ? packages.filter(p => p.category === selectedCategory)
+    : packages;
+
+  const [expandedPkgId, setExpandedPkgId] = useState<string | null>(null);
   const hasNutrition = !!services.nutrition?.enabled;
 
   // Available modes based on what PT offers
@@ -86,7 +99,7 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
   const percentFaster = baseWeeks > 0 ? Math.round((weeksSaved / baseWeeks) * 100) : 0;
 
   // Pricing
-  const sortedPkgs = [...packages].filter(p => p.sessions_per_week > 0).sort((a, b) => a.sessions_per_week - b.sessions_per_week);
+  const sortedPkgs = [...filteredPackages].filter(p => p.sessions_per_week > 0).sort((a, b) => a.sessions_per_week - b.sessions_per_week);
   const matchedPkg = sortedPkgs.find(p => p.sessions_per_week >= config.inPersonDays) || sortedPkgs[sortedPkgs.length - 1] || null;
 
   const months = displayWeeks / 4.33;
@@ -110,84 +123,89 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
 
   return (
     <div className="w-full">
-      <h3 className="text-xl font-bold mb-2 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
-        Build your plan
-      </h3>
-      <p className="text-sm text-center mb-8" style={{ color: branding.color_text_muted }}>
-        Adjust your training to see how it affects your timeline
-      </p>
-
-      {/* Animated weeks */}
-      <div className="text-center mb-8">
-        <div className="inline-block rounded-2xl px-8 py-5 transition-all duration-500"
-          style={{ backgroundColor: branding.color_primary + '15' }}>
-          <p className="text-5xl font-bold transition-all duration-300" style={{ color: branding.color_primary, fontFamily: 'var(--font-heading)' }}>
-            ~{animatingWeeks}
+      {!hideWeeksDisplay && (
+        <>
+          <h3 className="text-xl font-bold mb-2 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
+            Build your plan
+          </h3>
+          <p className="text-sm text-center mb-8" style={{ color: branding.color_text_muted }}>
+            Adjust your training to see how it affects your timeline
           </p>
-          <p className="text-sm mt-1" style={{ color: branding.color_text_muted }}>weeks to goal</p>
-        </div>
-        {weeksSaved > 0 && (
-          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
-            style={{ backgroundColor: branding.color_primary + '20', color: branding.color_primary }}>
-            {weeksSaved} weeks faster ({percentFaster}% quicker)
-          </div>
-        )}
-        {weeksSaved < 0 && (
-          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
-            style={{ backgroundColor: '#FF3B3015', color: '#FF3B30' }}>
-            {Math.abs(weeksSaved)} weeks longer (online is more flexible but slower)
-          </div>
-        )}
-      </div>
 
-      {/* Pricing summary */}
-      {matchedPkg && services.show_prices && (
-        <div className="rounded-2xl p-5 text-center mb-4 transition-all duration-500"
-          style={{ backgroundColor: branding.color_card, borderWidth: '1px', borderColor: branding.color_border }}>
-          <div className="flex items-center justify-center gap-6">
-            {monthlyTotal > 0 && (
-              <div>
-                <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>{sym}{monthlyTotal}</p>
-                <p className="text-[11px]" style={{ color: branding.color_text_muted }}>per month</p>
+          {/* Animated weeks */}
+          <div className="text-center mb-8">
+            <div className="inline-block rounded-2xl px-8 py-5 transition-all duration-500"
+              style={{ backgroundColor: branding.color_primary + '15' }}>
+              <p className="text-5xl font-bold transition-all duration-300" style={{ color: branding.color_primary, fontFamily: 'var(--font-heading)' }}>
+                ~{animatingWeeks}
+              </p>
+              <p className="text-sm mt-1" style={{ color: branding.color_text_muted }}>weeks to goal</p>
+            </div>
+            {weeksSaved > 0 && (
+              <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                style={{ backgroundColor: branding.color_primary + '20', color: branding.color_primary }}>
+                {weeksSaved} weeks faster ({percentFaster}% quicker)
               </div>
             )}
-            {grandTotal && (
-              <div>
-                <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>{sym}{grandTotal.toLocaleString()}</p>
-                <p className="text-[11px]" style={{ color: branding.color_text_muted }}>est. total</p>
+            {weeksSaved < 0 && (
+              <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                style={{ backgroundColor: '#FF3B3015', color: '#FF3B30' }}>
+                {Math.abs(weeksSaved)} weeks longer (online is more flexible but slower)
               </div>
             )}
           </div>
-          <p className="text-[11px] mt-2" style={{ color: branding.color_text_muted }}>
-            {totalDays}x per week for ~{displayWeeks} weeks
-          </p>
-        </div>
+
+          {/* Pricing summary */}
+          {matchedPkg && services.show_prices && (
+            <div className="rounded-2xl p-5 text-center mb-4 transition-all duration-500"
+              style={{ backgroundColor: branding.color_card, borderWidth: '1px', borderColor: branding.color_border }}>
+              <div className="flex items-center justify-center gap-6">
+                {monthlyTotal > 0 && (
+                  <div>
+                    <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>{sym}{monthlyTotal}</p>
+                    <p className="text-[11px]" style={{ color: branding.color_text_muted }}>per month</p>
+                  </div>
+                )}
+                {grandTotal && (
+                  <div>
+                    <p className="text-2xl font-bold" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>{sym}{grandTotal.toLocaleString()}</p>
+                    <p className="text-[11px]" style={{ color: branding.color_text_muted }}>est. total</p>
+                  </div>
+                )}
+              </div>
+              <p className="text-[11px] mt-2" style={{ color: branding.color_text_muted }}>
+                {totalDays}x per week for ~{displayWeeks} weeks
+              </p>
+            </div>
+          )}
+
+          {/* Training mode selector — only show if PT offers alternatives */}
+          {availableModes.length > 1 && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: branding.color_text_muted }}>
+                Training type
+              </p>
+              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${availableModes.length}, 1fr)` }}>
+                {availableModes.map((m) => (
+                  <button key={m.id} onClick={() => setMode(m.id)}
+                    className="py-3 px-2 rounded-xl text-center transition-all duration-200 active:scale-[0.97]"
+                    style={{
+                      backgroundColor: config.mode === m.id ? branding.color_primary + '12' : branding.color_card,
+                      borderWidth: '1.5px',
+                      borderColor: config.mode === m.id ? branding.color_primary : branding.color_border,
+                    }}>
+                    <p className="text-xs font-semibold" style={{ color: config.mode === m.id ? branding.color_primary : branding.color_text }}>{m.label}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: branding.color_text_muted }}>{m.sub}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Training mode selector — only show if PT offers alternatives */}
-      {availableModes.length > 1 && (
-        <div className="mb-4">
-          <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: branding.color_text_muted }}>
-            Training type
-          </p>
-          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${availableModes.length}, 1fr)` }}>
-            {availableModes.map((m) => (
-              <button key={m.id} onClick={() => setMode(m.id)}
-                className="py-3 px-2 rounded-xl text-center transition-all duration-200 active:scale-[0.97]"
-                style={{
-                  backgroundColor: config.mode === m.id ? branding.color_primary + '12' : branding.color_card,
-                  borderWidth: '1.5px',
-                  borderColor: config.mode === m.id ? branding.color_primary : branding.color_border,
-                }}>
-                <p className="text-xs font-semibold" style={{ color: config.mode === m.id ? branding.color_primary : branding.color_text }}>{m.label}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: branding.color_text_muted }}>{m.sub}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Day controls — varies by mode */}
+      {/* Day controls — varies by mode (hidden when weeks display is hidden) */}
+      {!hideWeeksDisplay && (
       <div className="space-y-4">
         {/* In-person days (shown for inperson and hybrid) */}
         {(config.mode === 'inperson' || config.mode === 'hybrid') && (
@@ -252,35 +270,89 @@ export default function TimelineToggles({ baseInput, baseWeeks, branding, servic
           </button>
         )}
       </div>
+      )}
 
       {/* Package selection */}
-      {config.mode === 'inperson' && packages.length > 1 && (
+      {hideWeeksDisplay && (
+        <div className="mb-4">
+          <h3 className="text-xl font-bold mb-2 text-center" style={{ color: branding.color_text, fontFamily: 'var(--font-heading)' }}>
+            Choose your plan
+          </h3>
+          <p className="text-sm text-center mb-4" style={{ color: branding.color_text_muted }}>
+            Pick the programme that fits your goals
+          </p>
+        </div>
+      )}
+      {filteredPackages.length > 0 && (
         <div className="space-y-2 mt-4">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: branding.color_text_muted }}>Packages</p>
-          {packages.sort((a, b) => a.sort_order - b.sort_order).map((pkg) => {
+
+          {/* Category tabs */}
+          {hasCategories && categories.length > 1 && (
+            <div className="flex gap-1.5 mb-2">
+              {categories.map((cat) => (
+                <button key={cat} onClick={() => { setSelectedCategory(cat); setExpandedDesc(false); }}
+                  className="text-[11px] font-semibold px-3 py-1.5 rounded-full transition-all active:scale-95"
+                  style={{
+                    backgroundColor: selectedCategory === cat ? branding.color_primary + '18' : branding.color_card,
+                    color: selectedCategory === cat ? branding.color_primary : branding.color_text_muted,
+                    borderWidth: '1.5px',
+                    borderColor: selectedCategory === cat ? branding.color_primary : branding.color_border,
+                  }}>
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Package cards — each with its own expandable description */}
+          {filteredPackages.sort((a, b) => a.sort_order - b.sort_order).map((pkg) => {
             const isActive = matchedPkg?.id === pkg.id;
+            const isExpanded = expandedPkgId === pkg.id;
+            const hasDesc = !!pkg.description?.trim();
             return (
-              <button key={pkg.id}
-                onClick={() => pkg.sessions_per_week > 0 && setConfig({ ...config, inPersonDays: pkg.sessions_per_week })}
-                className="w-full flex items-center justify-between rounded-xl p-3.5 transition-all duration-300 active:scale-[0.98]"
+              <div key={pkg.id} className="rounded-xl overflow-hidden transition-all duration-300"
                 style={{
-                  backgroundColor: isActive ? branding.color_primary + '12' : branding.color_card,
                   borderWidth: '1.5px',
                   borderColor: isActive ? branding.color_primary : branding.color_border,
-                  opacity: pkg.sessions_per_week === 0 ? 0.5 : 1,
+                  backgroundColor: isActive ? branding.color_primary + '12' : branding.color_card,
                 }}>
-                <div className="text-left">
-                  <p className="text-sm font-semibold" style={{ color: branding.color_text }}>{pkg.name}</p>
-                  <p className="text-[11px]" style={{ color: branding.color_text_muted }}>
-                    {pkg.sessions_per_week > 0 ? `${pkg.sessions_per_week}x per week${pkg.is_online ? ' (online)' : ''}` : 'Contact for details'}
-                  </p>
-                </div>
-                {services.show_prices && pkg.monthly_price && (
-                  <p className="text-sm font-bold" style={{ color: isActive ? branding.color_primary : branding.color_text }}>
-                    {sym}{pkg.monthly_price}<span className="text-[10px] font-normal" style={{ color: branding.color_text_muted }}>/mo</span>
-                  </p>
+                <button
+                  onClick={() => pkg.sessions_per_week > 0 && setConfig({ ...config, inPersonDays: pkg.sessions_per_week })}
+                  className="w-full flex items-center justify-between p-3.5 transition-all duration-300 active:scale-[0.98]"
+                  style={{ opacity: pkg.sessions_per_week === 0 ? 0.5 : 1 }}>
+                  <div className="text-left">
+                    <p className="text-sm font-semibold" style={{ color: branding.color_text }}>{pkg.name}</p>
+                    <p className="text-[11px]" style={{ color: branding.color_text_muted }}>
+                      {pkg.sessions_per_week > 0 ? `${pkg.sessions_per_week}x per week${pkg.is_online ? ' (online)' : ''}` : 'Contact for details'}
+                    </p>
+                  </div>
+                  {services.show_prices && pkg.monthly_price && (
+                    <p className="text-sm font-bold" style={{ color: isActive ? branding.color_primary : branding.color_text }}>
+                      {sym}{pkg.monthly_price}<span className="text-[10px] font-normal" style={{ color: branding.color_text_muted }}>/mo</span>
+                    </p>
+                  )}
+                </button>
+                {hasDesc && (
+                  <button onClick={() => setExpandedPkgId(isExpanded ? null : pkg.id)}
+                    className="w-full text-left px-3.5 pb-3 -mt-1">
+                    <div className="flex items-center gap-1">
+                      <svg className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        style={{ color: branding.color_text_muted }} fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-[10px] font-medium" style={{ color: branding.color_text_muted }}>
+                        {isExpanded ? 'Hide details' : "What's included"}
+                      </span>
+                    </div>
+                    {isExpanded && (
+                      <p className="text-xs leading-relaxed mt-2 whitespace-pre-line" style={{ color: branding.color_text_muted }}>
+                        {pkg.description}
+                      </p>
+                    )}
+                  </button>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>

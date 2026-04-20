@@ -318,7 +318,7 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
 
   if (step === 'results' && result) {
     return pageWrapper(
-      <div className="py-10 px-4">
+      <div className="py-10 px-4 animate-step-in">
         <TimelineResults
           trainer={trainer}
           branding={branding}
@@ -357,7 +357,7 @@ export default function TrainerPage({ trainer, packages, forms = [], isPreview =
         branding={branding}
       />
 
-      <div className="w-full transition-all duration-300">
+      <div key={step} className="w-full animate-step-in">
         {step === 'goal' && (
           <GoalSelector branding={branding} customGoals={trainer.custom_goals} onSelect={handleGoalSelect} />
         )}

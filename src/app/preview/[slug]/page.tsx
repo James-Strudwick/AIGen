@@ -24,7 +24,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
         return;
       }
 
-      // Load trainer via API (which verifies ownership)
+      // First try: load as the trainer themselves
       const res = await fetch('/api/me', {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
@@ -36,16 +36,29 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
 
       const data = await res.json();
 
-      // Check the slug matches the authenticated trainer
-      if (data.trainer.slug !== slug) {
+      // If slug matches the logged-in trainer, use that directly
+      if (data.trainer.slug === slug) {
+        setTrainer(data.trainer as Trainer);
+        setPackages((data.packages || []) as Package[]);
+        setForms((data.forms || []) as TrainerForm[]);
+        setAuthorized(true);
         setLoading(false);
         return;
       }
 
-      setTrainer(data.trainer as Trainer);
-      setPackages((data.packages || []) as Package[]);
-      setForms((data.forms || []) as TrainerForm[]);
-      setAuthorized(true);
+      // Otherwise try admin mode (owner can preview any trainer)
+      const adminRes = await fetch(`/api/me?slug=${slug}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      if (adminRes.ok) {
+        const adminData = await adminRes.json();
+        setTrainer(adminData.trainer as Trainer);
+        setPackages((adminData.packages || []) as Package[]);
+        setForms((adminData.forms || []) as TrainerForm[]);
+        setAuthorized(true);
+      }
+
       setLoading(false);
     };
     load();
@@ -78,7 +91,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
       {/* Preview banner */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-[#1a1a1a] text-white text-center py-2 text-xs font-medium flex items-center justify-center gap-3">
         <span>Preview mode — only you can see this</span>
-        <Link href="/settings" className="underline underline-offset-2 opacity-70 hover:opacity-100">
+        <Link href={`/settings?admin=${trainer.slug}`} className="underline underline-offset-2 opacity-70 hover:opacity-100">
           Back to settings
         </Link>
       </div>

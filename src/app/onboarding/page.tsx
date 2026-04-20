@@ -22,6 +22,8 @@ interface PackageInput {
   sessions_per_week: string;
   price_per_session: string;
   monthly_price: string;
+  description: string;
+  category: string;
   is_online: boolean;
   is_challenge: boolean;
   challenge_duration_weeks: string;
@@ -128,6 +130,8 @@ export default function OnboardingPage() {
             sessions_per_week: String(p.sessions_per_week),
             price_per_session: p.price_per_session ? String(p.price_per_session) : '',
             monthly_price: p.monthly_price ? String(p.monthly_price) : '',
+            description: (p.description as string) || '',
+            category: (p.category as string) || '',
             is_online: p.is_online as boolean,
             is_challenge: !!p.is_challenge,
             challenge_duration_weeks: p.challenge_duration_weeks ? String(p.challenge_duration_weeks) : '',
@@ -208,6 +212,8 @@ export default function OnboardingPage() {
       sessions_per_week: parseInt(p.sessions_per_week) || 0,
       price_per_session: p.price_per_session ? parseFloat(p.price_per_session) : null,
       monthly_price: p.monthly_price ? parseFloat(p.monthly_price) : null,
+      description: p.description?.trim() || null,
+      category: p.category?.trim() || null,
       is_online: p.is_online,
       is_challenge: p.is_challenge,
       challenge_duration_weeks: p.is_challenge && p.challenge_duration_weeks ? parseInt(p.challenge_duration_weeks) : null,
@@ -512,7 +518,7 @@ export default function OnboardingPage() {
               </div>
             ))}
 
-            <button onClick={() => setPkgs([...pkgs, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', is_online: false, is_challenge: false, challenge_duration_weeks: '', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '' }])}
+            <button onClick={() => setPkgs([...pkgs, { name: '', sessions_per_week: '3', price_per_session: '', monthly_price: '', description: '', category: '', is_online: false, is_challenge: false, challenge_duration_weeks: '', challenge_start_date: '', challenge_outcome: '', challenge_spots_total: '' }])}
               className="w-full py-3 rounded-xl border border-dashed border-[#e5e5ea] text-[#8e8e93] text-sm hover:border-[#8e8e93] transition-colors">
               + Add package
             </button>

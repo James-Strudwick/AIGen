@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { TrainerSpecialty, ServiceAddOn, CustomQuestion, CustomGoal, FormAboutConfig } from '@/types';
 import { getGoogleFontsUrl } from '@/lib/branding';
 import { currencySymbol } from '@/lib/currency';
@@ -194,6 +195,8 @@ interface PackageInput {
   sessions_per_week: string;
   monthly_price: string;
   price_per_session: string;
+  description?: string;
+  category?: string;
   is_online: boolean;
   is_challenge?: boolean;
   challenge_duration_weeks?: string;
@@ -224,6 +227,18 @@ export function PackagesPreview({ theme, primaryColor, packages, showPrices, cur
     } catch { return iso; }
   };
 
+  const categories = [...new Set(valid.filter(p => p.category).map(p => p.category!))];
+  const hasCategories = categories.length > 0;
+  const [selectedCat, setSelectedCat] = useState(hasCategories ? categories[0] : '');
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+
+  const displayed = hasCategories && selectedCat
+    ? valid.filter(p => p.category === selectedCat)
+    : valid;
+
+  // Reset expanded when switching category
+  const handleCatChange = (cat: string) => { setSelectedCat(cat); setExpandedIdx(null); };
+
   return (
     <PreviewWrapper theme={theme} primaryColor={primaryColor}>
       {/* Mini weeks display */}
@@ -234,10 +249,30 @@ export function PackagesPreview({ theme, primaryColor, packages, showPrices, cur
         </div>
       </div>
 
+      {/* Category tabs */}
+      {hasCategories && categories.length > 1 && (
+        <div className="flex gap-1 mb-2">
+          {categories.map((cat) => (
+            <button key={cat} onClick={() => handleCatChange(cat)}
+              className="text-[9px] font-semibold px-2.5 py-1 rounded-full transition-all"
+              style={{
+                backgroundColor: selectedCat === cat ? c.primary + '18' : c.card,
+                color: selectedCat === cat ? c.primary : c.muted,
+                borderWidth: '1px',
+                borderColor: selectedCat === cat ? c.primary : c.border,
+              }}>
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="space-y-1.5">
-        {valid.map((pkg, i) => {
+        {displayed.map((pkg, i) => {
           const isFirst = i === 0;
           const isChallenge = !!pkg.is_challenge;
+          const isExpanded = expandedIdx === i;
+          const hasDesc = !!pkg.description?.trim();
           const startDate = formatStartDate(pkg.challenge_start_date);
           const subtitleBits: string[] = [];
           if (isChallenge) {
@@ -250,29 +285,50 @@ export function PackagesPreview({ theme, primaryColor, packages, showPrices, cur
             subtitleBits.push('Contact for details');
           }
           return (
-            <div key={i} className="flex items-center justify-between rounded-lg p-2.5"
+            <div key={i} className="rounded-lg overflow-hidden"
               style={{
                 backgroundColor: isFirst ? c.primary + '12' : c.card,
                 borderWidth: '1px',
                 borderColor: isChallenge ? c.primary : (isFirst ? c.primary : c.border),
               }}>
-              <div className="min-w-0 pr-2">
-                <div className="flex items-center gap-1.5">
-                  {isChallenge && (
-                    <span className="text-[8px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded"
-                      style={{ backgroundColor: c.primary, color: '#ffffff' }}>
-                      Challenge
-                    </span>
-                  )}
-                  <p className="text-xs font-semibold truncate" style={{ color: c.text }}>{pkg.name}</p>
+              <div className="flex items-center justify-between p-2.5">
+                <div className="min-w-0 pr-2">
+                  <div className="flex items-center gap-1.5">
+                    {isChallenge && (
+                      <span className="text-[8px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded"
+                        style={{ backgroundColor: c.primary, color: '#ffffff' }}>
+                        Challenge
+                      </span>
+                    )}
+                    <p className="text-xs font-semibold truncate" style={{ color: c.text }}>{pkg.name}</p>
+                  </div>
+                  <p className="text-[10px]" style={{ color: c.muted }}>{subtitleBits.join(' · ')}</p>
                 </div>
-                <p className="text-[10px]" style={{ color: c.muted }}>{subtitleBits.join(' · ')}</p>
+                {showPrices && pkg.monthly_price && (
+                  <p className="text-xs font-bold whitespace-nowrap" style={{ color: isFirst ? c.primary : c.text }}>
+                    {sym}{pkg.monthly_price}
+                    {!isChallenge && <span className="text-[9px] font-normal" style={{ color: c.muted }}>/mo</span>}
+                  </p>
+                )}
               </div>
-              {showPrices && pkg.monthly_price && (
-                <p className="text-xs font-bold whitespace-nowrap" style={{ color: isFirst ? c.primary : c.text }}>
-                  {sym}{pkg.monthly_price}
-                  {!isChallenge && <span className="text-[9px] font-normal" style={{ color: c.muted }}>/mo</span>}
-                </p>
+              {hasDesc && (
+                <button onClick={() => setExpandedIdx(isExpanded ? null : i)}
+                  className="w-full text-left px-2.5 pb-2 -mt-0.5">
+                  <div className="flex items-center gap-1">
+                    <svg className={`w-2.5 h-2.5 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                      style={{ color: c.muted }} fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-[8px] font-medium" style={{ color: c.muted }}>
+                      {isExpanded ? 'Hide details' : "What's included"}
+                    </span>
+                  </div>
+                  {isExpanded && (
+                    <p className="text-[9px] leading-relaxed mt-1.5 whitespace-pre-line" style={{ color: c.muted }}>
+                      {pkg.description}
+                    </p>
+                  )}
+                </button>
               )}
             </div>
           );
